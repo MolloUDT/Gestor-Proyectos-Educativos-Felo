@@ -1,0 +1,98 @@
+
+import React, { useState } from 'react';
+
+interface LoginPageProps {
+    onLogin: (username: string, password: string) => void;
+    error: string;
+}
+
+const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onLogin(username, password);
+    };
+
+    return (
+        <div 
+            className="flex items-center justify-center min-h-screen bg-primary-50"
+            style={{
+                backgroundImage: `radial-gradient(#bbf7d0 1px, transparent 1px)`,
+                backgroundSize: '20px 20px',
+            }}
+        >
+            <div className="relative w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-2xl">
+                <div className="text-center">
+                    <img
+                        className="w-40 h-auto mx-auto"
+                        src="https://i.ibb.co/x8MPvpcr/Logo-Felo.png"
+                        alt="Logo CIFP Felo Monzón"
+                    />
+                    <h1 className="mt-4 text-2xl font-extrabold text-gray-900">
+                        Gestor de Proyectos Educativos
+                    </h1>
+                     <div className="mt-4">
+                        <p className="text-sm tracking-wider text-gray-500 uppercase">
+                            Departamento
+                        </p>
+                        <div className="w-1/4 mx-auto mt-1 mb-2 border-t border-gray-300"></div>
+                        <p className="text-lg font-bold text-green-700">
+                            Actividades Físicas y Deportivas
+                        </p>
+                    </div>
+                </div>
+                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                    <div className="space-y-4 rounded-md shadow-sm">
+                        <div>
+                            <label htmlFor="username" className="sr-only">Usuario</label>
+                            <input
+                                id="username"
+                                name="username"
+                                type="text"
+                                required
+                                className="relative block w-full px-3 py-2 bg-white text-gray-900 placeholder-gray-500 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
+                                placeholder="Nombre de usuario"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="password" className="sr-only">Contraseña</label>
+                            <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                required
+                                className="relative block w-full px-3 py-2 bg-white text-gray-900 placeholder-gray-500 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
+                                placeholder="Contraseña"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    
+                    {error && <p className="text-sm text-center text-red-600">{error}</p>}
+
+                    <div>
+                        <button
+                            type="submit"
+                            className="relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md group hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        >
+                            Acceder
+                        </button>
+                    </div>
+                </form>
+                 <div className="text-xs text-center text-gray-500">
+                    <p className="font-semibold">Credenciales de prueba:</p>
+                    <p>Admin: Admin / esperanza2026</p>
+                    <p>Tutor: Tutor / felo2627</p>
+                    <p>Alumno: alumno / alumno2627</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default LoginPage;
