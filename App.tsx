@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { User, Group, Task, Project, Role, RA, Tutorial, StoredFile, Message } from './types';
-import { MOCK_USERS, MOCK_GROUPS, MOCK_TASKS, MOCK_PROJECTS, MOCK_RAS, MOCK_TUTORIALS, MOCK_FILES, MOCK_MESSAGES } from './data';
+import { supabase } from './lib/supabase';
+import { mapUser, mapGroup, mapProject, mapTask, mapRA, mapTutorial, mapStoredFile, mapMessage } from './lib/mappers';
 import LoginPage from './components/LoginPage';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
@@ -28,271 +29,321 @@ const App: React.FC = () => {
     const [unreadMessagesToShow, setUnreadMessagesToShow] = useState<Message[]>([]);
 
     // Centralized state for application data
-    const [users, setUsers] = useState<User[]>(MOCK_USERS);
-    const [groups, setGroups] = useState<Group[]>(MOCK_GROUPS);
-    const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
-    const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
-    const [ras, setRas] = useState<RA[]>(MOCK_RAS);
-    const [tutorials, setTutorials] = useState<Tutorial[]>(MOCK_TUTORIALS);
-    const [files, setFiles] = useState<StoredFile[]>(MOCK_FILES);
-    const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES);
+    const [users, setUsers] = useState<User[]>([]);
+    const [groups, setGroups] = useState<Group[]>([]);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [ras, setRas] = useState<RA[]>([]);
+    const [tutorials, setTutorials] = useState<Tutorial[]>([]);
+    const [files, setFiles] = useState<StoredFile[]>([]);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [courseDates, setCourseDates] = useState({ startDate: '2025-09-15', endDate: '2026-06-19' });
     
-    const initialModules = useMemo(() => Array.from(new Set(MOCK_RAS.map(r => r.module))), []);
-    const [modules, setModules] = useState<string[]>(initialModules);
+    const [modules, setModules] = useState<string[]>([]);
 
+    const fetchAllData = useCallback(async () => {
+        try {
+            // Fetch Users
+            const { data: usersData } = await supabase.from('users').select('*, group_members(group_id)');
+            const fetchedUsers = usersData ? usersData.map(mapUser) : [];
+            setUsers(fetchedUsers);
 
-    const handleLogin = useCallback((username: string, password: string): void => {
-        const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
-        if (user) {
-            setCurrentUser(user);
-            setAuthError('');
-            setPage('dashboard');
+            // Fetch Groups
+            const { data: groupsData } = await supabase.from('groups').select('*, group_members(user_id)');
+            const fetchedGroups = groupsData ? groupsData.map(g => mapGroup(g, fetchedUsers)) : [];
+            setGroups(fetchedGroups);
 
+            // Fetch Projects
+            const { data: projectsData } = await supabase.from('projects').select('*');
+            setProjects(projectsData ? projectsData.map(mapProject) : []);
+
+            // Fetch Tasks
+            const { data: tasksData } = await supabase.from('tasks').select('*');
+            setTasks(tasksData ? tasksData.map(mapTask) : []);
+
+            // Fetch RAs
+            const { data: rasData } = await supabase.from('ras').select('*');
+            const fetchedRas = rasData ? rasData.map(mapRA) : [];
+            setRas(fetchedRas);
+            
+            // Update modules based on fetched RAs
+            const uniqueModules = Array.from(new Set(fetchedRas.map(r => r.module)));
+            setModules(prev => Array.from(new Set([...prev, ...uniqueModules])).sort());
+
+            // Fetch Tutorials
+            const { data: tutorialsData } = await supabase.from('tutorials').select('*');
+            setTutorials(tutorialsData ? tutorialsData.map(mapTutorial) : []);
+
+            // Fetch Files
+            const { data: filesData } = await supabase.from('stored_files').select('*');
+            setFiles(filesData ? filesData.map(mapStoredFile) : []);
+
+            // Fetch Messages
+            const { data: messagesData } = await supabase.from('messages').select('*, message_recipients(user_id, is_read), message_target_groups(group_id)');
+            const fetchedMessages = messagesData ? messagesData.map(mapMessage) : [];
+            setMessages(fetchedMessages);
+
+            // Fetch Course Dates
+            const { data: settingsData } = await supabase.from('settings').select('*').eq('key', 'course_dates').single();
+            if (settingsData && settingsData.value) {
+                setCourseDates(settingsData.value);
+            }
+
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (currentUser) {
             const unread = messages.filter(msg => 
-                msg.recipientIds.includes(user.id) && !msg.readBy.includes(user.id)
+                msg.recipientIds.includes(currentUser.id) && !msg.readBy.includes(currentUser.id)
             );
             if (unread.length > 0) {
                 setUnreadMessagesToShow(unread);
             }
+        }
+    }, [messages, currentUser]);
 
+    // Fetch data initially and set up a simple interval or just rely on manual refetches after mutations
+    useEffect(() => {
+        fetchAllData();
+    }, [fetchAllData, page]);
+
+    const handleLogin = useCallback(async (username: string, password: string): Promise<void> => {
+        const { data: usersData, error } = await supabase
+            .from('users')
+            .select('*, group_members(group_id)')
+            .eq('username', username)
+            .eq('password', password)
+            .single();
+
+        if (usersData) {
+            const user = mapUser(usersData);
+            setCurrentUser(user);
+            setAuthError('');
+            setPage('dashboard');
+            await fetchAllData();
         } else {
             setAuthError('Usuario o contraseña incorrectos.');
         }
-    }, [users, messages]);
+    }, [fetchAllData]);
 
     const handleLogout = useCallback((): void => {
         setCurrentUser(null);
     }, []);
 
-    const handleSendMessage = (messageData: { senderId: string; recipientIds: string[]; subject: string; body: string; targetType: 'tutors' | 'groups' | 'students'; targetGroupIds?: string[]; originalMessageId?: string; }) => {
-        const newMessage: Message = {
-            id: `msg-${Date.now()}`,
-            ...messageData,
-            timestamp: new Date().toISOString(),
-            readBy: [],
-        };
+    const handleSendMessage = async (messageData: { senderId: string; recipientIds: string[]; subject: string; body: string; targetType: 'tutors' | 'groups' | 'students'; targetGroupIds?: string[]; originalMessageId?: string; }) => {
+        const { data: newMessageData, error } = await supabase.from('messages').insert({
+            sender_id: messageData.senderId,
+            target_type: messageData.targetType,
+            subject: messageData.subject,
+            body: messageData.body,
+            original_message_id: messageData.originalMessageId || null,
+            replied_by: messageData.originalMessageId ? messageData.senderId : null
+        }).select().single();
 
-        if (messageData.originalMessageId) {
-            // This is a reply, update the original message
-            setMessages(prev => {
-                const originalMessage = prev.find(m => m.id === messageData.originalMessageId);
-                if (originalMessage) {
-                    const updatedOriginalMessage = { ...originalMessage, repliedBy: messageData.senderId };
-                    return [...prev.filter(m => m.id !== messageData.originalMessageId), updatedOriginalMessage, newMessage];
-                }
-                return [...prev, newMessage]; // Fallback if original not found
-            });
-        } else {
-             setMessages(prev => [...prev, newMessage]);
+        if (newMessageData) {
+            if (messageData.recipientIds.length > 0) {
+                await supabase.from('message_recipients').insert(
+                    messageData.recipientIds.map(id => ({ message_id: newMessageData.id, user_id: id }))
+                );
+            }
+            if (messageData.targetGroupIds && messageData.targetGroupIds.length > 0) {
+                await supabase.from('message_target_groups').insert(
+                    messageData.targetGroupIds.map(id => ({ message_id: newMessageData.id, group_id: id }))
+                );
+            }
+            await fetchAllData();
         }
     };
 
-    const handleMarkMessagesAsRead = (messageIds: string[]) => {
+    const handleMarkMessagesAsRead = async (messageIds: string[]) => {
         if (!currentUser) return;
-        setMessages(prev =>
-            prev.map(msg =>
-                messageIds.includes(msg.id) && !msg.readBy.includes(currentUser.id)
-                    ? { ...msg, readBy: [...msg.readBy, currentUser.id] }
-                    : msg
-            )
-        );
-         setUnreadMessagesToShow(prev => prev.filter(msg => !messageIds.includes(msg.id)));
+        for (const msgId of messageIds) {
+            await supabase.from('message_recipients')
+                .update({ is_read: true })
+                .eq('message_id', msgId)
+                .eq('user_id', currentUser.id);
+        }
+        await fetchAllData();
+        setUnreadMessagesToShow(prev => prev.filter(msg => !messageIds.includes(msg.id)));
     };
 
-    const handleDeleteMessage = (messageId: string) => {
-        setMessages(prev => prev.filter(msg => msg.id !== messageId));
+    const handleDeleteMessage = async (messageId: string) => {
+        await supabase.from('messages').delete().eq('id', messageId);
+        await fetchAllData();
     };
 
-    const handleCreateGroup = (groupData: { name: string; tutorId: string; memberIds: string[]; projectName: string; projectDescription: string; startDate: string; endDate: string; }) => {
-        const groupId = `group-${Date.now()}`;
-        const newGroup: Group = {
-            id: groupId,
+    const handleCreateGroup = async (groupData: { name: string; tutorId: string; memberIds: string[]; projectName: string; projectDescription: string; startDate: string; endDate: string; }) => {
+        const { data: newGroup, error: groupError } = await supabase.from('groups').insert({
             name: groupData.name,
-            tutorId: groupData.tutorId,
-            members: users.filter(u => groupData.memberIds.includes(u.id)),
-        };
-         const newProject: Project = {
-            id: `proj-${Date.now()}`,
+            tutor_id: groupData.tutorId || null
+        }).select().single();
+
+        if (newGroup) {
+            if (groupData.memberIds.length > 0) {
+                await supabase.from('group_members').insert(
+                    groupData.memberIds.map(id => ({ group_id: newGroup.id, user_id: id }))
+                );
+            }
+            await supabase.from('projects').insert({
+                name: groupData.projectName,
+                description: groupData.projectDescription,
+                group_id: newGroup.id,
+                start_date: groupData.startDate,
+                end_date: groupData.endDate
+            });
+            await fetchAllData();
+        }
+    };
+
+    const handleUpdateGroup = async (groupId: string, groupData: { name: string; tutorId: string; memberIds: string[]; projectName: string; projectDescription: string; startDate: string; endDate: string; }) => {
+        await supabase.from('groups').update({
+            name: groupData.name,
+            tutor_id: groupData.tutorId || null
+        }).eq('id', groupId);
+
+        await supabase.from('group_members').delete().eq('group_id', groupId);
+        if (groupData.memberIds.length > 0) {
+            await supabase.from('group_members').insert(
+                groupData.memberIds.map(id => ({ group_id: groupId, user_id: id }))
+            );
+        }
+
+        await supabase.from('projects').update({
             name: groupData.projectName,
             description: groupData.projectDescription,
-            groupId: groupId,
-            startDate: groupData.startDate,
-            endDate: groupData.endDate,
-        };
-        setGroups(prevGroups => [...prevGroups, newGroup]);
-        setProjects(prevProjects => [...prevProjects, newProject]);
-    };
+            start_date: groupData.startDate,
+            end_date: groupData.endDate
+        }).eq('group_id', groupId);
 
-    const handleUpdateGroup = (groupId: string, groupData: { name: string; tutorId: string; memberIds: string[]; projectName: string; projectDescription: string; startDate: string; endDate: string; }) => {
-        setGroups(prevGroups =>
-            prevGroups.map(group =>
-                group.id === groupId
-                    ? {
-                          ...group,
-                          name: groupData.name,
-                          tutorId: groupData.tutorId,
-                          members: users.filter(u => groupData.memberIds.includes(u.id)),
-                      }
-                    : group
-            )
-        );
-         setProjects(prevProjects => 
-            prevProjects.map(project => 
-                project.groupId === groupId 
-                    ? {
-                        ...project,
-                        name: groupData.projectName,
-                        description: groupData.projectDescription,
-                        startDate: groupData.startDate,
-                        endDate: groupData.endDate,
-                      }
-                    : project
-            )
-        );
+        await fetchAllData();
     };
     
-    const handleDeleteGroup = (groupId: string) => {
-        const projectsToDelete = projects.filter(p => p.groupId === groupId);
-        const projectIdsToDelete = projectsToDelete.map(p => p.id);
-        setTasks(prevTasks => prevTasks.filter(t => !projectIdsToDelete.includes(t.projectId)));
-        setProjects(prevProjects => prevProjects.filter(p => p.groupId !== groupId));
-        setGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
+    const handleDeleteGroup = async (groupId: string) => {
+        await supabase.from('groups').delete().eq('id', groupId);
+        await fetchAllData();
     };
 
-    const handleCreateTutor = (tutorData: { name: string; password?: string }) => {
-        const newTutor: User = {
-            id: `user-${Date.now()}`,
+    const handleCreateTutor = async (tutorData: { name: string; password?: string }) => {
+        await supabase.from('users').insert({
             name: tutorData.name,
             username: tutorData.name.split(' ')[0].toLowerCase() + Date.now().toString().slice(-4),
             password: tutorData.password || 'password',
-            role: Role.Tutor,
-            groupIds: [],
-        };
-        setUsers(prevUsers => [...prevUsers, newTutor]);
+            role: Role.Tutor
+        });
+        await fetchAllData();
     };
 
-    const handleUpdateTutor = (tutorId: string, tutorData: { name: string; password?: string }) => {
-        setUsers(prevUsers =>
-            prevUsers.map(user =>
-                user.id === tutorId
-                    ? {
-                          ...user,
-                          name: tutorData.name,
-                          ...(tutorData.password && { password: tutorData.password }),
-                      }
-                    : user
-            )
-        );
+    const handleUpdateTutor = async (tutorId: string, tutorData: { name: string; password?: string }) => {
+        const updateData: any = { name: tutorData.name };
+        if (tutorData.password) updateData.password = tutorData.password;
+        await supabase.from('users').update(updateData).eq('id', tutorId);
+        await fetchAllData();
     };
     
-    const handleDeleteTutor = (tutorId: string) => {
-        setGroups(prevGroups =>
-            prevGroups.map(group =>
-                group.tutorId === tutorId
-                    ? { ...group, tutorId: '' }
-                    : group
-            )
-        );
-        setUsers(prevUsers => prevUsers.filter(user => user.id !== tutorId));
+    const handleDeleteTutor = async (tutorId: string) => {
+        await supabase.from('users').delete().eq('id', tutorId);
+        await fetchAllData();
     };
 
-    const handleCreateStudent = (studentData: { name: string; password?: string; courseGroup: string }) => {
-        const newStudent: User = {
-            id: `user-${Date.now()}`,
+    const handleCreateStudent = async (studentData: { name: string; password?: string; courseGroup: string }) => {
+        await supabase.from('users').insert({
             name: studentData.name,
             username: studentData.name.split(' ')[0].toLowerCase() + Date.now().toString().slice(-4),
             password: studentData.password || 'password',
             role: Role.Student,
-            groupIds: [], // Initially not assigned to a project group
-            courseGroup: studentData.courseGroup,
-        };
-        setUsers(prevUsers => [...prevUsers, newStudent]);
+            course_group: studentData.courseGroup
+        });
+        await fetchAllData();
     };
 
-    const handleCreateStudentsBulk = (studentsData: { name: string; password: string; courseGroup: string }[]) => {
+    const handleCreateStudentsBulk = async (studentsData: { name: string; password: string; courseGroup: string }[]) => {
         const timestamp = Date.now();
-        const newStudents: User[] = studentsData.map((studentData, index) => ({
-            id: `user-${timestamp}-${index}`,
+        const inserts = studentsData.map((studentData, index) => ({
             name: studentData.name.trim(),
             username: studentData.name.trim().split(' ')[0].toLowerCase() + timestamp.toString().slice(-4) + index,
             password: studentData.password.trim(),
             role: Role.Student,
-            groupIds: [],
-            courseGroup: studentData.courseGroup,
+            course_group: studentData.courseGroup
         }));
-        setUsers(prevUsers => [...prevUsers, ...newStudents]);
+        await supabase.from('users').insert(inserts);
+        await fetchAllData();
     };
 
-    const handleUpdateStudent = (studentId: string, studentData: { name: string; password?: string; courseGroup: string }) => {
-        setUsers(prevUsers =>
-            prevUsers.map(user =>
-                user.id === studentId
-                    ? {
-                          ...user,
-                          name: studentData.name,
-                          courseGroup: studentData.courseGroup,
-                          ...(studentData.password && { password: studentData.password }),
-                      }
-                    : user
-            )
-        );
+    const handleUpdateStudent = async (studentId: string, studentData: { name: string; password?: string; courseGroup: string }) => {
+        const updateData: any = { name: studentData.name, course_group: studentData.courseGroup };
+        if (studentData.password) updateData.password = studentData.password;
+        await supabase.from('users').update(updateData).eq('id', studentId);
+        await fetchAllData();
     };
 
-    const handleDeleteStudent = (studentId: string) => {
-        setGroups(prevGroups => 
-            prevGroups.map(g => ({ ...g, members: g.members.filter(m => m.id !== studentId) }))
-        );
-        setTasks(prevTasks =>
-            prevTasks.map(t => t.assigneeId === studentId ? { ...t, assigneeId: ''} : t)
-        )
-        setUsers(prevUsers => prevUsers.filter(user => user.id !== studentId));
+    const handleDeleteStudent = async (studentId: string) => {
+        await supabase.from('users').delete().eq('id', studentId);
+        await fetchAllData();
     };
 
-
-    const handleCreateTask = (taskData: Omit<Task, 'id'>) => {
-        const newTask: Task = {
-            id: `task-${Date.now()}`,
-            ...taskData,
-        };
-        setTasks(prevTasks => [...prevTasks, newTask]);
+    const handleCreateTask = async (taskData: Omit<Task, 'id'>) => {
+        await supabase.from('tasks').insert({
+            title: taskData.title,
+            description: taskData.description,
+            status: taskData.status,
+            priority: taskData.priority,
+            difficulty: taskData.difficulty,
+            assignee_id: taskData.assigneeId || null,
+            start_date: taskData.startDate,
+            end_date: taskData.endDate,
+            ra_id: taskData.raId || null,
+            project_id: taskData.projectId,
+            is_verified: taskData.isVerified || false
+        });
+        await fetchAllData();
     };
 
-    const handleUpdateTask = (taskId: string, taskData: Partial<Omit<Task, 'id'>>) => {
-        setTasks(prevTasks =>
-            prevTasks.map(task =>
-                task.id === taskId ? { ...task, ...taskData } : task
-            )
-        );
+    const handleUpdateTask = async (taskId: string, taskData: Partial<Omit<Task, 'id'>>) => {
+        const updateData: any = {};
+        if (taskData.title !== undefined) updateData.title = taskData.title;
+        if (taskData.description !== undefined) updateData.description = taskData.description;
+        if (taskData.status !== undefined) updateData.status = taskData.status;
+        if (taskData.priority !== undefined) updateData.priority = taskData.priority;
+        if (taskData.difficulty !== undefined) updateData.difficulty = taskData.difficulty;
+        if (taskData.assigneeId !== undefined) updateData.assignee_id = taskData.assigneeId || null;
+        if (taskData.startDate !== undefined) updateData.start_date = taskData.startDate;
+        if (taskData.endDate !== undefined) updateData.end_date = taskData.endDate;
+        if (taskData.raId !== undefined) updateData.ra_id = taskData.raId || null;
+        if (taskData.isVerified !== undefined) updateData.is_verified = taskData.isVerified;
+        
+        await supabase.from('tasks').update(updateData).eq('id', taskId);
+        await fetchAllData();
     };
 
-    const handleDeleteTask = (taskId: string) => {
-        setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    const handleDeleteTask = async (taskId: string) => {
+        await supabase.from('tasks').delete().eq('id', taskId);
+        await fetchAllData();
     };
     
-    const handleCreateRA = (raData: { module: string; code: string; description: string }) => {
-        const newRA: RA = {
-            id: `ra-${Date.now()}`,
-            ...raData,
-        };
-        setRas(prevRas => [...prevRas, newRA]);
+    const handleCreateRA = async (raData: { module: string; code: string; description: string }) => {
+        await supabase.from('ras').insert({
+            module: raData.module,
+            code: raData.code,
+            description: raData.description
+        });
+        await fetchAllData();
     };
     
-    const handleUpdateRA = (raId: string, raData: { module: string; code: string; description: string }) => {
-        setRas(prevRas =>
-            prevRas.map(ra =>
-                ra.id === raId ? { ...ra, ...raData } : ra
-            )
-        );
+    const handleUpdateRA = async (raId: string, raData: { module: string; code: string; description: string }) => {
+        await supabase.from('ras').update({
+            module: raData.module,
+            code: raData.code,
+            description: raData.description
+        }).eq('id', raId);
+        await fetchAllData();
     };
 
-    const handleDeleteRA = (raId: string) => {
-        setTasks(prevTasks =>
-            prevTasks.map(task =>
-                task.raId === raId ? { ...task, raId: '' } : task
-            )
-        );
-        setRas(prevRas => prevRas.filter(ra => ra.id !== raId));
+    const handleDeleteRA = async (raId: string) => {
+        await supabase.from('ras').delete().eq('id', raId);
+        await fetchAllData();
     };
 
     const handleCreateModule = (moduleName: string) => {
@@ -302,59 +353,74 @@ const App: React.FC = () => {
         }
     };
 
-    const handleUpdateModule = (oldName: string, newName: string) => {
+    const handleUpdateModule = async (oldName: string, newName: string) => {
+        await supabase.from('ras').update({ module: newName }).eq('module', oldName);
         setModules(prev => prev.map(m => (m === oldName ? newName : m)).sort());
-        setRas(prevRas => prevRas.map(ra => (ra.module === oldName ? { ...ra, module: newName } : ra)));
+        await fetchAllData();
     };
 
-    const handleDeleteModule = (moduleName: string) => {
-        const raIdsToDelete = ras.filter(ra => ra.module === moduleName).map(r => r.id);
-        setTasks(prevTasks =>
-            prevTasks.map(task =>
-                raIdsToDelete.includes(task.raId) ? { ...task, raId: '' } : task
-            )
-        );
-        setRas(prevRas => prevRas.filter(ra => ra.module !== moduleName));
+    const handleDeleteModule = async (moduleName: string) => {
+        await supabase.from('ras').delete().eq('module', moduleName);
         setModules(prev => prev.filter(m => m !== moduleName));
+        await fetchAllData();
     };
 
-    const handleCreateTutorial = (tutorialData: Omit<Tutorial, 'id'>) => {
-        const newTutorial: Tutorial = {
-            id: `tut-${Date.now()}`,
-            ...tutorialData,
-        };
-        setTutorials(prevTutorials => [...prevTutorials, newTutorial]);
+    const handleCreateTutorial = async (tutorialData: Omit<Tutorial, 'id'>) => {
+        await supabase.from('tutorials').insert({
+            date: tutorialData.date,
+            summary: tutorialData.summary,
+            group_id: tutorialData.groupId,
+            tutor_id: tutorialData.tutorId,
+            location: tutorialData.location,
+            next_date: tutorialData.nextDate,
+            next_location: tutorialData.nextLocation,
+            next_time: tutorialData.nextTime
+        });
+        await fetchAllData();
     };
     
-    const handleUpdateTutorial = (tutorialId: string, tutorialData: Partial<Omit<Tutorial, 'id'>>) => {
-        setTutorials(prev => prev.map(t => t.id === tutorialId ? { ...t, ...tutorialData } : t));
+    const handleUpdateTutorial = async (tutorialId: string, tutorialData: Partial<Omit<Tutorial, 'id'>>) => {
+        const updateData: any = {};
+        if (tutorialData.date !== undefined) updateData.date = tutorialData.date;
+        if (tutorialData.summary !== undefined) updateData.summary = tutorialData.summary;
+        if (tutorialData.groupId !== undefined) updateData.group_id = tutorialData.groupId;
+        if (tutorialData.tutorId !== undefined) updateData.tutor_id = tutorialData.tutorId;
+        if (tutorialData.location !== undefined) updateData.location = tutorialData.location;
+        if (tutorialData.nextDate !== undefined) updateData.next_date = tutorialData.nextDate;
+        if (tutorialData.nextLocation !== undefined) updateData.next_location = tutorialData.nextLocation;
+        if (tutorialData.nextTime !== undefined) updateData.next_time = tutorialData.nextTime;
+        
+        await supabase.from('tutorials').update(updateData).eq('id', tutorialId);
+        await fetchAllData();
     };
 
-    const handleDeleteTutorial = (tutorialId: string) => {
-        setTutorials(prev => prev.filter(t => t.id !== tutorialId));
+    const handleDeleteTutorial = async (tutorialId: string) => {
+        await supabase.from('tutorials').delete().eq('id', tutorialId);
+        await fetchAllData();
     };
 
-    const handleUpdateGroupLogbook = (groupId: string, logbook: string) => {
-        setGroups(prev => prev.map(g => g.id === groupId ? { ...g, logbook } : g));
+    const handleUpdateGroupLogbook = async (groupId: string, logbook: string) => {
+        await supabase.from('groups').update({ logbook }).eq('id', groupId);
+        await fetchAllData();
     };
 
-    const handleUpdateCourseDates = (dates: { startDate: string, endDate: string }) => {
-        setCourseDates(dates);
+    const handleUpdateCourseDates = async (dates: { startDate: string, endDate: string }) => {
+        await supabase.from('settings').upsert({ key: 'course_dates', value: dates });
+        await fetchAllData();
     };
     
-    const handleUploadFile = (file: File, groupId: string) => {
-        const newFile: StoredFile = {
-            id: `file-${Date.now()}`,
+    const handleUploadFile = async (file: File, groupId: string) => {
+        await supabase.from('stored_files').insert({
             name: file.name,
-            url: '#', // Placeholder URL for mock data
-            uploadedAt: new Date().toISOString(),
-            groupId: groupId,
-        };
-        setFiles(prevFiles => [...prevFiles, newFile]);
+            url: '#', // Placeholder URL
+            group_id: groupId
+        });
+        await fetchAllData();
     };
 
-    const handleDeleteFile = (fileId: string) => {
-        setFiles(prevFiles => prevFiles.filter(file => file.id !== fileId));
+    const handleDeleteFile = async (fileId: string) => {
+        await supabase.from('stored_files').delete().eq('id', fileId);
+        await fetchAllData();
     };
 
     const handleNavigateToKanban = (projectId: string) => {
