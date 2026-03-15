@@ -84,12 +84,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
                         </button>
                     </div>
                 </form>
-                 <div className="text-xs text-center text-gray-500">
-                    <p className="font-semibold">Credenciales de prueba:</p>
-                    <p>Admin: Admin / esperanza2026</p>
-                    <p>Tutor: Tutor / felo2627</p>
-                    <p>Alumno: alumno / alumno2627</p>
-                </div>
             </div>
         </div>
     );
