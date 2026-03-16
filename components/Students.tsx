@@ -6,19 +6,20 @@ import { EditIcon, TrashIcon, PlusCircleIcon, ChevronDownIcon, EyeIcon, EyeOffIc
 
 interface StudentsProps {
     users: User[];
+    courseGroups: string[];
+    onUpdateCourseGroups: (newGroups: string[], renameMapping?: { oldName: string, newName: string }) => void;
     onCreate: (data: { name: string; password?: string; courseGroup: string }) => void;
     onCreateBulk: (students: { name: string; password: string; courseGroup: string }[]) => void;
     onUpdate: (id: string, data: { name: string; password?: string; courseGroup: string }) => void;
     onDelete: (id: string) => void;
 }
 
-const COURSE_GROUPS = ['1º TSAF', '2º TSAF', '1º TSEAS', '2º TSEAS'];
-
 const StudentForm: React.FC<{
     student: Partial<User> | null;
     onSave: (data: { name: string; password?: string, courseGroup: string }) => void;
     onCancel: () => void;
-}> = ({ student, onSave, onCancel }) => {
+    courseGroups: string[];
+}> = ({ student, onSave, onCancel, courseGroups }) => {
     const [name, setName] = useState(student?.name || '');
     const [password, setPassword] = useState('');
     const [courseGroup, setCourseGroup] = useState(student?.courseGroup || '');
@@ -51,7 +52,7 @@ const StudentForm: React.FC<{
                     required
                 >
                     <option value="">Selecciona un grupo</option>
-                    {COURSE_GROUPS.map(group => <option key={group} value={group}>{group}</option>)}
+                    {courseGroups.map(group => <option key={group} value={group}>{group}</option>)}
                 </select>
             </div>
             <div>
@@ -79,7 +80,8 @@ const StudentForm: React.FC<{
 const BulkStudentForm: React.FC<{
     onSave: (students: { name: string; password: string; courseGroup: string }[]) => void;
     onCancel: () => void;
-}> = ({ onSave, onCancel }) => {
+    courseGroups: string[];
+}> = ({ onSave, onCancel, courseGroups }) => {
     const [courseGroup, setCourseGroup] = useState('');
     const [pastedText, setPastedText] = useState('');
     const [error, setError] = useState('');
@@ -143,7 +145,7 @@ const BulkStudentForm: React.FC<{
                     required
                 >
                     <option value="">Selecciona un curso</option>
-                    {COURSE_GROUPS.map(group => <option key={group} value={group}>{group}</option>)}
+                    {courseGroups.map(group => <option key={group} value={group}>{group}</option>)}
                 </select>
             </div>
             <div>
@@ -175,21 +177,25 @@ const BulkStudentForm: React.FC<{
     );
 };
 
-const Students: React.FC<StudentsProps> = ({ users, onCreate, onCreateBulk, onUpdate, onDelete }) => {
+const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourseGroups, onCreate, onCreateBulk, onUpdate, onDelete }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+    const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
+    const [isEditCourseModalOpen, setIsEditCourseModalOpen] = useState(false);
     const [editingStudent, setEditingStudent] = useState<User | null>(null);
     const [studentToDelete, setStudentToDelete] = useState<User | null>(null);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
     const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+    const [newCourseName, setNewCourseName] = useState('');
+    const [editingCourseName, setEditingCourseName] = useState<{ oldName: string, newName: string } | null>(null);
 
     const studentsByGroup = useMemo(() => {
         const studentList = users.filter(u => u.role === Role.Student);
-        return COURSE_GROUPS.reduce((acc, groupName) => {
+        return courseGroups.reduce((acc, groupName) => {
             acc[groupName] = studentList.filter(s => s.courseGroup === groupName);
             return acc;
         }, {} as Record<string, User[]>);
-    }, [users]);
+    }, [users, courseGroups]);
     
     const toggleGroup = (groupName: string) => {
         setExpandedGroups(prev => ({ ...prev, [groupName]: !prev[groupName] }));
@@ -230,9 +236,28 @@ const Students: React.FC<StudentsProps> = ({ users, onCreate, onCreateBulk, onUp
         setEditingStudent(null);
     };
 
+    const handleCreateCourse = () => {
+        if (newCourseName && !courseGroups.includes(newCourseName)) {
+            onUpdateCourseGroups([...courseGroups, newCourseName]);
+            setNewCourseName('');
+            setIsAddCourseModalOpen(false);
+        }
+    };
+
     const handleBulkSave = (studentsToCreate: { name: string; password: string; courseGroup: string }[]) => {
         onCreateBulk(studentsToCreate);
         setIsBulkModalOpen(false);
+    };
+
+    const handleEditCourse = () => {
+        if (editingCourseName && editingCourseName.newName && !courseGroups.includes(editingCourseName.newName)) {
+            onUpdateCourseGroups(
+                courseGroups.map(c => c === editingCourseName.oldName ? editingCourseName.newName : c),
+                { oldName: editingCourseName.oldName, newName: editingCourseName.newName }
+            );
+            setEditingCourseName(null);
+            setIsEditCourseModalOpen(false);
+        }
     };
 
     return (
@@ -240,6 +265,10 @@ const Students: React.FC<StudentsProps> = ({ users, onCreate, onCreateBulk, onUp
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                 <h2 className="text-xl font-bold text-gray-800">Listado de Alumnos por Grupo</h2>
                 <div className="flex items-center gap-2">
+                    <button onClick={() => setIsAddCourseModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-black rounded-md hover:bg-gray-800">
+                        <PlusCircleIcon className="w-5 h-5" />
+                        Añadir Curso
+                    </button>
                     <button onClick={() => setIsBulkModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700">
                         <UsersIcon className="w-5 h-5" />
                         Añadir Grupo
@@ -252,23 +281,28 @@ const Students: React.FC<StudentsProps> = ({ users, onCreate, onCreateBulk, onUp
             </div>
 
             <div className="space-y-2">
-                {COURSE_GROUPS.map(groupName => {
+                {courseGroups.map(groupName => {
                     const students = studentsByGroup[groupName] || [];
                     const isExpanded = !!expandedGroups[groupName];
                     return (
                         <div key={groupName} className="border border-gray-200 rounded-lg">
-                            <button
-                                onClick={() => toggleGroup(groupName)}
-                                className="flex items-center justify-between w-full p-4 text-left bg-gray-50 hover:bg-gray-100 focus:outline-none"
-                            >
-                                <div className="flex items-center">
-                                    <h3 className="font-semibold text-gray-800">{groupName}</h3>
-                                    <span className="ml-3 px-2 py-0.5 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
-                                        {students.length} {students.length === 1 ? 'alumno' : 'alumnos'}
-                                    </span>
-                                </div>
-                                <ChevronDownIcon className={`w-5 h-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : 'rotate-0'}`} />
-                            </button>
+                            <div className="flex items-center justify-between w-full p-4 bg-gray-50">
+                                <button
+                                    onClick={() => toggleGroup(groupName)}
+                                    className="flex items-center flex-1 text-left focus:outline-none"
+                                >
+                                    <div className="flex items-center">
+                                        <h3 className="font-semibold text-gray-800">{groupName}</h3>
+                                        <span className="ml-3 px-2 py-0.5 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
+                                            {students.length} {students.length === 1 ? 'alumno' : 'alumnos'}
+                                        </span>
+                                    </div>
+                                    <ChevronDownIcon className={`w-5 h-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : 'rotate-0'}`} />
+                                </button>
+                                <button onClick={() => { setEditingCourseName({ oldName: groupName, newName: groupName }); setIsEditCourseModalOpen(true); }} className="ml-2 text-gray-500 hover:text-gray-700">
+                                    <EditIcon className="w-5 h-5" />
+                                </button>
+                            </div>
                             {isExpanded && (
                                 <div className="p-4 border-t border-gray-200">
                                     {students.length > 0 ? (
@@ -316,12 +350,49 @@ const Students: React.FC<StudentsProps> = ({ users, onCreate, onCreateBulk, onUp
                 })}
             </div>
 
+            {isAddCourseModalOpen && (
+                <Modal title="Añadir Nuevo Curso" onClose={() => setIsAddCourseModalOpen(false)}>
+                    <div className="space-y-4">
+                        <input
+                            type="text"
+                            value={newCourseName}
+                            onChange={(e) => setNewCourseName(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md"
+                            placeholder="Nombre del curso"
+                        />
+                        <div className="flex justify-end pt-4 space-x-2">
+                            <button onClick={() => setIsAddCourseModalOpen(false)} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancelar</button>
+                            <button onClick={handleCreateCourse} className="px-4 py-2 text-white bg-black rounded-md hover:bg-gray-800">Guardar</button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {isEditCourseModalOpen && editingCourseName && (
+                <Modal title="Editar Nombre del Curso" onClose={() => setIsEditCourseModalOpen(false)}>
+                    <div className="space-y-4">
+                        <input
+                            type="text"
+                            value={editingCourseName.newName}
+                            onChange={(e) => setEditingCourseName({ ...editingCourseName, newName: e.target.value })}
+                            className="w-full p-2 border border-gray-300 rounded-md"
+                            placeholder="Nuevo nombre del curso"
+                        />
+                        <div className="flex justify-end pt-4 space-x-2">
+                            <button onClick={() => setIsEditCourseModalOpen(false)} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancelar</button>
+                            <button onClick={handleEditCourse} className="px-4 py-2 text-white bg-black rounded-md hover:bg-gray-800">Guardar</button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
             {isModalOpen && (
                 <Modal title={editingStudent ? "Editar Alumno" : "Añadir Nuevo Alumno"} onClose={() => setIsModalOpen(false)}>
                     <StudentForm
                         student={editingStudent}
                         onSave={handleSave}
                         onCancel={() => setIsModalOpen(false)}
+                        courseGroups={courseGroups}
                     />
                 </Modal>
             )}
@@ -331,6 +402,7 @@ const Students: React.FC<StudentsProps> = ({ users, onCreate, onCreateBulk, onUp
                     <BulkStudentForm
                         onSave={handleBulkSave}
                         onCancel={() => setIsBulkModalOpen(false)}
+                        courseGroups={courseGroups}
                     />
                 </Modal>
             )}

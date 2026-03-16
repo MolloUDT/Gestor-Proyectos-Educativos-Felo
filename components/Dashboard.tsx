@@ -4,6 +4,7 @@ import { ChevronDownIcon, TrashIcon } from './Icons';
 import PendingMessagesModal from './PendingMessagesModal';
 import Modal from './Modal';
 import TaskForm from './TaskForm';
+import { sortBySurname } from '../lib/utils';
 
 interface DashboardProps {
     user: User;
@@ -374,6 +375,7 @@ const AdminTutorGroupCard: React.FC<{
                             <div className="flex flex-wrap gap-x-4 gap-y-1">
                                 {freshGroupMembers
                                     .filter(member => member.role === Role.Student)
+                                    .sort(sortBySurname)
                                     .map(member => (
                                     <span key={member.id} className="text-sm text-gray-800">{member.name}</span>
                                 ))}
@@ -747,6 +749,7 @@ const StudentProjectDetailCard: React.FC<{
                             <div className="flex flex-wrap gap-x-4 gap-y-1">
                                 {freshGroupMembers
                                     .filter(member => member.role === Role.Student)
+                                    .sort(sortBySurname)
                                     .map(member => (
                                     <span key={member.id} className="text-sm text-gray-800">{member.name}</span>
                                 ))}

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { User, Group, Role, Project, Task, KanbanStatus } from '../types';
 import Modal from './Modal';
 import { EditIcon, TrashIcon, XIcon, PlusCircleIcon, ChevronDownIcon } from './Icons';
+import { sortBySurname } from '../lib/utils';
 
 interface GroupsProps {
     user: User;
@@ -245,6 +246,7 @@ const GroupCard: React.FC<{
                 <div className="space-y-2">
                     {group.members
                         .filter(member => member.role === Role.Student)
+                        .sort(sortBySurname)
                         .map(member => (
                         <div key={member.id} className="flex items-center">
                             <div className="w-2 h-2 mr-3 bg-green-500 rounded-full"></div>
@@ -284,7 +286,6 @@ const GroupForm: React.FC<{
     const [endDate, setEndDate] = useState(projectForGroup?.endDate || '');
     const [tutorId, setTutorId] = useState(group?.tutorId || (user.role === Role.Tutor ? user.id : ''));
     const [memberIds, setMemberIds] = useState<string[]>(group?.members?.map(m => m.id) || []);
-    const [memberToRemove, setMemberToRemove] = useState<User | null>(null);
     const [formError, setFormError] = useState('');
     const [selectedCourse, setSelectedCourse] = useState(initialCourse);
     
@@ -305,24 +306,11 @@ const GroupForm: React.FC<{
         }
     };
 
-    const handleAddMember = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectedId = e.target.value;
-        if (selectedId && !memberIds.includes(selectedId)) {
-            setMemberIds([...memberIds, selectedId]);
-        }
-    };
-    
-    const handleRemoveMemberClick = (idToRemove: string) => {
-        const member = allStudents.find(s => s.id === idToRemove);
-        if (member) {
-            setMemberToRemove(member);
-        }
-    };
-
-    const handleConfirmRemoveMember = () => {
-        if (memberToRemove) {
-            setMemberIds(memberIds.filter(id => id !== memberToRemove.id));
-            setMemberToRemove(null);
+    const handleToggleMember = (studentId: string) => {
+        if (memberIds.includes(studentId)) {
+            setMemberIds(memberIds.filter(id => id !== studentId));
+        } else {
+            setMemberIds([...memberIds, studentId]);
         }
     };
     
@@ -336,9 +324,7 @@ const GroupForm: React.FC<{
         onSave({ name, tutorId, memberIds, projectName, projectDescription, startDate, endDate });
     };
 
-    const availableStudents = allStudents.filter(s => 
-        s.courseGroup === selectedCourse && !memberIds.includes(s.id)
-    );
+    const courseStudents = allStudents.filter(s => s.courseGroup === selectedCourse).sort(sortBySurname);
 
     const isCourseSelectDisabled = isEditing && !!initialCourse;
 
@@ -434,30 +420,27 @@ const GroupForm: React.FC<{
                 </div>
                  <div>
                     <label className="block text-sm font-medium text-gray-700">Alumnado integrante</label>
-                    {memberIds.length > 0 && (
-                        <div className="p-2 mt-1 space-y-2 border border-gray-300 rounded-md max-h-40 overflow-y-auto">
-                            {memberIds.map(id => {
-                                const member = allStudents.find(s => s.id === id);
-                                return member ? (
-                                    <div key={id} className="flex items-center justify-between p-1 bg-gray-100 rounded">
-                                        <span className="text-gray-800">{member.name}</span>
-                                        <button type="button" onClick={() => handleRemoveMemberClick(id)} className="text-red-500 hover:text-red-700">
-                                            <XIcon className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                ) : null;
-                            })}
-                        </div>
-                    )}
-                    <select 
-                        onChange={handleAddMember} 
-                        value="" 
-                        className="w-full p-2 mt-2 border border-gray-300 rounded-md disabled:bg-gray-100 disabled:text-gray-500"
-                        disabled={!selectedCourse}
-                    >
-                         <option value="">{selectedCourse ? "Añadir alumno..." : "Selecciona un curso primero"}</option>
-                         {availableStudents.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
+                    <div className="p-2 mt-2 border border-gray-300 rounded-md max-h-60 overflow-y-auto">
+                        {selectedCourse ? (
+                            courseStudents.length > 0 ? (
+                                courseStudents.map(s => (
+                                    <label key={s.id} className="flex items-center p-1 hover:bg-gray-50 cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={memberIds.includes(s.id)}
+                                            onChange={() => handleToggleMember(s.id)}
+                                            className="mr-2"
+                                        />
+                                        {s.name}
+                                    </label>
+                                ))
+                            ) : (
+                                <p className="text-sm text-gray-500 p-1">No hay alumnos en este curso.</p>
+                            )
+                        ) : (
+                            <p className="text-sm text-gray-500 p-1">Selecciona un curso primero.</p>
+                        )}
+                    </div>
                 </div>
 
                 {formError && <p className="mt-2 text-sm text-center text-red-600">{formError}</p>}
@@ -467,25 +450,6 @@ const GroupForm: React.FC<{
                     <button type="submit" className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700">Guardar</button>
                 </div>
             </form>
-
-            {memberToRemove && (
-                 <Modal title="Confirmar Acción" onClose={() => setMemberToRemove(null)}>
-                    <div className="text-center">
-                        <p className="text-lg text-gray-700">¿Estás seguro de que quieres eliminar a</p>
-                        <p className="my-2 text-xl font-bold text-gray-800">"{memberToRemove.name}"</p>
-                        <p className="text-lg text-gray-700">de este grupo?</p>
-
-                        <div className="flex justify-center mt-6 space-x-4">
-                            <button onClick={() => setMemberToRemove(null)} className="px-6 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
-                                Cancelar
-                            </button>
-                            <button onClick={handleConfirmRemoveMember} className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">
-                                Sí, Eliminar
-                            </button>
-                        </div>
-                    </div>
-                </Modal>
-            )}
         </>
     );
 };
