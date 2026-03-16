@@ -8,6 +8,7 @@ interface StudentsProps {
     users: User[];
     courseGroups: string[];
     onUpdateCourseGroups: (newGroups: string[], renameMapping?: { oldName: string, newName: string }) => void;
+    onDeleteCourse: (courseName: string) => void;
     onCreate: (data: { name: string; password?: string; courseGroup: string }) => void;
     onCreateBulk: (students: { name: string; password: string; courseGroup: string }[]) => void;
     onUpdate: (id: string, data: { name: string; password?: string; courseGroup: string }) => void;
@@ -177,25 +178,62 @@ const BulkStudentForm: React.FC<{
     );
 };
 
-const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourseGroups, onCreate, onCreateBulk, onUpdate, onDelete }) => {
+const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourseGroups, onDeleteCourse, onCreate, onCreateBulk, onUpdate, onDelete }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
     const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
     const [isEditCourseModalOpen, setIsEditCourseModalOpen] = useState(false);
+    const [isDeleteCourseModalOpen, setIsDeleteCourseModalOpen] = useState(false);
     const [editingStudent, setEditingStudent] = useState<User | null>(null);
     const [studentToDelete, setStudentToDelete] = useState<User | null>(null);
+    const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
     const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
     const [newCourseName, setNewCourseName] = useState('');
     const [editingCourseName, setEditingCourseName] = useState<{ oldName: string, newName: string } | null>(null);
 
+    const allCourseGroups = useMemo(() => {
+        const groupsFromUsers = new Set(users.filter(u => u.courseGroup).map(u => u.courseGroup!));
+        const all = new Set([...courseGroups, ...Array.from(groupsFromUsers)]);
+        
+        const sortOrder = (a: string, b: string) => {
+            const getParts = (name: string) => {
+                // Matches "1ºA TSAF" or "1º TSAF A"
+                const match = name.match(/(\d+)[ºª]([A-Z])?\s*(TSAF|TSEAS)|(\d+)[ºª]\s*(TSAF|TSEAS)\s*([A-Z])?/i);
+                
+                if (!match) return { type: 2, level: 99, group: 'Z' }; // Fallback for unknown format
+                
+                let level, type, group;
+                if (match[1]) { // Format "1ºA TSAF"
+                    level = parseInt(match[1]);
+                    group = match[2] || 'A';
+                    type = match[3].toUpperCase() === 'TSAF' ? 0 : 1;
+                } else { // Format "1º TSAF A"
+                    level = parseInt(match[4]);
+                    type = match[5].toUpperCase() === 'TSAF' ? 0 : 1;
+                    group = match[6] || 'A';
+                }
+                return { type, level, group };
+            };
+
+            const pA = getParts(a);
+            const pB = getParts(b);
+
+            if (pA.type !== pB.type) return pA.type - pB.type;
+            if (pA.level !== pB.level) return pA.level - pB.level;
+            return pA.group.localeCompare(pB.group);
+        };
+
+        return Array.from(all).sort(sortOrder);
+    }, [courseGroups, users]);
+
     const studentsByGroup = useMemo(() => {
         const studentList = users.filter(u => u.role === Role.Student);
-        return courseGroups.reduce((acc, groupName) => {
+        return allCourseGroups.reduce((acc, groupName) => {
             acc[groupName] = studentList.filter(s => s.courseGroup === groupName);
             return acc;
         }, {} as Record<string, User[]>);
-    }, [users, courseGroups]);
+    }, [users, allCourseGroups]);
     
     const toggleGroup = (groupName: string) => {
         setExpandedGroups(prev => ({ ...prev, [groupName]: !prev[groupName] }));
@@ -271,17 +309,17 @@ const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourse
                     </button>
                     <button onClick={() => setIsBulkModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700">
                         <UsersIcon className="w-5 h-5" />
-                        Añadir Grupo
+                        Añadir Grupo a curso
                     </button>
                     <button onClick={handleCreate} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">
                         <PlusCircleIcon className="w-5 h-5" />
-                        Añadir Alumno
+                        Añadir Alumno a curso
                     </button>
                 </div>
             </div>
 
             <div className="space-y-2">
-                {courseGroups.map(groupName => {
+                {allCourseGroups.map(groupName => {
                     const students = studentsByGroup[groupName] || [];
                     const isExpanded = !!expandedGroups[groupName];
                     return (
@@ -301,6 +339,9 @@ const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourse
                                 </button>
                                 <button onClick={() => { setEditingCourseName({ oldName: groupName, newName: groupName }); setIsEditCourseModalOpen(true); }} className="ml-2 text-gray-500 hover:text-gray-700">
                                     <EditIcon className="w-5 h-5" />
+                                </button>
+                                <button onClick={() => { setCourseToDelete(groupName); setIsDeleteCourseModalOpen(true); }} className="ml-2 text-red-500 hover:text-red-700">
+                                    <TrashIcon className="w-5 h-5" />
                                 </button>
                             </div>
                             {isExpanded && (
@@ -381,6 +422,26 @@ const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourse
                         <div className="flex justify-end pt-4 space-x-2">
                             <button onClick={() => setIsEditCourseModalOpen(false)} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancelar</button>
                             <button onClick={handleEditCourse} className="px-4 py-2 text-white bg-black rounded-md hover:bg-gray-800">Guardar</button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {isDeleteCourseModalOpen && courseToDelete && (
+                <Modal title="Confirmar Eliminación de Curso" onClose={() => setIsDeleteCourseModalOpen(false)}>
+                    <div className="text-center">
+                        <p className="text-lg text-gray-700">¿Estás seguro de que quieres eliminar el curso?</p>
+                        <p className="my-2 text-xl font-bold text-red-600">"{courseToDelete}"</p>
+                        <p className="text-sm text-gray-500">
+                            Esta acción es irreversible y eliminará el curso y todos los alumnos asociados a él.
+                        </p>
+                        <div className="flex justify-center mt-6 space-x-4">
+                            <button onClick={() => setIsDeleteCourseModalOpen(false)} className="px-6 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                                Cancelar
+                            </button>
+                            <button onClick={() => { onDeleteCourse(courseToDelete); setIsDeleteCourseModalOpen(false); }} className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">
+                                Sí, Eliminar Curso
+                            </button>
                         </div>
                     </div>
                 </Modal>

@@ -202,6 +202,25 @@ const App: React.FC = () => {
         await fetchAllData();
     };
 
+    const handleDeleteCourse = async (courseName: string) => {
+        const newGroups = courseGroups.filter(g => g !== courseName);
+        setCourseGroups(newGroups);
+        
+        // Remove course from settings
+        const { data: existing } = await supabase.from('settings').select('*').eq('key', 'course_groups');
+        if (existing && existing.length > 0) {
+            await supabase.from('settings').update({ value: newGroups }).eq('key', 'course_groups');
+        }
+        
+        // Delete all students associated with this course
+        await supabase.from('users')
+            .delete()
+            .eq('course_group', courseName)
+            .eq('role', Role.Student);
+        
+        await fetchAllData();
+    };
+
     const handleCreateGroup = async (groupData: { name: string; tutorId: string; memberIds: string[]; projectName: string; projectDescription: string; startDate: string; endDate: string; }) => {
         const { data: newGroup, error: groupError } = await supabase.from('groups').insert({
             name: groupData.name,
@@ -485,6 +504,7 @@ const App: React.FC = () => {
                             users={users}
                             courseGroups={courseGroups}
                             onUpdateCourseGroups={handleUpdateCourseGroups}
+                            onDeleteCourse={handleDeleteCourse}
                             onCreate={handleCreateStudent}
                             onCreateBulk={handleCreateStudentsBulk}
                             onUpdate={handleUpdateStudent}
