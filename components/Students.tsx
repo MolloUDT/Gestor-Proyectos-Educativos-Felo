@@ -10,25 +10,26 @@ interface StudentsProps {
     onUpdateCourse: (courseId: string, name: string) => void;
     onDeleteCourse: (courseId: string) => void;
     onCreateCourse: (name: string) => void;
-    onCreate: (data: { name: string; password?: string; courseId: string }) => void;
+    onCreate: (data: { name: string; username?: string; password?: string; courseId: string }) => void;
     onCreateBulk: (students: { name: string; password: string; courseId: string }[]) => void;
-    onUpdate: (id: string, data: { name: string; password?: string; courseId: string }) => void;
+    onUpdate: (id: string, data: { name: string; username?: string; password?: string; courseId: string }) => void;
     onDelete: (id: string) => void;
 }
 
 const StudentForm: React.FC<{
     student: Partial<User> | null;
-    onSave: (data: { name: string; password?: string, courseId: string }) => void;
+    onSave: (data: { name: string; username?: string; password?: string, courseId: string }) => void;
     onCancel: () => void;
     courses: Course[];
 }> = ({ student, onSave, onCancel, courses }) => {
     const [name, setName] = useState(student?.name || '');
+    const [username, setUsername] = useState(student?.username || '');
     const [password, setPassword] = useState('');
     const [courseId, setCourseId] = useState(student?.courseId || '');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({ name, ...(password && { password }), courseId });
+        onSave({ name, ...(username && { username }), ...(password && { password }), courseId });
     };
 
     return (
@@ -42,6 +43,17 @@ const StudentForm: React.FC<{
                     onChange={(e) => setName(e.target.value)}
                     className="w-full p-2 mt-1 border border-gray-300 rounded-md"
                     required
+                />
+            </div>
+            <div>
+                <label htmlFor="studentUsername" className="block text-sm font-medium text-gray-700">Nombre de Usuario (opcional)</label>
+                <input
+                    type="text"
+                    id="studentUsername"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full p-2 mt-1 border border-gray-300 rounded-md"
+                    placeholder="Se generará automáticamente si se deja en blanco"
                 />
             </div>
             <div>
@@ -230,7 +242,7 @@ const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onD
         }
     };
 
-    const handleSave = (studentData: { name: string; password?: string, courseId: string }) => {
+    const handleSave = (studentData: { name: string; username?: string; password?: string, courseId: string }) => {
         if (editingStudent) {
             onUpdate(editingStudent.id, studentData);
         } else {
@@ -315,6 +327,7 @@ const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onD
                                                 <thead>
                                                     <tr>
                                                         <th className="px-4 py-2 font-semibold text-gray-600">Nombre</th>
+                                                        <th className="px-4 py-2 font-semibold text-gray-600">Nombre de Usuario</th>
                                                         <th className="px-4 py-2 font-semibold text-gray-600">Contraseña</th>
                                                         <th className="px-4 py-2 font-semibold text-gray-600">Acciones</th>
                                                     </tr>
@@ -323,6 +336,7 @@ const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onD
                                                     {students.map(student => (
                                                         <tr key={student.id}>
                                                             <td className="px-4 py-2 font-medium text-gray-800">{student.name}</td>
+                                                            <td className="px-4 py-2 text-gray-600">{student.username}</td>
                                                             <td className="px-4 py-2">
                                                                 <div className="flex items-center space-x-2">
                                                                     <span className="text-gray-600 font-mono">

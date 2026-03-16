@@ -7,22 +7,23 @@ import { EditIcon, TrashIcon, PlusCircleIcon, EyeIcon, EyeOffIcon } from './Icon
 interface TutorsProps {
     users: User[];
     groups: Group[];
-    onCreate: (data: { name: string; password?: string }) => void;
-    onUpdate: (id: string, data: { name: string; password?: string }) => void;
+    onCreate: (data: { name: string; username?: string; password?: string }) => void;
+    onUpdate: (id: string, data: { name: string; username?: string; password?: string }) => void;
     onDelete: (id: string) => void;
 }
 
 const TutorForm: React.FC<{
     tutor: Partial<User> | null;
-    onSave: (data: { name: string; password?: string }) => void;
+    onSave: (data: { name: string; username?: string; password?: string }) => void;
     onCancel: () => void;
 }> = ({ tutor, onSave, onCancel }) => {
     const [name, setName] = useState(tutor?.name || '');
+    const [username, setUsername] = useState(tutor?.username || '');
     const [password, setPassword] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({ name, ...(password && { password }) });
+        onSave({ name, ...(username && { username }), ...(password && { password }) });
     };
 
     return (
@@ -36,6 +37,17 @@ const TutorForm: React.FC<{
                     onChange={(e) => setName(e.target.value)}
                     className="w-full p-2 mt-1 border border-gray-300 rounded-md"
                     required
+                />
+            </div>
+            <div>
+                <label htmlFor="tutorUsername" className="block text-sm font-medium text-gray-700">Nombre de Usuario (opcional)</label>
+                <input
+                    type="text"
+                    id="tutorUsername"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full p-2 mt-1 border border-gray-300 rounded-md"
+                    placeholder="Se generará automáticamente si se deja en blanco"
                 />
             </div>
             <div>
@@ -93,7 +105,7 @@ const Tutors: React.FC<TutorsProps> = ({ users, groups, onCreate, onUpdate, onDe
         }
     };
 
-    const handleSave = (tutorData: { name: string; password?: string }) => {
+    const handleSave = (tutorData: { name: string; username?: string; password?: string }) => {
         if (editingTutor) {
             onUpdate(editingTutor.id, tutorData);
         } else {
@@ -122,6 +134,7 @@ const Tutors: React.FC<TutorsProps> = ({ users, groups, onCreate, onUpdate, onDe
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-4 py-3 font-semibold text-gray-600">Nombre</th>
+                            <th className="px-4 py-3 font-semibold text-gray-600">Nombre de Usuario</th>
                             <th className="px-4 py-3 font-semibold text-gray-600">Grupos Asignados</th>
                             <th className="px-4 py-3 font-semibold text-gray-600">Contraseña</th>
                             <th className="px-4 py-3 font-semibold text-gray-600">Acciones</th>
@@ -131,6 +144,7 @@ const Tutors: React.FC<TutorsProps> = ({ users, groups, onCreate, onUpdate, onDe
                         {tutors.map(tutor => (
                             <tr key={tutor.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 font-medium text-gray-800">{tutor.name}</td>
+                                <td className="px-4 py-3 text-gray-600">{tutor.username}</td>
                                 <td className="px-4 py-3 text-gray-600">{assignedGroupsCount(tutor.id)}</td>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center space-x-2">

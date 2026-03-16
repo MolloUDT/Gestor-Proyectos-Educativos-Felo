@@ -19,6 +19,8 @@ import Logbook from './components/Logbook';
 import NotificationModal from './components/NotificationModal';
 import InformationPage from './components/InformationPage';
 
+import ProfileModal from './components/ProfileModal';
+
 export type Page = 'dashboard' | 'students' | 'ras' | 'tutors' | 'board' | 'gantt' | 'groups' | 'files' | 'calendar' | 'project-dates' | 'messaging' | 'information' | 'logbook';
 
 const App: React.FC = () => {
@@ -27,6 +29,7 @@ const App: React.FC = () => {
     const [selectedKanbanProject, setSelectedKanbanProject] = useState<string | null>(null);
     const [authError, setAuthError] = useState<string>('');
     const [unreadMessagesToShow, setUnreadMessagesToShow] = useState<Message[]>([]);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     // Centralized state for application data
     const [users, setUsers] = useState<User[]>([]);
@@ -275,18 +278,19 @@ const App: React.FC = () => {
         await fetchAllData();
     };
 
-    const handleCreateTutor = async (tutorData: { name: string; password?: string }) => {
+    const handleCreateTutor = async (tutorData: { name: string; username?: string; password?: string }) => {
         await supabase.from('users').insert({
             name: tutorData.name,
-            username: tutorData.name.split(' ')[0].toLowerCase() + Date.now().toString().slice(-4),
+            username: tutorData.username || tutorData.name.split(' ')[0].toLowerCase() + Date.now().toString().slice(-4),
             password: tutorData.password || 'password',
             role: Role.Tutor
         });
         await fetchAllData();
     };
 
-    const handleUpdateTutor = async (tutorId: string, tutorData: { name: string; password?: string }) => {
+    const handleUpdateTutor = async (tutorId: string, tutorData: { name: string; username?: string; password?: string }) => {
         const updateData: any = { name: tutorData.name };
+        if (tutorData.username) updateData.username = tutorData.username;
         if (tutorData.password) updateData.password = tutorData.password;
         await supabase.from('users').update(updateData).eq('id', tutorId);
         await fetchAllData();
@@ -297,10 +301,10 @@ const App: React.FC = () => {
         await fetchAllData();
     };
 
-    const handleCreateStudent = async (studentData: { name: string; password?: string; courseId: string }) => {
+    const handleCreateStudent = async (studentData: { name: string; username?: string; password?: string; courseId: string }) => {
         const { error } = await supabase.from('users').insert({
             name: studentData.name,
-            username: studentData.name.split(' ')[0].toLowerCase() + Date.now().toString().slice(-4),
+            username: studentData.username || studentData.name.split(' ')[0].toLowerCase() + Date.now().toString().slice(-4),
             password: studentData.password || 'password',
             role: Role.Student,
             course_id: studentData.courseId
@@ -323,8 +327,9 @@ const App: React.FC = () => {
         await fetchAllData();
     };
 
-    const handleUpdateStudent = async (studentId: string, studentData: { name: string; password?: string; courseId: string }) => {
+    const handleUpdateStudent = async (studentId: string, studentData: { name: string; username?: string; password?: string; courseId: string }) => {
         const updateData: any = { name: studentData.name, course_id: studentData.courseId };
+        if (studentData.username) updateData.username = studentData.username;
         if (studentData.password) updateData.password = studentData.password;
         const { error } = await supabase.from('users').update(updateData).eq('id', studentId);
         if (error) console.error("Error updating student:", error);
@@ -473,6 +478,24 @@ const App: React.FC = () => {
     const handleDeleteFile = async (fileId: string) => {
         await supabase.from('stored_files').delete().eq('id', fileId);
         await fetchAllData();
+    };
+
+    const handleUpdateProfile = async (userId: string, data: { username?: string; password?: string }) => {
+        const updateData: any = {};
+        if (data.username) updateData.username = data.username;
+        if (data.password) updateData.password = data.password;
+        
+        if (Object.keys(updateData).length > 0) {
+            const { error } = await supabase.from('users').update(updateData).eq('id', userId);
+            if (error) {
+                console.error("Error updating profile:", error);
+            } else {
+                // Update local current user state
+                setCurrentUser(prev => prev ? { ...prev, ...updateData } : null);
+                await fetchAllData();
+            }
+        }
+        setIsProfileModalOpen(false);
     };
 
     const handleNavigateToKanban = (projectId: string) => {
@@ -645,7 +668,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <Layout user={currentUser} onLogout={handleLogout} currentPage={page} setPage={setPage}>
+        <Layout user={currentUser} onLogout={handleLogout} currentPage={page} setPage={setPage} onOpenProfile={() => setIsProfileModalOpen(true)}>
             {renderPage}
             {unreadMessagesToShow.length > 0 && currentUser && (
                 <NotificationModal
@@ -659,6 +682,13 @@ const App: React.FC = () => {
                         setUnreadMessagesToShow([]);
                     }}
                     onMarkMessagesAsRead={handleMarkMessagesAsRead}
+                />
+            )}
+            {isProfileModalOpen && (
+                <ProfileModal
+                    user={currentUser}
+                    onClose={() => setIsProfileModalOpen(false)}
+                    onSave={handleUpdateProfile}
                 />
             )}
         </Layout>

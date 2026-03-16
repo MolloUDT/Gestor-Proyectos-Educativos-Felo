@@ -11,9 +11,10 @@ interface LayoutProps {
     children: React.ReactNode;
     currentPage: Page;
     setPage: (page: Page) => void;
+    onOpenProfile: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ user, onLogout, children, currentPage, setPage }) => {
+const Layout: React.FC<LayoutProps> = ({ user, onLogout, children, currentPage, setPage, onOpenProfile }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const pageTitle = NAV_ITEMS.find(item => item.id === currentPage)?.label || '';
@@ -33,6 +34,7 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, children, currentPage, 
                     onLogout={onLogout} 
                     toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
                     pageTitle={pageTitle}
+                    onOpenProfile={onOpenProfile}
                 />
                 <main className="flex-1 p-4 overflow-y-auto md:p-6 lg:p-8">
                     {children}
