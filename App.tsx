@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { User, Group, Task, Project, Role, RA, Tutorial, StoredFile, Message } from './types';
+import { User, Group, Task, Project, Role, RA, Tutorial, StoredFile, Message, Course } from './types';
 import { supabase } from './lib/supabase';
 import { mapUser, mapGroup, mapProject, mapTask, mapRA, mapTutorial, mapStoredFile, mapMessage } from './lib/mappers';
 import LoginPage from './components/LoginPage';
@@ -37,8 +37,8 @@ const App: React.FC = () => {
     const [tutorials, setTutorials] = useState<Tutorial[]>([]);
     const [files, setFiles] = useState<StoredFile[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
+    const [courses, setCourses] = useState<Course[]>([]);
     const [courseDates, setCourseDates] = useState({ startDate: '2025-09-15', endDate: '2026-06-19' });
-    const [courseGroups, setCourseGroups] = useState<string[]>(['1º TSAF', '2º TSAF', '1º TSEAS', '2º TSEAS']);
     
     const [modules, setModules] = useState<string[]>([]);
 
@@ -53,6 +53,10 @@ const App: React.FC = () => {
             const { data: groupsData } = await supabase.from('groups').select('*, group_members(user_id)');
             const fetchedGroups = groupsData ? groupsData.map(g => mapGroup(g, fetchedUsers)) : [];
             setGroups(fetchedGroups);
+
+            // Fetch Courses
+            const { data: coursesData } = await supabase.from('courses').select('*');
+            setCourses(coursesData || []);
 
             // Fetch Projects
             const { data: projectsData } = await supabase.from('projects').select('*');
@@ -84,13 +88,11 @@ const App: React.FC = () => {
             const fetchedMessages = messagesData ? messagesData.map(mapMessage) : [];
             setMessages(fetchedMessages);
 
-            // Fetch Course Dates and Groups
+            // Fetch Course Dates
             const { data: settingsData } = await supabase.from('settings').select('*');
             if (settingsData) {
                 const dates = settingsData.find(s => s.key === 'course_dates');
                 if (dates && dates.value) setCourseDates(dates.value);
-                const groups = settingsData.find(s => s.key === 'course_groups');
-                if (groups && groups.value) setCourseGroups(groups.value);
             }
 
         } catch (error) {
@@ -209,54 +211,13 @@ const App: React.FC = () => {
         await fetchAllData();
     };
 
-    const handleUpdateCourseGroups = async (newGroups: string[], renameMapping?: { oldName: string, newName: string }) => {
-        setCourseGroups(newGroups);
-        
-        if (renameMapping) {
-            setUsers(users.map(u => u.courseGroup === renameMapping.oldName ? { ...u, courseGroup: renameMapping.newName } : u));
-        }
-
-        const { data: existing, error: selectError } = await supabase.from('settings').select('*').eq('key', 'course_groups');
-        if (selectError) console.error("Select error:", selectError);
-
-        if (existing && existing.length > 0) {
-            const { error: updateError } = await supabase.from('settings').update({ value: newGroups }).eq('key', 'course_groups');
-            if (updateError) console.error("Update error:", updateError);
-        } else {
-            const { error: insertError } = await supabase.from('settings').insert({ key: 'course_groups', value: newGroups });
-            if (insertError) console.error("Insert error:", insertError);
-        }
-        
-        if (renameMapping) {
-            const { error: userUpdateError } = await supabase.from('users')
-                .update({ course_group: renameMapping.newName })
-                .eq('course_group', renameMapping.oldName);
-            if (userUpdateError) console.error("User update error:", userUpdateError);
-        }
-        
+    const handleUpdateCourse = async (courseId: string, name: string) => {
+        await supabase.from('courses').update({ name }).eq('id', courseId);
         await fetchAllData();
     };
 
-    const handleDeleteCourse = async (courseName: string) => {
-        const newGroups = courseGroups.filter(g => g !== courseName);
-        setCourseGroups(newGroups);
-        
-        // Remove course from settings
-        const { data: existing, error: selectError } = await supabase.from('settings').select('*').eq('key', 'course_groups');
-        if (selectError) console.error("Select error:", selectError);
-        
-        if (existing && existing.length > 0) {
-            const { error: updateError } = await supabase.from('settings').update({ value: newGroups }).eq('key', 'course_groups');
-            if (updateError) console.error("Update error:", updateError);
-        }
-        
-        // Delete all students associated with this course
-        const { error: deleteError } = await supabase.from('users')
-            .delete()
-            .eq('course_group', courseName)
-            .eq('role', Role.Student);
-        if (deleteError) console.error("Delete error:", deleteError);
-        
+    const handleDeleteCourse = async (courseId: string) => {
+        await supabase.from('courses').delete().eq('id', courseId);
         await fetchAllData();
     };
 
@@ -541,8 +502,8 @@ const App: React.FC = () => {
             case 'students':
                 return <Students 
                             users={users}
-                            courseGroups={courseGroups}
-                            onUpdateCourseGroups={handleUpdateCourseGroups}
+                            courses={courses}
+                            onUpdateCourse={handleUpdateCourse}
                             onDeleteCourse={handleDeleteCourse}
                             onCreate={handleCreateStudent}
                             onCreateBulk={handleCreateStudentsBulk}
@@ -602,6 +563,7 @@ const App: React.FC = () => {
                             projects={projects}
                             allUsers={users}
                             tasks={tasks}
+                            courses={courses}
                             courseDates={courseDates}
                             onCreate={handleCreateGroup}
                             onUpdate={handleUpdateGroup}

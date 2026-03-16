@@ -23,6 +23,11 @@ export enum KanbanStatus {
     Done = 'Realizadas',
 }
 
+export interface Course {
+    id: string;
+    name: string;
+}
+
 export interface User {
     id: string;
     name: string;
@@ -30,7 +35,7 @@ export interface User {
     password?: string; // Should not be stored long-term
     role: Role;
     groupIds: string[];
-    courseGroup?: string;
+    courseId?: string;
 }
 
 export interface RA {
@@ -61,6 +66,7 @@ export interface Group {
     members: User[];
     tutorId: string;
     logbook?: string;
+    courseId?: string;
 }
 
 export interface Project {

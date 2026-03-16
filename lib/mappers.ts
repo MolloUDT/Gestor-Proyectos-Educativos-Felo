@@ -7,7 +7,7 @@ export const mapUser = (row: any): User => ({
     password: row.password,
     role: row.role as Role,
     groupIds: row.group_members?.map((gm: any) => gm.group_id) || [],
-    courseGroup: row.course_group || undefined,
+    courseId: row.course_id || undefined,
 });
 
 export const mapGroup = (row: any, allUsers: User[]): Group => ({
@@ -16,6 +16,7 @@ export const mapGroup = (row: any, allUsers: User[]): Group => ({
     tutorId: row.tutor_id,
     logbook: row.logbook || undefined,
     members: row.group_members?.map((gm: any) => allUsers.find(u => u.id === gm.user_id)).filter(Boolean) as User[] || [],
+    courseId: row.course_id || undefined,
 });
 
 export const mapProject = (row: any): Project => ({

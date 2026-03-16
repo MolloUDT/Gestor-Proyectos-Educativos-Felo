@@ -13,27 +13,27 @@ export const MOCK_USERS: User[] = [
     { id: 'user-14', name: 'Miguel Torres (Tutor)', username: 'Tutor4', password: 'felo2627', role: Role.Tutor, groupIds: ['group-4'] },
     
     // Students Group 1 (1º TSAF)
-    { id: 'user-3', name: 'Carlos Gomez', username: 'alumno', password: 'alumno2627', role: Role.Student, groupIds: ['group-1'], courseGroup: '1º TSAF' },
-    { id: 'user-4', name: 'Ana Fernandez', username: 'ana', password: 'password', role: Role.Student, groupIds: ['group-1'], courseGroup: '1º TSAF' },
-    { id: 'user-5', name: 'David Garcia', username: 'david', password: 'password', role: Role.Student, groupIds: ['group-1'], courseGroup: '1º TSAF' },
+    { id: 'user-3', name: 'Carlos Gomez', username: 'alumno', password: 'alumno2627', role: Role.Student, groupIds: ['group-1'], courseId: 'course-1' },
+    { id: 'user-4', name: 'Ana Fernandez', username: 'ana', password: 'password', role: Role.Student, groupIds: ['group-1'], courseId: 'course-1' },
+    { id: 'user-5', name: 'David Garcia', username: 'david', password: 'password', role: Role.Student, groupIds: ['group-1'], courseId: 'course-1' },
     
     // Students Group 2 (2º TSAF)
-    { id: 'user-6', name: 'Sofia Rodriguez', username: 'sofia', password: 'password', role: Role.Student, groupIds: ['group-2'], courseGroup: '2º TSAF' },
-    { id: 'user-7', name: 'Javier Lopez', username: 'javier', password: 'password', role: Role.Student, groupIds: ['group-2'], courseGroup: '2º TSAF' },
+    { id: 'user-6', name: 'Sofia Rodriguez', username: 'sofia', password: 'password', role: Role.Student, groupIds: ['group-2'], courseId: 'course-2' },
+    { id: 'user-7', name: 'Javier Lopez', username: 'javier', password: 'password', role: Role.Student, groupIds: ['group-2'], courseId: 'course-2' },
 
     // Students Group 3 (1º TSEAS)
-    { id: 'user-15', name: 'Paula Alonso', username: 'paula', password: 'password', role: Role.Student, groupIds: ['group-3'], courseGroup: '1º TSEAS' },
-    { id: 'user-16', name: 'Marcos Ruiz', username: 'marcos', password: 'password', role: Role.Student, groupIds: ['group-3'], courseGroup: '1º TSEAS' },
+    { id: 'user-15', name: 'Paula Alonso', username: 'paula', password: 'password', role: Role.Student, groupIds: ['group-3'], courseId: 'course-3' },
+    { id: 'user-16', name: 'Marcos Ruiz', username: 'marcos', password: 'password', role: Role.Student, groupIds: ['group-3'], courseId: 'course-3' },
 
     // Students Group 4 (2º TSEAS)
-    { id: 'user-17', name: 'Sara Moreno', username: 'sara', password: 'password', role: Role.Student, groupIds: ['group-4'], courseGroup: '2º TSEAS' },
-    { id: 'user-18', name: 'Adrián Gil', username: 'adrian', password: 'password', role: Role.Student, groupIds: ['group-4'], courseGroup: '2º TSEAS' },
+    { id: 'user-17', name: 'Sara Moreno', username: 'sara', password: 'password', role: Role.Student, groupIds: ['group-4'], courseId: 'course-4' },
+    { id: 'user-18', name: 'Adrián Gil', username: 'adrian', password: 'password', role: Role.Student, groupIds: ['group-4'], courseId: 'course-4' },
     
     // Unassigned Students
-    { id: 'user-8', name: 'Maria Sanchez', username: 'maria', password: 'password', role: Role.Student, groupIds: [], courseGroup: '1º TSAF' },
-    { id: 'user-9', name: 'Pedro Ramirez', username: 'pedro', password: 'password', role: Role.Student, groupIds: [], courseGroup: '2º TSAF' },
-    { id: 'user-10', name: 'Lucia Jimenez', username: 'lucia', password: 'password', role: Role.Student, groupIds: [], courseGroup: '1º TSEAS' },
-    { id: 'user-11', name: 'Daniel Martin', username: 'daniel', password: 'password', role: Role.Student, groupIds: [], courseGroup: '2º TSEAS' },
+    { id: 'user-8', name: 'Maria Sanchez', username: 'maria', password: 'password', role: Role.Student, groupIds: [], courseId: 'course-1' },
+    { id: 'user-9', name: 'Pedro Ramirez', username: 'pedro', password: 'password', role: Role.Student, groupIds: [], courseId: 'course-2' },
+    { id: 'user-10', name: 'Lucia Jimenez', username: 'lucia', password: 'password', role: Role.Student, groupIds: [], courseId: 'course-3' },
+    { id: 'user-11', name: 'Daniel Martin', username: 'daniel', password: 'password', role: Role.Student, groupIds: [], courseId: 'course-4' },
 ];
 
 // RAs (Resultados de Aprendizaje)

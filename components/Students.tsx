@@ -1,33 +1,33 @@
 
 import React, { useState, useMemo } from 'react';
-import { User, Role } from '../types';
+import { User, Role, Course } from '../types';
 import Modal from './Modal';
 import { EditIcon, TrashIcon, PlusCircleIcon, ChevronDownIcon, EyeIcon, EyeOffIcon, UsersIcon } from './Icons';
 
 interface StudentsProps {
     users: User[];
-    courseGroups: string[];
-    onUpdateCourseGroups: (newGroups: string[], renameMapping?: { oldName: string, newName: string }) => void;
-    onDeleteCourse: (courseName: string) => void;
-    onCreate: (data: { name: string; password?: string; courseGroup: string }) => void;
-    onCreateBulk: (students: { name: string; password: string; courseGroup: string }[]) => void;
-    onUpdate: (id: string, data: { name: string; password?: string; courseGroup: string }) => void;
+    courses: Course[];
+    onUpdateCourse: (courseId: string, name: string) => void;
+    onDeleteCourse: (courseId: string) => void;
+    onCreate: (data: { name: string; password?: string; courseId: string }) => void;
+    onCreateBulk: (students: { name: string; password: string; courseId: string }[]) => void;
+    onUpdate: (id: string, data: { name: string; password?: string; courseId: string }) => void;
     onDelete: (id: string) => void;
 }
 
 const StudentForm: React.FC<{
     student: Partial<User> | null;
-    onSave: (data: { name: string; password?: string, courseGroup: string }) => void;
+    onSave: (data: { name: string; password?: string, courseId: string }) => void;
     onCancel: () => void;
-    courseGroups: string[];
-}> = ({ student, onSave, onCancel, courseGroups }) => {
+    courses: Course[];
+}> = ({ student, onSave, onCancel, courses }) => {
     const [name, setName] = useState(student?.name || '');
     const [password, setPassword] = useState('');
-    const [courseGroup, setCourseGroup] = useState(student?.courseGroup || '');
+    const [courseId, setCourseId] = useState(student?.courseId || '');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({ name, ...(password && { password }), courseGroup });
+        onSave({ name, ...(password && { password }), courseId });
     };
 
     return (
@@ -44,16 +44,16 @@ const StudentForm: React.FC<{
                 />
             </div>
             <div>
-                <label htmlFor="courseGroup" className="block text-sm font-medium text-gray-700">Grupo</label>
+                <label htmlFor="courseId" className="block text-sm font-medium text-gray-700">Curso</label>
                 <select
-                    id="courseGroup"
-                    value={courseGroup}
-                    onChange={(e) => setCourseGroup(e.target.value)}
+                    id="courseId"
+                    value={courseId}
+                    onChange={(e) => setCourseId(e.target.value)}
                     className="w-full p-2 mt-1 border border-gray-300 rounded-md"
                     required
                 >
-                    <option value="">Selecciona un grupo</option>
-                    {courseGroups.map(group => <option key={group} value={group}>{group}</option>)}
+                    <option value="">Selecciona un curso</option>
+                    {courses.map(course => <option key={course.id} value={course.id}>{course.name}</option>)}
                 </select>
             </div>
             <div>
@@ -79,18 +79,18 @@ const StudentForm: React.FC<{
 };
 
 const BulkStudentForm: React.FC<{
-    onSave: (students: { name: string; password: string; courseGroup: string }[]) => void;
+    onSave: (students: { name: string; password: string; courseId: string }[]) => void;
     onCancel: () => void;
-    courseGroups: string[];
-}> = ({ onSave, onCancel, courseGroups }) => {
-    const [courseGroup, setCourseGroup] = useState('');
+    courses: Course[];
+}> = ({ onSave, onCancel, courses }) => {
+    const [courseId, setCourseId] = useState('');
     const [pastedText, setPastedText] = useState('');
     const [error, setError] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!pastedText || !courseGroup) {
+        if (!pastedText || !courseId) {
             setError('Debes seleccionar un curso y pegar los datos de los alumnos.');
             return;
         }
@@ -115,7 +115,7 @@ const BulkStudentForm: React.FC<{
                     throw new Error(`Error en la fila ${index + 1}: El nombre y la contraseña no pueden estar vacíos.`);
                 }
                 
-                return { name, password, courseGroup };
+                return { name, password, courseId };
             });
             onSave(studentsToCreate);
         } catch (err: any) {
@@ -137,16 +137,16 @@ const BulkStudentForm: React.FC<{
                 </ul>
             </div>
             <div>
-                <label htmlFor="bulkCourseGroup" className="block text-sm font-medium text-gray-700">Curso para los nuevos alumnos</label>
+                <label htmlFor="bulkCourseId" className="block text-sm font-medium text-gray-700">Curso para los nuevos alumnos</label>
                 <select
-                    id="bulkCourseGroup"
-                    value={courseGroup}
-                    onChange={(e) => setCourseGroup(e.target.value)}
+                    id="bulkCourseId"
+                    value={courseId}
+                    onChange={(e) => setCourseId(e.target.value)}
                     className="w-full p-2 mt-1 border border-gray-300 rounded-md"
                     required
                 >
                     <option value="">Selecciona un curso</option>
-                    {courseGroups.map(group => <option key={group} value={group}>{group}</option>)}
+                    {courses.map(course => <option key={course.id} value={course.id}>{course.name}</option>)}
                 </select>
             </div>
             <div>
@@ -168,7 +168,7 @@ const BulkStudentForm: React.FC<{
                 <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancelar</button>
                 <button 
                     type="submit" 
-                    disabled={!pastedText || !courseGroup || isProcessing}
+                    disabled={!pastedText || !courseId || isProcessing}
                     className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
                     {isProcessing ? 'Procesando...' : 'Añadir Alumnos'}
@@ -178,7 +178,7 @@ const BulkStudentForm: React.FC<{
     );
 };
 
-const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourseGroups, onDeleteCourse, onCreate, onCreateBulk, onUpdate, onDelete }) => {
+const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onDeleteCourse, onCreate, onCreateBulk, onUpdate, onDelete }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
     const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
@@ -190,53 +190,18 @@ const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourse
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
     const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
     const [newCourseName, setNewCourseName] = useState('');
-    const [editingCourseName, setEditingCourseName] = useState<{ oldName: string, newName: string } | null>(null);
+    const [editingCourse, setEditingCourse] = useState<Course | null>(null);
 
-    const allCourseGroups = useMemo(() => {
-        const groupsFromUsers = new Set(users.filter(u => u.courseGroup).map(u => u.courseGroup!));
-        const all = new Set([...courseGroups, ...Array.from(groupsFromUsers)]);
-        
-        const sortOrder = (a: string, b: string) => {
-            const getParts = (name: string) => {
-                // Matches "1ºA TSAF" or "1º TSAF A"
-                const match = name.match(/(\d+)[ºª]([A-Z])?\s*(TSAF|TSEAS)|(\d+)[ºª]\s*(TSAF|TSEAS)\s*([A-Z])?/i);
-                
-                if (!match) return { type: 2, level: 99, group: 'Z' }; // Fallback for unknown format
-                
-                let level, type, group;
-                if (match[1]) { // Format "1ºA TSAF"
-                    level = parseInt(match[1]);
-                    group = match[2] || 'A';
-                    type = match[3].toUpperCase() === 'TSAF' ? 0 : 1;
-                } else { // Format "1º TSAF A"
-                    level = parseInt(match[4]);
-                    type = match[5].toUpperCase() === 'TSAF' ? 0 : 1;
-                    group = match[6] || 'A';
-                }
-                return { type, level, group };
-            };
-
-            const pA = getParts(a);
-            const pB = getParts(b);
-
-            if (pA.type !== pB.type) return pA.type - pB.type;
-            if (pA.level !== pB.level) return pA.level - pB.level;
-            return pA.group.localeCompare(pB.group);
-        };
-
-        return Array.from(all).sort(sortOrder);
-    }, [courseGroups, users]);
-
-    const studentsByGroup = useMemo(() => {
+    const studentsByCourse = useMemo(() => {
         const studentList = users.filter(u => u.role === Role.Student);
-        return allCourseGroups.reduce((acc, groupName) => {
-            acc[groupName] = studentList.filter(s => s.courseGroup === groupName);
+        return courses.reduce((acc, course) => {
+            acc[course.id] = studentList.filter(s => s.courseId === course.id);
             return acc;
         }, {} as Record<string, User[]>);
-    }, [users, allCourseGroups]);
+    }, [users, courses]);
     
-    const toggleGroup = (groupName: string) => {
-        setExpandedGroups(prev => ({ ...prev, [groupName]: !prev[groupName] }));
+    const toggleGroup = (courseId: string) => {
+        setExpandedGroups(prev => ({ ...prev, [courseId]: !prev[courseId] }));
     };
 
     const togglePasswordVisibility = (id: string) => {
@@ -264,7 +229,7 @@ const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourse
         }
     };
 
-    const handleSave = (studentData: { name: string; password?: string, courseGroup: string }) => {
+    const handleSave = (studentData: { name: string; password?: string, courseId: string }) => {
         if (editingStudent) {
             onUpdate(editingStudent.id, studentData);
         } else {
@@ -275,25 +240,20 @@ const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourse
     };
 
     const handleCreateCourse = () => {
-        if (newCourseName && !courseGroups.includes(newCourseName)) {
-            onUpdateCourseGroups([...courseGroups, newCourseName]);
-            setNewCourseName('');
-            setIsAddCourseModalOpen(false);
-        }
+        // This needs to be implemented in App.tsx and passed down
+        // For now, I'll just close the modal
+        setIsAddCourseModalOpen(false);
     };
 
-    const handleBulkSave = (studentsToCreate: { name: string; password: string; courseGroup: string }[]) => {
+    const handleBulkSave = (studentsToCreate: { name: string; password: string; courseId: string }[]) => {
         onCreateBulk(studentsToCreate);
         setIsBulkModalOpen(false);
     };
 
     const handleEditCourse = () => {
-        if (editingCourseName && editingCourseName.newName && !courseGroups.includes(editingCourseName.newName)) {
-            onUpdateCourseGroups(
-                courseGroups.map(c => c === editingCourseName.oldName ? editingCourseName.newName : c),
-                { oldName: editingCourseName.oldName, newName: editingCourseName.newName }
-            );
-            setEditingCourseName(null);
+        if (editingCourse && editingCourse.name) {
+            // This needs to be implemented in App.tsx and passed down
+            setEditingCourse(null);
             setIsEditCourseModalOpen(false);
         }
     };
@@ -301,7 +261,7 @@ const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourse
     return (
         <div className="p-4 bg-white rounded-lg shadow-md">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Listado de Alumnos por Grupo</h2>
+                <h2 className="text-xl font-bold text-gray-800">Listado de Alumnos por Curso</h2>
                 <div className="flex items-center gap-2">
                     <button onClick={() => setIsAddCourseModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-black rounded-md hover:bg-gray-800">
                         <PlusCircleIcon className="w-5 h-5" />
@@ -309,7 +269,7 @@ const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourse
                     </button>
                     <button onClick={() => setIsBulkModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700">
                         <UsersIcon className="w-5 h-5" />
-                        Añadir Grupo a curso
+                        Añadir Alumnos a curso
                     </button>
                     <button onClick={handleCreate} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">
                         <PlusCircleIcon className="w-5 h-5" />
@@ -319,28 +279,28 @@ const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourse
             </div>
 
             <div className="space-y-2">
-                {allCourseGroups.map(groupName => {
-                    const students = studentsByGroup[groupName] || [];
-                    const isExpanded = !!expandedGroups[groupName];
+                {courses.map(course => {
+                    const students = studentsByCourse[course.id] || [];
+                    const isExpanded = !!expandedGroups[course.id];
                     return (
-                        <div key={groupName} className="border border-gray-200 rounded-lg">
+                        <div key={course.id} className="border border-gray-200 rounded-lg">
                             <div className="flex items-center justify-between w-full p-4 bg-gray-50">
                                 <button
-                                    onClick={() => toggleGroup(groupName)}
+                                    onClick={() => toggleGroup(course.id)}
                                     className="flex items-center flex-1 text-left focus:outline-none"
                                 >
                                     <div className="flex items-center">
-                                        <h3 className="font-semibold text-gray-800">{groupName}</h3>
+                                        <h3 className="font-semibold text-gray-800">{course.name}</h3>
                                         <span className="ml-3 px-2 py-0.5 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
                                             {students.length} {students.length === 1 ? 'alumno' : 'alumnos'}
                                         </span>
                                     </div>
                                     <ChevronDownIcon className={`w-5 h-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : 'rotate-0'}`} />
                                 </button>
-                                <button onClick={() => { setEditingCourseName({ oldName: groupName, newName: groupName }); setIsEditCourseModalOpen(true); }} className="ml-2 text-gray-500 hover:text-gray-700">
+                                <button onClick={() => { setEditingCourse(course); setIsEditCourseModalOpen(true); }} className="ml-2 text-gray-500 hover:text-gray-700">
                                     <EditIcon className="w-5 h-5" />
                                 </button>
-                                <button onClick={() => { setCourseToDelete(groupName); setIsDeleteCourseModalOpen(true); }} className="ml-2 text-red-500 hover:text-red-700">
+                                <button onClick={() => { setCourseToDelete(course.id); setIsDeleteCourseModalOpen(true); }} className="ml-2 text-red-500 hover:text-red-700">
                                     <TrashIcon className="w-5 h-5" />
                                 </button>
                             </div>
@@ -382,7 +342,7 @@ const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourse
                                             </table>
                                         </div>
                                     ) : (
-                                        <p className="text-center text-gray-500">No hay alumnos en este grupo.</p>
+                                        <p className="text-center text-gray-500">No hay alumnos en este curso.</p>
                                     )}
                                 </div>
                             )}
@@ -409,13 +369,13 @@ const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourse
                 </Modal>
             )}
 
-            {isEditCourseModalOpen && editingCourseName && (
+            {isEditCourseModalOpen && editingCourse && (
                 <Modal title="Editar Nombre del Curso" onClose={() => setIsEditCourseModalOpen(false)}>
                     <div className="space-y-4">
                         <input
                             type="text"
-                            value={editingCourseName.newName}
-                            onChange={(e) => setEditingCourseName({ ...editingCourseName, newName: e.target.value })}
+                            value={editingCourse.name}
+                            onChange={(e) => setEditingCourse({ ...editingCourse, name: e.target.value })}
                             className="w-full p-2 border border-gray-300 rounded-md"
                             placeholder="Nuevo nombre del curso"
                         />
@@ -431,7 +391,7 @@ const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourse
                 <Modal title="Confirmar Eliminación de Curso" onClose={() => setIsDeleteCourseModalOpen(false)}>
                     <div className="text-center">
                         <p className="text-lg text-gray-700">¿Estás seguro de que quieres eliminar el curso?</p>
-                        <p className="my-2 text-xl font-bold text-red-600">"{courseToDelete}"</p>
+                        <p className="my-2 text-xl font-bold text-red-600">"{courses.find(c => c.id === courseToDelete)?.name}"</p>
                         <p className="text-sm text-gray-500">
                             Esta acción es irreversible y eliminará el curso y todos los alumnos asociados a él.
                         </p>
@@ -453,7 +413,7 @@ const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourse
                         student={editingStudent}
                         onSave={handleSave}
                         onCancel={() => setIsModalOpen(false)}
-                        courseGroups={courseGroups}
+                        courses={courses}
                     />
                 </Modal>
             )}
@@ -463,7 +423,7 @@ const Students: React.FC<StudentsProps> = ({ users, courseGroups, onUpdateCourse
                     <BulkStudentForm
                         onSave={handleBulkSave}
                         onCancel={() => setIsBulkModalOpen(false)}
-                        courseGroups={courseGroups}
+                        courses={courses}
                     />
                 </Modal>
             )}

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { User, Group, Role, Project, Task, KanbanStatus } from '../types';
+import { User, Group, Role, Project, Task, KanbanStatus, Course } from '../types';
 import Modal from './Modal';
 import { EditIcon, TrashIcon, XIcon, PlusCircleIcon, ChevronDownIcon } from './Icons';
 import { sortBySurname } from '../lib/utils';
@@ -10,6 +10,7 @@ interface GroupsProps {
     projects: Project[];
     allUsers: User[];
     tasks: Task[];
+    courses: Course[];
     courseDates: { startDate: string; endDate: string; };
     onCreate: (groupData: any) => void;
     onUpdate: (groupId: string, groupData: any) => void;
@@ -142,24 +143,18 @@ const GroupCard: React.FC<{
     allUsers: User[];
     tasks: Task[];
     user: User;
+    courses: Course[];
     onEdit: () => void; 
     onDelete: () => void;
     onCardClick: () => void;
-}> = ({ group, projects, allUsers, tasks, user, onEdit, onDelete, onCardClick }) => {
+}> = ({ group, projects, allUsers, tasks, user, courses, onEdit, onDelete, onCardClick }) => {
     const tutor = allUsers.find(u => u.id === group.tutorId);
     const project = projects.find(p => p.groupId === group.id);
 
-    const courseGroup = useMemo(() => {
-        if (group.members.length > 0) {
-            for (const member of group.members) {
-                const freshMemberInfo = allUsers.find(u => u.id === member.id);
-                if (freshMemberInfo && freshMemberInfo.courseGroup) {
-                    return freshMemberInfo.courseGroup;
-                }
-            }
-        }
-        return 'Curso no definido';
-    }, [group.members, allUsers]);
+    const courseName = useMemo(() => {
+        const course = courses.find(c => c.id === group.courseId);
+        return course ? course.name : 'Curso no definido';
+    }, [group.courseId, courses]);
 
     const { progress, totalTasks, inProgressTasks, completedTasks } = useMemo(() => {
         if (!project) return { progress: 0, totalTasks: 0, inProgressTasks: 0, completedTasks: 0 };
@@ -204,7 +199,7 @@ const GroupCard: React.FC<{
                 <div className="flex-1 min-w-0">
                     <h3 className="text-base font-bold text-green-700 break-words">{project ? project.name : group.name}</h3>
                     <p className="text-sm text-gray-500">{project ? group.name : 'Grupo sin proyecto'}</p>
-                    <p className="mt-1 text-sm font-semibold text-gray-600">{courseGroup}</p>
+                    <p className="mt-1 text-sm font-semibold text-gray-600">{courseName}</p>
                     {tutor && <p className="mt-1 text-sm font-bold italic text-green-800">Tutor/a: {tutor.name}</p>}
                 </div>
             </div>
@@ -264,20 +259,17 @@ const GroupForm: React.FC<{
     projects: Project[];
     allUsers: User[];
     user: User;
+    courses: Course[];
     courseDates: { startDate: string; endDate: string; };
     onSave: (groupData: any) => void;
     onCancel: () => void;
-}> = ({ group, projects, allUsers, user, courseDates, onSave, onCancel }) => {
+}> = ({ group, projects, allUsers, user, courses, courseDates, onSave, onCancel }) => {
     const isEditing = !!group?.id;
     const projectForGroup = useMemo(() => projects.find(p => p.groupId === group?.id), [projects, group]);
     
-    const initialCourse = useMemo(() => {
-        if (isEditing && group?.members?.length) {
-            const firstMember = allUsers.find(u => u.id === group.members![0].id);
-            return firstMember?.courseGroup || '';
-        }
-        return '';
-    }, [group, allUsers, isEditing]);
+    const initialCourseId = useMemo(() => {
+        return group?.courseId || '';
+    }, [group]);
     
     const [name, setName] = useState(group?.name || '');
     const [projectName, setProjectName] = useState(projectForGroup?.name || '');
@@ -287,19 +279,14 @@ const GroupForm: React.FC<{
     const [tutorId, setTutorId] = useState(group?.tutorId || (user.role === Role.Tutor ? user.id : ''));
     const [memberIds, setMemberIds] = useState<string[]>(group?.members?.map(m => m.id) || []);
     const [formError, setFormError] = useState('');
-    const [selectedCourse, setSelectedCourse] = useState(initialCourse);
+    const [selectedCourseId, setSelectedCourseId] = useState(initialCourseId);
     
     const allTutors = useMemo(() => allUsers.filter(u => u.role === Role.Tutor), [allUsers]);
     const allStudents = useMemo(() => allUsers.filter(u => u.role === Role.Student), [allUsers]);
     
-    const courseGroups = useMemo(() => {
-        const courses = new Set(allStudents.filter(s => s.courseGroup).map(s => s.courseGroup!));
-        return Array.from(courses).sort();
-    }, [allStudents]);
-
     const handleCourseChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const newCourse = e.target.value;
-        setSelectedCourse(newCourse);
+        const newCourseId = e.target.value;
+        setSelectedCourseId(newCourseId);
         // Reset members only when creating a new group and changing course
         if (!isEditing) {
             setMemberIds([]);
@@ -321,12 +308,12 @@ const GroupForm: React.FC<{
             return;
         }
         setFormError('');
-        onSave({ name, tutorId, memberIds, projectName, projectDescription, startDate, endDate });
+        onSave({ name, tutorId, memberIds, projectName, projectDescription, startDate, endDate, courseId: selectedCourseId });
     };
 
-    const courseStudents = allStudents.filter(s => s.courseGroup === selectedCourse).sort(sortBySurname);
+    const courseStudents = allStudents.filter(s => s.courseId === selectedCourseId).sort(sortBySurname);
 
-    const isCourseSelectDisabled = isEditing && !!initialCourse;
+    const isCourseSelectDisabled = isEditing && !!initialCourseId;
 
     return (
         <>
@@ -405,23 +392,23 @@ const GroupForm: React.FC<{
                     </div>
                 )}
                  <div>
-                    <label htmlFor="courseGroup" className="block text-sm font-medium text-gray-700">Curso</label>
+                    <label htmlFor="courseId" className="block text-sm font-medium text-gray-700">Curso</label>
                     <select
-                        id="courseGroup"
-                        value={selectedCourse}
+                        id="courseId"
+                        value={selectedCourseId}
                         onChange={handleCourseChange}
                         className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
                         required
                         disabled={isCourseSelectDisabled}
                     >
                         <option value="">Selecciona un curso</option>
-                        {courseGroups.map(cg => <option key={cg} value={cg}>{cg}</option>)}
+                        {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                 </div>
                  <div>
                     <label className="block text-sm font-medium text-gray-700">Alumnado integrante</label>
                     <div className="p-2 mt-2 border border-gray-300 rounded-md max-h-60 overflow-y-auto">
-                        {selectedCourse ? (
+                        {selectedCourseId ? (
                             courseStudents.length > 0 ? (
                                 courseStudents.map(s => (
                                     <label key={s.id} className="flex items-center p-1 hover:bg-gray-50 cursor-pointer">
@@ -454,7 +441,7 @@ const GroupForm: React.FC<{
     );
 };
 
-const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks, courseDates, onCreate, onUpdate, onDelete, onNavigateToKanban }) => {
+const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks, courses, courseDates, onCreate, onUpdate, onDelete, onNavigateToKanban }) => {
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
     const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
@@ -467,23 +454,16 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
     const groupsByCourse = useMemo(() => {
         const result: Record<string, Group[]> = {};
         visibleGroups.forEach(group => {
-            let courseName = 'Grupos sin curso asignado';
-            if (group.members.length > 0) {
-                for (const member of group.members) {
-                    const freshMemberInfo = allUsers.find(u => u.id === member.id);
-                    if (freshMemberInfo && freshMemberInfo.courseGroup) {
-                        courseName = freshMemberInfo.courseGroup;
-                        break;
-                    }
-                }
-            }
+            const course = courses.find(c => c.id === group.courseId);
+            const courseName = course ? course.name : 'Grupos sin curso asignado';
+            
             if (!result[courseName]) {
                 result[courseName] = [];
             }
             result[courseName].push(group);
         });
         return result;
-    }, [visibleGroups, allUsers]);
+    }, [visibleGroups, courses]);
 
     const toggleCourseGroup = (courseName: string) => {
         setExpandedCourseGroups(prev => ({ ...prev, [courseName]: !prev[courseName] }));
@@ -565,6 +545,7 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
                                                 allUsers={allUsers}
                                                 tasks={tasks}
                                                 user={user}
+                                                courses={courses}
                                                 onEdit={() => handleEdit(group)} 
                                                 onDelete={() => handleDeleteClick(group)}
                                                 onCardClick={() => handleCardClick(group)} 
@@ -585,6 +566,7 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
                         projects={projects}
                         allUsers={allUsers}
                         user={user}
+                        courses={courses}
                         courseDates={courseDates}
                         onSave={handleSave}
                         onCancel={() => setIsFormModalOpen(false)}
