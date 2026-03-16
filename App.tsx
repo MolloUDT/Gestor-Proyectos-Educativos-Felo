@@ -135,33 +135,24 @@ const App: React.FC = () => {
     }, [fetchAllData]);
 
     const handleLogin = useCallback(async (username: string, password: string): Promise<void> => {
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-            email: username,
-            password: password,
-        });
+        // Buscar directamente en la tabla users
+        const { data: usersData, error: userError } = await supabase
+            .from('users')
+            .select('*, group_members(group_id)')
+            .eq('username', username)
+            .eq('password', password)
+            .single();
 
-        if (authError) {
+        if (userError || !usersData) {
             setAuthError('Usuario o contraseña incorrectos.');
             return;
         }
 
-        if (authData.user) {
-            const { data: usersData, error: userError } = await supabase
-                .from('users')
-                .select('*, group_members(group_id)')
-                .eq('id', authData.user.id)
-                .single();
-
-            if (usersData) {
-                const user = mapUser(usersData);
-                setCurrentUser(user);
-                setAuthError('');
-                setPage('dashboard');
-                await fetchAllData();
-            } else {
-                setAuthError('Error al cargar el perfil de usuario.');
-            }
-        }
+        const user = mapUser(usersData);
+        setCurrentUser(user);
+        setAuthError('');
+        setPage('dashboard');
+        await fetchAllData();
     }, [fetchAllData]);
 
     const handleLogout = useCallback(async (): Promise<void> => {
@@ -208,6 +199,11 @@ const App: React.FC = () => {
 
     const handleDeleteMessage = async (messageId: string) => {
         await supabase.from('messages').delete().eq('id', messageId);
+        await fetchAllData();
+    };
+
+    const handleCreateCourse = async (name: string) => {
+        await supabase.from('courses').insert({ name });
         await fetchAllData();
     };
 
@@ -503,6 +499,7 @@ const App: React.FC = () => {
                 return <Students 
                             users={users}
                             courses={courses}
+                            onCreateCourse={handleCreateCourse}
                             onUpdateCourse={handleUpdateCourse}
                             onDeleteCourse={handleDeleteCourse}
                             onCreate={handleCreateStudent}

@@ -9,6 +9,7 @@ interface StudentsProps {
     courses: Course[];
     onUpdateCourse: (courseId: string, name: string) => void;
     onDeleteCourse: (courseId: string) => void;
+    onCreateCourse: (name: string) => void;
     onCreate: (data: { name: string; password?: string; courseId: string }) => void;
     onCreateBulk: (students: { name: string; password: string; courseId: string }[]) => void;
     onUpdate: (id: string, data: { name: string; password?: string; courseId: string }) => void;
@@ -178,7 +179,7 @@ const BulkStudentForm: React.FC<{
     );
 };
 
-const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onDeleteCourse, onCreate, onCreateBulk, onUpdate, onDelete }) => {
+const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onDeleteCourse, onCreateCourse, onCreate, onCreateBulk, onUpdate, onDelete }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
     const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
@@ -240,9 +241,11 @@ const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onD
     };
 
     const handleCreateCourse = () => {
-        // This needs to be implemented in App.tsx and passed down
-        // For now, I'll just close the modal
-        setIsAddCourseModalOpen(false);
+        if (newCourseName.trim()) {
+            onCreateCourse(newCourseName.trim());
+            setNewCourseName('');
+            setIsAddCourseModalOpen(false);
+        }
     };
 
     const handleBulkSave = (studentsToCreate: { name: string; password: string; courseId: string }[]) => {
