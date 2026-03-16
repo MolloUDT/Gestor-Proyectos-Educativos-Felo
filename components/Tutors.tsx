@@ -78,7 +78,17 @@ const Tutors: React.FC<TutorsProps> = ({ users, groups, onCreate, onUpdate, onDe
     const [tutorToDelete, setTutorToDelete] = useState<User | null>(null);
     const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
-    const tutors = useMemo(() => users.filter(u => u.role === Role.Tutor), [users]);
+    const tutors = useMemo(() => {
+        return users
+            .filter(u => u.role === Role.Tutor)
+            .sort((a, b) => {
+                const getSurname = (name: string) => {
+                    const parts = name.trim().split(/\s+/);
+                    return parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
+                };
+                return getSurname(a.name).localeCompare(getSurname(b.name), 'es');
+            });
+    }, [users]);
 
     const togglePasswordVisibility = (id: string) => {
         setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }));
