@@ -203,7 +203,8 @@ const App: React.FC = () => {
     };
 
     const handleCreateCourse = async (name: string) => {
-        await supabase.from('courses').insert({ name });
+        const { error } = await supabase.from('courses').insert({ name });
+        if (error) console.error("Error creating course:", error);
         await fetchAllData();
     };
 
@@ -217,11 +218,14 @@ const App: React.FC = () => {
         await fetchAllData();
     };
 
-    const handleCreateGroup = async (groupData: { name: string; tutorId: string; memberIds: string[]; projectName: string; projectDescription: string; startDate: string; endDate: string; }) => {
+    const handleCreateGroup = async (groupData: { name: string; tutorId: string; memberIds: string[]; projectName: string; projectDescription: string; startDate: string; endDate: string; courseId: string; }) => {
         const { data: newGroup, error: groupError } = await supabase.from('groups').insert({
             name: groupData.name,
-            tutor_id: groupData.tutorId || null
+            tutor_id: groupData.tutorId || null,
+            course_id: groupData.courseId
         }).select().single();
+
+        if (groupError) console.error("Error creating group:", groupError);
 
         if (newGroup) {
             if (groupData.memberIds.length > 0) {
@@ -240,11 +244,14 @@ const App: React.FC = () => {
         }
     };
 
-    const handleUpdateGroup = async (groupId: string, groupData: { name: string; tutorId: string; memberIds: string[]; projectName: string; projectDescription: string; startDate: string; endDate: string; }) => {
-        await supabase.from('groups').update({
+    const handleUpdateGroup = async (groupId: string, groupData: { name: string; tutorId: string; memberIds: string[]; projectName: string; projectDescription: string; startDate: string; endDate: string; courseId: string; }) => {
+        const { error: groupError } = await supabase.from('groups').update({
             name: groupData.name,
-            tutor_id: groupData.tutorId || null
+            tutor_id: groupData.tutorId || null,
+            course_id: groupData.courseId
         }).eq('id', groupId);
+
+        if (groupError) console.error("Error updating group:", groupError);
 
         await supabase.from('group_members').delete().eq('group_id', groupId);
         if (groupData.memberIds.length > 0) {
@@ -290,34 +297,37 @@ const App: React.FC = () => {
         await fetchAllData();
     };
 
-    const handleCreateStudent = async (studentData: { name: string; password?: string; courseGroup: string }) => {
-        await supabase.from('users').insert({
+    const handleCreateStudent = async (studentData: { name: string; password?: string; courseId: string }) => {
+        const { error } = await supabase.from('users').insert({
             name: studentData.name,
             username: studentData.name.split(' ')[0].toLowerCase() + Date.now().toString().slice(-4),
             password: studentData.password || 'password',
             role: Role.Student,
-            course_group: studentData.courseGroup
+            course_id: studentData.courseId
         });
+        if (error) console.error("Error creating student:", error);
         await fetchAllData();
     };
 
-    const handleCreateStudentsBulk = async (studentsData: { name: string; password: string; courseGroup: string }[]) => {
+    const handleCreateStudentsBulk = async (studentsData: { name: string; password: string; courseId: string }[]) => {
         const timestamp = Date.now();
         const inserts = studentsData.map((studentData, index) => ({
             name: studentData.name.trim(),
             username: studentData.name.trim().split(' ')[0].toLowerCase() + timestamp.toString().slice(-4) + index,
             password: studentData.password.trim(),
             role: Role.Student,
-            course_group: studentData.courseGroup
+            course_id: studentData.courseId
         }));
-        await supabase.from('users').insert(inserts);
+        const { error } = await supabase.from('users').insert(inserts);
+        if (error) console.error("Error creating students in bulk:", error);
         await fetchAllData();
     };
 
-    const handleUpdateStudent = async (studentId: string, studentData: { name: string; password?: string; courseGroup: string }) => {
-        const updateData: any = { name: studentData.name, course_group: studentData.courseGroup };
+    const handleUpdateStudent = async (studentId: string, studentData: { name: string; password?: string; courseId: string }) => {
+        const updateData: any = { name: studentData.name, course_id: studentData.courseId };
         if (studentData.password) updateData.password = studentData.password;
-        await supabase.from('users').update(updateData).eq('id', studentId);
+        const { error } = await supabase.from('users').update(updateData).eq('id', studentId);
+        if (error) console.error("Error updating student:", error);
         await fetchAllData();
     };
 
