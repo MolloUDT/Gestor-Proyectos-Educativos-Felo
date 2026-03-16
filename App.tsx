@@ -186,17 +186,22 @@ const App: React.FC = () => {
             setUsers(users.map(u => u.courseGroup === renameMapping.oldName ? { ...u, courseGroup: renameMapping.newName } : u));
         }
 
-        const { data: existing } = await supabase.from('settings').select('*').eq('key', 'course_groups');
+        const { data: existing, error: selectError } = await supabase.from('settings').select('*').eq('key', 'course_groups');
+        if (selectError) console.error("Select error:", selectError);
+
         if (existing && existing.length > 0) {
-            await supabase.from('settings').update({ value: newGroups }).eq('key', 'course_groups');
+            const { error: updateError } = await supabase.from('settings').update({ value: newGroups }).eq('key', 'course_groups');
+            if (updateError) console.error("Update error:", updateError);
         } else {
-            await supabase.from('settings').insert({ key: 'course_groups', value: newGroups });
+            const { error: insertError } = await supabase.from('settings').insert({ key: 'course_groups', value: newGroups });
+            if (insertError) console.error("Insert error:", insertError);
         }
         
         if (renameMapping) {
-            await supabase.from('users')
+            const { error: userUpdateError } = await supabase.from('users')
                 .update({ course_group: renameMapping.newName })
                 .eq('course_group', renameMapping.oldName);
+            if (userUpdateError) console.error("User update error:", userUpdateError);
         }
         
         await fetchAllData();
@@ -207,16 +212,20 @@ const App: React.FC = () => {
         setCourseGroups(newGroups);
         
         // Remove course from settings
-        const { data: existing } = await supabase.from('settings').select('*').eq('key', 'course_groups');
+        const { data: existing, error: selectError } = await supabase.from('settings').select('*').eq('key', 'course_groups');
+        if (selectError) console.error("Select error:", selectError);
+        
         if (existing && existing.length > 0) {
-            await supabase.from('settings').update({ value: newGroups }).eq('key', 'course_groups');
+            const { error: updateError } = await supabase.from('settings').update({ value: newGroups }).eq('key', 'course_groups');
+            if (updateError) console.error("Update error:", updateError);
         }
         
         // Delete all students associated with this course
-        await supabase.from('users')
+        const { error: deleteError } = await supabase.from('users')
             .delete()
             .eq('course_group', courseName)
             .eq('role', Role.Student);
+        if (deleteError) console.error("Delete error:", deleteError);
         
         await fetchAllData();
     };
