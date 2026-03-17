@@ -24,42 +24,40 @@ const ProjectDates: React.FC<ProjectDatesProps> = ({ courseDates, onUpdate }) =>
 
     return (
         <div className="p-6 bg-white rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Configurar Fechas del Curso Escolar</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 text-center mb-12">Configurar fechas del curso escolar</h2>
+            <p className="text-gray-600 text-center mb-8">
                 Establece las fechas de inicio y fin del curso. Todos los proyectos y tareas deberán estar dentro de este rango.
             </p>
             <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Fecha de Inicio del Curso</label>
+                <div className="flex flex-col md:flex-row justify-center gap-8">
+                    <div className="w-full max-w-48">
+                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 text-center">Fecha de inicio de curso</label>
                         <input
                             type="date"
                             id="startDate"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
-                            className="w-full p-2 mt-1 border border-gray-300 rounded-md"
+                            className="w-full p-2 mt-2 border border-green-200 bg-green-50 text-green-800 rounded-md text-center [&::-webkit-datetime-edit]:flex [&::-webkit-datetime-edit]:justify-center [&::-webkit-datetime-edit-fields-wrapper]:flex [&::-webkit-datetime-edit-fields-wrapper]:justify-center"
                             required
                         />
                     </div>
-                    <div>
-                        <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">Fecha de Fin del Curso</label>
+                    <div className="w-full max-w-48">
+                        <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 text-center">Fecha de fin del curso</label>
                         <input
                             type="date"
                             id="endDate"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
-                            className="w-full p-2 mt-1 border border-gray-300 rounded-md"
+                            className="w-full p-2 mt-2 border border-red-200 bg-red-50 text-red-800 rounded-md text-center [&::-webkit-datetime-edit]:flex [&::-webkit-datetime-edit]:justify-center [&::-webkit-datetime-edit-fields-wrapper]:flex [&::-webkit-datetime-edit-fields-wrapper]:justify-center"
                             required
                         />
                     </div>
                 </div>
-                <div className="flex items-center justify-between pt-4">
-                     <div className="flex-grow">
-                        {feedback && <p className={`text-sm font-semibold ${feedback.includes('anterior') ? 'text-red-600' : 'text-green-600'}`}>{feedback}</p>}
-                    </div>
+                <div className="flex flex-col items-center pt-4">
+                    {feedback && <p className={`text-sm font-semibold mb-4 ${feedback.includes('anterior') ? 'text-red-600' : 'text-green-600'}`}>{feedback}</p>}
                     <button
                         type="submit"
-                        className="px-6 py-2 ml-4 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700"
+                        className="px-10 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
                     >
                         Guardar Fechas
                     </button>

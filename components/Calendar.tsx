@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { User, Tutorial, Role, Group, Project, Course } from '../types';
+import { User, Tutorial, Role, Group, Project, Course, Task } from '../types';
 import Modal from './Modal';
 import { ChevronDownIcon, EditIcon, TrashIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
+import { GroupCard } from './GroupCard';
 
 interface CalendarProps {
     user: User;
@@ -14,6 +15,7 @@ interface CalendarProps {
     onUpdateTutorial: (id: string, data: Partial<Omit<Tutorial, 'id'>>) => void;
     onDeleteTutorial: (id: string) => void;
     courseDates: { startDate: string; endDate: string; };
+    tasks: Task[];
 }
 
 const formatDate = (date: Date) => {
@@ -634,7 +636,7 @@ const PendingTutorialsModal: React.FC<{
     );
 };
 
-const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, projects, courses, onCreateTutorial, onUpdateTutorial, onDeleteTutorial, courseDates }) => {
+const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, projects, courses, onCreateTutorial, onUpdateTutorial, onDeleteTutorial, courseDates, tasks }) => {
     const [view, setView] = useState('list');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingTutorial, setEditingTutorial] = useState<Tutorial | null>(null);
@@ -730,18 +732,17 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
 
     return (
         <div>
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Historial de Tutorías</h2>
-                <div className="flex items-center gap-2">
-                     <button onClick={() => setIsPendingModalOpen(true)} className="px-4 py-2 font-semibold text-gray-800 bg-yellow-400 rounded-md hover:bg-yellow-500">
-                        Reuniones pendientes
+            <div className="mb-6">
+                <div className="flex gap-2">
+                     <button onClick={() => setIsPendingModalOpen(true)} className="flex-1 px-2 py-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors truncate">
+                        Pendientes
                     </button>
-                    <button onClick={() => setView(v => v === 'list' ? 'calendar' : 'list')} className="px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700">
-                        {view === 'list' ? 'Calendario de tutorías' : 'Ver como Lista'}
+                    <button onClick={() => setView(v => v === 'list' ? 'calendar' : 'list')} className="flex-1 px-2 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors truncate">
+                        {view === 'list' ? 'Calendario' : 'Lista'}
                     </button>
                     {(user.role === Role.Admin || user.role === Role.Tutor) && (
-                        <button onClick={handleCreate} className="px-4 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">
-                            Registrar Tutoría
+                        <button onClick={handleCreate} className="flex-1 px-2 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors truncate">
+                            Registrar
                         </button>
                     )}
                 </div>
@@ -750,51 +751,57 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
             {view === 'list' ? (
                 <div className="space-y-2">
                     {Object.keys(tutorialsByCourseAndGroup).sort().map(courseName => (
-                        <div key={courseName} className="border border-gray-200 rounded-lg">
-                            <button onClick={() => toggleExpand(`course_${courseName}`)} className="flex items-center justify-between w-full p-4 text-left bg-gray-50 hover:bg-gray-100 focus:outline-none">
+                        <div key={courseName} className="bg-white rounded-lg shadow-md">
+                            <button onClick={() => toggleExpand(`course_${courseName}`)} className="flex items-center justify-between w-full p-4 text-left focus:outline-none">
                                 <div className="flex items-center">
-                                    <h3 className="font-semibold text-gray-800">{courseName}</h3>
-                                    <span className="ml-3 px-2 py-0.5 text-xs font-semibold text-green-800 bg-green-100 rounded-full">{tutorialsByCourseAndGroup[courseName].length} grupos</span>
+                                    <h3 className="text-lg font-semibold text-gray-800">{courseName}</h3>
+                                    <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">{tutorialsByCourseAndGroup[courseName].length} {tutorialsByCourseAndGroup[courseName].length === 1 ? 'grupo' : 'grupos'}</span>
                                 </div>
-                                <ChevronDownIcon className={`w-5 h-5 text-gray-500 transition-transform ${expandedKeys[`course_${courseName}`] ? 'rotate-180' : ''}`} />
+                                <ChevronDownIcon className={`w-6 h-6 text-gray-500 transition-transform ${expandedKeys[`course_${courseName}`] ? 'rotate-180' : ''}`} />
                             </button>
                             {expandedKeys[`course_${courseName}`] && (
                                 <div className="p-4 border-t border-gray-200">
-                                    {tutorialsByCourseAndGroup[courseName].map(({ group, tutorials: groupTutorials }) => {
-                                        const project = projects.find(p => p.groupId === group.id);
-                                        return (
-                                        <div key={group.id} className="mb-2 border-l-2 border-green-200">
-                                            <button onClick={() => toggleExpand(`group_${group.id}`)} className="flex items-center justify-between w-full p-3 text-left hover:bg-gray-50 focus:outline-none">
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center">
-                                                        <h4 className="font-semibold text-green-800">{group.name}</h4>
-                                                        <span className="ml-3 px-2 py-0.5 text-xs font-semibold text-gray-700 bg-gray-200 rounded-full">{groupTutorials.length} tutorías</span>
-                                                    </div>
-                                                    {project && <p className="mt-1 text-sm italic text-gray-500 truncate">{project.name}</p>}
-                                                </div>
-                                                <ChevronDownIcon className={`flex-shrink-0 w-5 h-5 ml-2 text-gray-500 transition-transform ${expandedKeys[`group_${group.id}`] ? 'rotate-180' : ''}`} />
-                                            </button>
-                                            {expandedKeys[`group_${group.id}`] && (
-                                                <div className="pl-6 pr-2 pb-2 mt-1 space-y-2">
-                                                    {groupTutorials.map(tutorial => (
-                                                        <div key={tutorial.id} className="flex items-center justify-between p-3 bg-white border rounded-md hover:shadow-sm">
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="font-semibold text-gray-700">{new Date(tutorial.date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                                                <p className="mt-1 text-sm text-gray-600 truncate">{tutorial.summary}</p>
-                                                                {tutorial.nextDate && <p className="pt-2 mt-2 text-xs text-blue-600 border-t"><strong className="font-semibold">Próxima reunión:</strong> {new Date(tutorial.nextDate  + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</p>}
-                                                            </div>
-                                                            {(user.role === Role.Admin || user.id === tutorial.tutorId) && (
-                                                                <div className="flex flex-shrink-0 ml-4 space-x-1">
-                                                                    <button onClick={() => setEditingTutorial(tutorial)} className="p-2 text-gray-400 rounded-full hover:bg-blue-100 hover:text-blue-600" aria-label="Editar tutoría"><EditIcon className="w-4 h-4" /></button>
-                                                                    <button onClick={() => setTutorialToDelete(tutorial)} className="p-2 text-gray-400 rounded-full hover:bg-red-100 hover:text-red-600" aria-label="Eliminar tutoría"><TrashIcon className="w-4 h-4" /></button>
-                                                                </div>
-                                                            )}
+                                    <div className="grid grid-cols-1 gap-6">
+                                        {tutorialsByCourseAndGroup[courseName].map(({ group, tutorials: groupTutorials }) => {
+                                            const isGroupExpanded = expandedKeys[`group_${group.id}`];
+                                            return (
+                                                <div key={group.id} className="mb-4">
+                                                    <GroupCard 
+                                                        group={group}
+                                                        projects={projects}
+                                                        allUsers={allUsers}
+                                                        tasks={tasks}
+                                                        user={user}
+                                                        courses={courses}
+                                                        onCardClick={() => toggleExpand(`group_${group.id}`)}
+                                                    />
+                                                    {isGroupExpanded && (
+                                                        <div className="pl-6 pr-2 pb-2 mt-1 space-y-2 border-l-2 border-green-200 ml-4">
+                                                            {groupTutorials.map(tutorial => (
+                                                                <button 
+                                                                    key={tutorial.id} 
+                                                                    onClick={() => setEditingTutorial(tutorial)}
+                                                                    className="flex items-center justify-between w-full p-3 text-left text-gray-700 transition-colors bg-white border rounded-md shadow-sm gap-4 hover:bg-green-50 hover:border-green-300"
+                                                                >
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <p className="font-semibold text-gray-700">{new Date(tutorial.date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                                        <p className="mt-1 text-sm text-gray-600 truncate">{tutorial.summary}</p>
+                                                                        {tutorial.nextDate && <p className="pt-2 mt-2 text-xs text-blue-600 border-t"><strong className="font-semibold">Próxima reunión:</strong> {new Date(tutorial.nextDate  + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</p>}
+                                                                    </div>
+                                                                    {(user.role === Role.Admin || user.id === tutorial.tutorId) && (
+                                                                        <div className="flex flex-shrink-0 ml-4 space-x-1">
+                                                                            <div onClick={(e) => { e.stopPropagation(); setEditingTutorial(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-blue-100 hover:text-blue-600" aria-label="Editar tutoría"><EditIcon className="w-4 h-4" /></div>
+                                                                            <div onClick={(e) => { e.stopPropagation(); setTutorialToDelete(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-red-100 hover:text-red-600" aria-label="Eliminar tutoría"><TrashIcon className="w-4 h-4" /></div>
+                                                                        </div>
+                                                                    )}
+                                                                </button>
+                                                            ))}
                                                         </div>
-                                                    ))}
+                                                    )}
                                                 </div>
-                                            )}
-                                        </div>
-                                    )})}
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             )}
                         </div>

@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { User, Task, KanbanStatus, Role, Group, Project, Priority, RA, Difficulty } from '../types';
+import { User, Task, KanbanStatus, Role, Group, Project, Priority, RA, Difficulty, Course } from '../types';
 import { KANBAN_COLUMNS_ORDER, STATUS_COLORS } from '../constants';
 import KanbanCard from './KanbanCard';
 import PriorityIcon, { KanbanLegend } from './PriorityIcon';
 import DifficultyIcon from './DifficultyIcon';
 import StatusIcon from './StatusIcon';
 import Modal from './Modal';
-import { PlusCircleIcon } from './Icons';
+import { PlusCircleIcon, ChevronDownIcon } from './Icons';
 import TaskForm from './TaskForm';
+import { ProgressCircle } from './ProgressCircle';
 
 interface KanbanBoardProps {
     user: User;
@@ -16,12 +17,13 @@ interface KanbanBoardProps {
     tasks: Task[];
     users: User[];
     ras: RA[];
+    courses: Course[];
     courseDates: { startDate: string; endDate: string; };
     onCreateTask: (data: Omit<Task, 'id'>) => void;
     onUpdateTask: (id: string, data: Partial<Task>) => void;
     onDeleteTask: (id: string) => void;
     initialProjectId?: string | null;
-    onProjectSelected?: () => void;
+    onProjectSelected?: (projectId: string) => void;
 }
 
 type ViewMode = 'status' | 'priority' | 'difficulty';
@@ -105,7 +107,7 @@ const KanbanColumn: React.FC<{
 };
 
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks, users, ras, courseDates, onCreateTask, onUpdateTask, onDeleteTask, initialProjectId, onProjectSelected }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks, users, ras, courses, courseDates, onCreateTask, onUpdateTask, onDeleteTask, initialProjectId, onProjectSelected }) => {
     const relevantProjectIds = useMemo(() => {
         if (user.role === Role.Admin) return projects.map(p => p.id);
         if (user.role === Role.Tutor) {
@@ -115,26 +117,56 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
         return projects.filter(p => user.groupIds.includes(p.groupId)).map(p => p.id);
     }, [user, groups, projects]);
 
-    const [selectedProjectId, setSelectedProjectId] = useState<string>(
+    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
         (initialProjectId && relevantProjectIds.includes(initialProjectId))
             ? initialProjectId
-            : (relevantProjectIds[0] || '')
+            : null
     );
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
     const [viewMode, setViewMode] = useState<ViewMode>('status');
+    const [expandedCourseGroups, setExpandedCourseGroups] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
         if (initialProjectId && relevantProjectIds.includes(initialProjectId)) {
             setSelectedProjectId(initialProjectId);
+        } else if (initialProjectId === null) {
+            setSelectedProjectId(null);
         }
     }, [initialProjectId, relevantProjectIds]);
 
     const handleProjectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedProjectId(e.target.value);
+        const newProjectId = e.target.value;
+        setSelectedProjectId(newProjectId);
         if (onProjectSelected) {
-            onProjectSelected();
+            onProjectSelected(newProjectId);
+        }
+    };
+
+    const projectsByCourse = useMemo(() => {
+        const result: Record<string, Project[]> = {};
+        projects.forEach(project => {
+            const group = groups.find(g => g.id === project.groupId);
+            const course = group ? courses.find(c => c.id === group.courseId) : null;
+            const courseName = course ? course.name : 'Proyectos sin curso asignado';
+            
+            if (!result[courseName]) {
+                result[courseName] = [];
+            }
+            result[courseName].push(project);
+        });
+        return result;
+    }, [projects, groups, courses]);
+
+    const toggleCourseGroup = (courseName: string) => {
+        setExpandedCourseGroups(prev => ({ ...prev, [courseName]: !prev[courseName] }));
+    };
+
+    const handleProjectCardClick = (projectId: string) => {
+        setSelectedProjectId(projectId);
+        if (onProjectSelected) {
+            onProjectSelected(projectId);
         }
     };
 
@@ -206,11 +238,74 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
         }
     };
     
+    if (!selectedProjectId) {
+        return (
+            <div className="space-y-4">
+                <h2 className="mb-6 text-2xl font-bold text-gray-800">Selecciona un Proyecto</h2>
+                {Object.keys(projectsByCourse).sort().map(courseName => {
+                    const courseProjects = projectsByCourse[courseName];
+                    const isExpanded = !!expandedCourseGroups[courseName];
+                    return (
+                        <div key={courseName} className="border border-gray-200 rounded-lg bg-white shadow-sm">
+                            <button onClick={() => toggleCourseGroup(courseName)} className="flex items-center justify-between w-full p-4 text-left bg-gray-50 hover:bg-gray-100 focus:outline-none rounded-lg">
+                                <div className="flex items-center">
+                                    <h3 className="text-lg font-semibold text-gray-800">{courseName}</h3>
+                                    <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">
+                                        {courseProjects.length} {courseProjects.length === 1 ? 'proyecto' : 'proyectos'}
+                                    </span>
+                                </div>
+                                <ChevronDownIcon className={`w-6 h-6 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                            </button>
+                            {isExpanded && (
+                                <div className="p-4 border-t border-gray-200">
+                                    <div className="space-y-2">
+                                        {courseProjects.map(project => {
+                                            const group = groups.find(g => g.id === project.groupId);
+                                            const tutor = users.find(u => u.id === group?.tutorId);
+                                            
+                                            return (
+                                                <button 
+                                                    key={project.id} 
+                                                    onClick={() => handleProjectCardClick(project.id)} 
+                                                    className="flex items-center w-full p-3 text-left text-gray-700 transition-colors bg-white border rounded-md shadow-sm gap-4 hover:bg-green-50 hover:border-green-300"
+                                                >
+                                                    <div>
+                                                        <ProgressCircle progress={Math.round((tasks.filter(t => t.projectId === project.id && t.status === KanbanStatus.Done).length / (tasks.filter(t => t.projectId === project.id).length || 1)) * 100)} size={48} showText={true} />
+                                                    </div>
+                                                    <div className="flex-grow min-w-0">
+                                                        <p className="font-semibold text-green-800 truncate">{project.name}</p>
+                                                        <p className="text-sm text-gray-500">{group?.name}</p>
+                                                        <p className="mt-1 text-xs text-gray-500">Tutor: {tutor ? tutor.name : 'Sin tutor'}</p>
+                                                    </div>
+                                                    <div className="flex flex-col items-end flex-shrink-0">
+                                                        <div>
+                                                            <p className="text-sm font-medium text-gray-800">{new Date(project.startDate).toLocaleDateString('es-ES')}</p>
+                                                            <p className="text-xs text-right text-gray-500">Inicio</p>
+                                                        </div>
+                                                        <div className="mt-1">
+                                                            <p className="text-sm font-medium text-gray-800">{new Date(project.endDate).toLocaleDateString('es-ES')}</p>
+                                                            <p className="text-xs text-right text-gray-500">Fin</p>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col h-full">
             <div className="flex flex-wrap items-center justify-between gap-4 p-4 mb-4 bg-white rounded-lg shadow-md">
                 <div className="flex flex-wrap items-center gap-4">
-                    <select value={selectedProjectId} onChange={handleProjectChange} className="p-2 border border-gray-300 rounded-md md:w-80 focus:ring-green-500 focus:border-green-500">
+                    <select value={selectedProjectId || ''} onChange={handleProjectChange} className="p-2 border border-gray-300 rounded-md md:w-80 focus:ring-green-500 focus:border-green-500">
+                        <option value="">-- Volver a la selección de proyectos --</option>
                         {projects.filter(p => relevantProjectIds.includes(p.id)).map(project => (
                             <option key={project.id} value={project.id}>{project.name}</option>
                         ))}

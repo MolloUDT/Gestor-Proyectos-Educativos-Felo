@@ -6,6 +6,7 @@ import DifficultyIcon from './DifficultyIcon';
 import StatusIcon from './StatusIcon';
 import { KANBAN_COLUMNS_ORDER } from '../constants';
 import Modal from './Modal';
+import { ProgressCircle } from './ProgressCircle';
 
 const formatDate = (date: Date) => {
     const year = date.getFullYear();
@@ -232,7 +233,7 @@ const GanttLegend: React.FC = () => {
     );
 };
 
-const ProgressCircle: React.FC<{ progress: number; size?: number }> = ({ progress, size = 48 }) => {
+const LocalProgressCircle: React.FC<{ progress: number; size?: number }> = ({ progress, size = 48 }) => {
     const strokeWidth = 6;
 
     if (progress === 100) {
@@ -602,8 +603,8 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
     }
     
     return (
-        <div className="p-4 bg-white rounded-lg shadow-md">
-            <h2 className="pb-4 mb-4 text-xl font-bold text-gray-800 border-b">Seleccione un proyecto para ver su Diagrama de Gantt</h2>
+        <div className="space-y-4">
+            <h2 className="mb-6 text-2xl font-bold text-gray-800">Selecciona un Proyecto</h2>
             
             {user.role === Role.Student ? (
                 <div className="space-y-2">
@@ -621,7 +622,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
                                 className="flex items-center w-full p-3 text-left text-gray-700 transition-colors bg-white border rounded-md shadow-sm gap-4 hover:bg-green-50 hover:border-green-300"
                             >
                                 <div>
-                                    <ProgressCircle progress={progress} size={48} />
+                                    <ProgressCircle progress={progress} size={48} showText={true} />
                                 </div>
                                 <div className="flex-grow min-w-0">
                                     <p className="font-semibold text-green-800 truncate">{project.name}</p>
@@ -647,8 +648,8 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
                     {Object.keys(projectsByCourseGroup).sort().map(courseGroup => {
                         const courseProjects = projectsByCourseGroup[courseGroup]; const isExpanded = !!expandedCourseGroups[courseGroup];
                         return (
-                            <div key={courseGroup} className="border border-gray-200 rounded-lg">
-                                <button onClick={() => toggleCourseGroup(courseGroup)} className="flex items-center justify-between w-full p-4 text-left bg-gray-50 hover:bg-gray-100 focus:outline-none">
+                            <div key={courseGroup} className="border border-gray-200 rounded-lg bg-white shadow-sm">
+                                <button onClick={() => toggleCourseGroup(courseGroup)} className="flex items-center justify-between w-full p-4 text-left bg-gray-50 hover:bg-gray-100 focus:outline-none rounded-lg">
                                     <div className="flex items-center">
                                         <h3 className="text-lg font-semibold text-gray-800">{courseGroup}</h3>
                                         <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">{courseProjects.length} {courseProjects.length === 1 ? 'proyecto' : 'proyectos'}</span>
@@ -667,13 +668,13 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
                                                 const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
                                                 return (
-                                                    <button 
+                                                <button 
                                                         key={project.id} 
                                                         onClick={() => setSelectedProjectId(project.id)} 
                                                         className="flex items-center w-full p-3 text-left text-gray-700 transition-colors bg-white border rounded-md shadow-sm gap-4 hover:bg-green-50 hover:border-green-300"
                                                     >
                                                         <div>
-                                                            <ProgressCircle progress={progress} size={48} />
+                                                            <ProgressCircle progress={progress} size={48} showText={true} />
                                                         </div>
                                                         <div className="flex-grow min-w-0">
                                                             <p className="font-semibold text-green-800 truncate">{project.name}</p>

@@ -568,12 +568,13 @@ const App: React.FC = () => {
                             tasks={tasks}
                             users={users}
                             ras={ras}
+                            courses={courses}
                             courseDates={courseDates}
                             onCreateTask={handleCreateTask}
                             onUpdateTask={handleUpdateTask}
                             onDeleteTask={handleDeleteTask}
                             initialProjectId={selectedKanbanProject}
-                            onProjectSelected={() => setSelectedKanbanProject(null)}
+                            onProjectSelected={(projectId) => setSelectedKanbanProject(projectId)}
                         />;
             case 'gantt':
                 return <GanttChart 
@@ -609,6 +610,7 @@ const App: React.FC = () => {
                             groups={groups}
                             projects={projects}
                             messages={messages}
+                            courses={courses}
                             onSendMessage={handleSendMessage}
                             onDeleteMessage={handleDeleteMessage}
                             onMarkMessagesAsRead={handleMarkMessagesAsRead}
@@ -620,6 +622,7 @@ const App: React.FC = () => {
                             groups={groups}
                             allUsers={users}
                             projects={projects}
+                            courses={courses}
                             onUploadFile={handleUploadFile}
                             onDeleteFile={handleDeleteFile}
                         />;
@@ -635,6 +638,7 @@ const App: React.FC = () => {
                             onUpdateTutorial={handleUpdateTutorial}
                             onDeleteTutorial={handleDeleteTutorial}
                             courseDates={courseDates}
+                            tasks={tasks}
                         />;
             case 'logbook':
                 return <Logbook 
@@ -642,6 +646,8 @@ const App: React.FC = () => {
                             groups={groups}
                             allUsers={users}
                             projects={projects}
+                            tasks={tasks}
+                            courses={courses}
                             onUpdateLogbook={handleUpdateGroupLogbook}
                         />;
             case 'information':
@@ -670,8 +676,15 @@ const App: React.FC = () => {
         return <LoginPage onLogin={handleLogin} error={authError} />;
     }
 
+    const handleSetPage = (newPage: Page) => {
+        setPage(newPage);
+        if (newPage === 'board') {
+            setSelectedKanbanProject(null);
+        }
+    };
+
     return (
-        <Layout user={currentUser} onLogout={handleLogout} currentPage={page} setPage={setPage} onOpenProfile={() => setIsProfileModalOpen(true)}>
+        <Layout user={currentUser} onLogout={handleLogout} currentPage={page} setPage={handleSetPage} onOpenProfile={() => setIsProfileModalOpen(true)}>
             {renderPage}
             {unreadMessagesToShow.length > 0 && currentUser && (
                 <NotificationModal

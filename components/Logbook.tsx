@@ -1,50 +1,45 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-import { User, Group, Project } from '../types';
+import { User, Group, Project, Course, Task, Role } from '../types';
 import { ChevronDownIcon, SaveIcon, ArrowLeftIcon } from './Icons';
+import { GroupCard } from './GroupCard';
 
 interface LogbookProps {
     user: User;
     groups: Group[];
     projects: Project[];
     allUsers: User[];
+    courses: Course[];
+    tasks: Task[];
     onUpdateLogbook: (groupId: string, logbook: string) => void;
 }
 
 const QuillComponent = ReactQuill as any;
 
-const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, onUpdateLogbook }) => {
+const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, courses, tasks, onUpdateLogbook }) => {
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
     const [logContent, setLogContent] = useState('');
     const [expandedCourseGroups, setExpandedCourseGroups] = useState<Record<string, boolean>>({});
     const quillRef = useRef<any>(null);
 
-    const projectsByCourseGroup = useMemo(() => {
+    const projectsByCourse = useMemo(() => {
         const result: Record<string, { project: Project, group: Group }[]> = {};
         
         projects.forEach(project => {
             const group = groups.find(g => g.id === project.groupId);
-            if (group && group.members.length > 0) {
-                let projectCourseGroup: string | undefined;
-                for (const member of group.members) {
-                    const freshMember = allUsers.find(u => u.id === member.id);
-                    if (freshMember && freshMember.courseGroup) {
-                        projectCourseGroup = freshMember.courseGroup;
-                        break;
-                    }
-                }
+            if (group && group.courseId) {
+                const course = courses.find(c => c.id === group.courseId);
+                const courseName = course ? course.name : 'Curso sin nombre';
 
-                if (projectCourseGroup) {
-                    if (!result[projectCourseGroup]) {
-                        result[projectCourseGroup] = [];
-                    }
-                    result[projectCourseGroup].push({ project, group });
+                if (!result[courseName]) {
+                    result[courseName] = [];
                 }
+                result[courseName].push({ project, group });
             }
         });
         return result;
-    }, [projects, groups, allUsers]);
+    }, [projects, groups, courses]);
 
     const toggleCourseGroup = (courseGroupName: string) => {
         setExpandedCourseGroups(prev => ({ ...prev, [courseGroupName]: !prev[courseGroupName] }));
@@ -124,7 +119,7 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, onU
                         min-height: 400px;
                     }
                 `}</style>
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-start mb-6">
                     <button 
                         onClick={() => setSelectedGroupId(null)}
                         className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
@@ -132,7 +127,6 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, onU
                         <ArrowLeftIcon className="w-5 h-5 mr-2" />
                         Volver al listado
                     </button>
-                    <h2 className="text-2xl font-bold text-gray-800">Cuaderno de Bitácora</h2>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
@@ -169,23 +163,21 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, onU
 
     return (
         <div>
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Cuaderno de Bitácora</h2>
-            </div>
+            {/* Title removed as per user request */}
             <p className="text-gray-600 mb-8">Selecciona un grupo para ver o añadir entradas a su cuaderno de bitácora.</p>
             
             <div className="space-y-4">
-                {Object.keys(projectsByCourseGroup).sort().map(courseGroup => {
-                    const projectsData = projectsByCourseGroup[courseGroup];
-                    const isExpanded = !!expandedCourseGroups[courseGroup];
+                {Object.keys(projectsByCourse).sort().map(courseName => {
+                    const projectsData = projectsByCourse[courseName];
+                    const isExpanded = !!expandedCourseGroups[courseName];
                     return (
-                        <div key={courseGroup} className="bg-white rounded-lg shadow-md">
+                        <div key={courseName} className="bg-white rounded-lg shadow-md">
                             <button 
-                                onClick={() => toggleCourseGroup(courseGroup)} 
+                                onClick={() => toggleCourseGroup(courseName)} 
                                 className="flex items-center justify-between w-full p-4 text-left focus:outline-none"
                             >
                                 <div className="flex items-center">
-                                    <h3 className="text-lg font-semibold text-gray-800">{courseGroup}</h3>
+                                    <h3 className="text-lg font-semibold text-gray-800">{courseName}</h3>
                                     <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">
                                         {projectsData.length} {projectsData.length === 1 ? 'proyecto' : 'proyectos'}
                                     </span>
@@ -196,19 +188,16 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, onU
                                 <div className="p-4 border-t border-gray-200">
                                     <div className="grid grid-cols-1 gap-6">
                                         {projectsData.map(({ project, group }) => (
-                                            <button
+                                            <GroupCard 
                                                 key={project.id}
-                                                onClick={() => handleSelectGroup(group)}
-                                                className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-green-500 hover:shadow-md transition-all text-left group"
-                                            >
-                                                <div>
-                                                    <h4 className="font-bold text-gray-800 group-hover:text-green-700">{project.name}</h4>
-                                                    <p className="text-sm text-gray-500">Grupo: {group.name}</p>
-                                                </div>
-                                                <div className="text-green-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    Abrir bitácora →
-                                                </div>
-                                            </button>
+                                                group={group}
+                                                projects={projects}
+                                                allUsers={allUsers}
+                                                tasks={tasks}
+                                                user={user}
+                                                courses={courses}
+                                                onCardClick={() => handleSelectGroup(group)}
+                                            />
                                         ))}
                                     </div>
                                 </div>

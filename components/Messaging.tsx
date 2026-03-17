@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { User, Role, Group, Project, Message } from '../types';
+import { User, Role, Group, Project, Message, Course } from '../types';
 import { ChevronDownIcon, XIcon } from './Icons';
 import MessagingHistoryModal from './MessagingHistoryModal';
 import PendingMessagesModal from './PendingMessagesModal';
@@ -11,6 +11,7 @@ interface MessagingProps {
     groups: Group[];
     projects: Project[];
     messages: Message[];
+    courses: Course[];
     onSendMessage: (messageData: { senderId: string; recipientIds: string[]; subject: string; body: string; targetType: 'tutors' | 'groups' | 'students'; targetGroupIds?: string[]; originalMessageId?: string; }) => void;
     onDeleteMessage: (messageId: string) => void;
     onMarkMessagesAsRead: (messageIds: string[]) => void;
@@ -18,7 +19,7 @@ interface MessagingProps {
 
 type ActiveTab = 'tutors' | 'groups' | 'students';
 
-const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects, messages, onSendMessage, onDeleteMessage, onMarkMessagesAsRead }) => {
+const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects, messages, courses, onSendMessage, onDeleteMessage, onMarkMessagesAsRead }) => {
     
     const [activeTab, setActiveTab] = useState<ActiveTab | null>(null);
     
@@ -140,33 +141,30 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
         const result: Record<string, { groups: Group[]; students: User[] }> = {};
 
         availableStudents.forEach(student => {
-            if (student.courseGroup) {
-                if (!result[student.courseGroup]) {
-                    result[student.courseGroup] = { groups: [], students: [] };
-                }
-                result[student.courseGroup].students.push(student);
+            const course = courses.find(c => c.id === student.courseId);
+            const courseName = course ? course.name : 'Curso no asignado';
+            
+            if (!result[courseName]) {
+                result[courseName] = { groups: [], students: [] };
             }
+            result[courseName].students.push(student);
         });
 
         availableGroups.forEach(group => {
-            let courseName: string | undefined;
-            for (const member of group.members) {
-                const student = allUsers.find(s => s.id === member.id);
-                if (student?.courseGroup) {
-                    courseName = student.courseGroup;
-                    break;
-                }
+            const course = courses.find(c => c.id === group.courseId);
+            const courseName = course ? course.name : 'Curso no asignado';
+            
+            if (!result[courseName]) {
+                result[courseName] = { groups: [], students: [] };
             }
-            if (courseName) {
-                if (!result[courseName]) {
-                    result[courseName] = { groups: [], students: [] };
-                }
+            // Avoid duplicates if already added by students
+            if (!result[courseName].groups.find(g => g.id === group.id)) {
                 result[courseName].groups.push(group);
             }
         });
         
         return result;
-    }, [availableGroups, availableStudents, allUsers]);
+    }, [availableGroups, availableStudents, courses]);
 
     const toggleCourseExpansion = (course: string) => {
         setExpandedCourses(prev => ({...prev, [course]: !prev[course]}));

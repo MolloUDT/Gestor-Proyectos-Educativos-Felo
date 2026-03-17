@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { User, Role, StoredFile, Group, Project } from '../types';
+import { User, Role, StoredFile, Group, Project, Course } from '../types';
 import { ChevronDownIcon, TrashIcon } from './Icons';
 import Modal from './Modal';
 
@@ -10,11 +10,12 @@ interface FilesProps {
     groups: Group[];
     allUsers: User[];
     projects: Project[];
+    courses: Course[];
     onUploadFile: (file: File, groupId: string) => void;
     onDeleteFile: (fileId: string) => void;
 }
 
-const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, onUploadFile, onDeleteFile }) => {
+const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, courses, onUploadFile, onDeleteFile }) => {
     const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
     const [fileToDelete, setFileToDelete] = useState<StoredFile | null>(null);
 
@@ -30,21 +31,16 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                 : groups.filter(g => user.groupIds.includes(g.id));
 
         visibleGroups.forEach(group => {
-            let courseName = 'Curso no asignado';
-            for (const member of group.members) {
-                const freshMember = allUsers.find(u => u.id === member.id);
-                if (freshMember?.courseGroup) {
-                    courseName = freshMember.courseGroup;
-                    break;
-                }
-            }
+            const course = courses.find(c => c.id === group.courseId);
+            const courseName = course ? course.name : 'Curso no asignado';
+            
             if (!result[courseName]) result[courseName] = [];
             result[courseName].push(group);
         });
 
         Object.values(result).forEach(groupList => groupList.sort((a, b) => a.name.localeCompare(b.name)));
         return result;
-    }, [user, groups, allUsers]);
+    }, [user, groups, courses]);
 
     const handleConfirmDelete = () => {
         if (fileToDelete) {

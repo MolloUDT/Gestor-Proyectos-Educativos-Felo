@@ -23,7 +23,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
                 backgroundSize: '20px 20px',
             }}
         >
-            <div className="relative w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-2xl">
+            <div className="relative w-full max-w-md p-8 mb-24 space-y-8 bg-white rounded-lg shadow-2xl sm:mb-32">
                 <div className="text-center">
                     <img
                         className="w-40 h-auto mx-auto"
@@ -40,6 +40,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
                         <div className="w-1/4 mx-auto mt-1 mb-2 border-t border-gray-300"></div>
                         <p className="text-lg font-bold text-green-700">
                             Actividades Físicas y Deportivas
+                        </p>
+                        <p className="mt-2 text-sm tracking-wider text-gray-500 uppercase">
+                            CIFP Felo Monzón Grau-Bassas
                         </p>
                     </div>
                 </div>
