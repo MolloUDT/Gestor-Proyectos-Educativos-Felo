@@ -31,7 +31,7 @@ const ProjectDates: React.FC<ProjectDatesProps> = ({ courseDates, onUpdate }) =>
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="flex flex-col md:flex-row justify-center gap-8">
                     <div className="w-full max-w-48">
-                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 text-center">Fecha de inicio de curso</label>
+                        <label htmlFor="startDate" className="block text-sm font-bold text-green-600 text-center">Fecha de inicio de curso</label>
                         <input
                             type="date"
                             id="startDate"
@@ -42,7 +42,7 @@ const ProjectDates: React.FC<ProjectDatesProps> = ({ courseDates, onUpdate }) =>
                         />
                     </div>
                     <div className="w-full max-w-48">
-                        <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 text-center">Fecha de fin del curso</label>
+                        <label htmlFor="endDate" className="block text-sm font-bold text-red-600 text-center">Fecha de fin de curso</label>
                         <input
                             type="date"
                             id="endDate"
