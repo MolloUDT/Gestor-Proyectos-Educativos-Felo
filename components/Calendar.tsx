@@ -28,11 +28,12 @@ const TutorialForm: React.FC<{
     groups: Group[];
     allUsers: User[];
     projects: Project[];
+    courses: Course[];
     onSave: (data: { id?: string, payload: Omit<Tutorial, 'id'>}) => void;
     onCancel: () => void;
     tutorialToEdit?: Tutorial | null;
     initialData?: Partial<Omit<Tutorial, 'id'>> | null;
-}> = ({ tutors, groups, allUsers, projects, onSave, onCancel, tutorialToEdit, initialData }) => {
+}> = ({ tutors, groups, allUsers, projects, courses, onSave, onCancel, tutorialToEdit, initialData }) => {
     const [date, setDate] = useState(tutorialToEdit?.date || initialData?.date || formatDate(new Date()));
     const [tutorId, setTutorId] = useState(tutorialToEdit?.tutorId || initialData?.tutorId || '');
     const [groupId, setGroupId] = useState(tutorialToEdit?.groupId || initialData?.groupId || '');
@@ -59,20 +60,15 @@ const TutorialForm: React.FC<{
         const result: Record<string, Group[]> = {};
         filteredGroups.forEach(group => {
             let courseName = 'Grupos sin curso asignado';
-            if (group.members.length > 0) {
-                for (const member of group.members) {
-                    const freshMemberInfo = allUsers.find(u => u.id === member.id);
-                    if (freshMemberInfo && freshMemberInfo.courseGroup) {
-                        courseName = freshMemberInfo.courseGroup;
-                        break;
-                    }
-                }
+            const course = courses.find(c => c.id === group.courseId);
+            if (course) {
+                courseName = course.name;
             }
             if (!result[courseName]) result[courseName] = [];
             result[courseName].push(group);
         });
         return result;
-    }, [tutorId, groups, allUsers]);
+    }, [tutorId, groups, courses]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -156,12 +152,20 @@ const TutorialForm: React.FC<{
     );
 };
 
-const COURSE_COLOR_CONFIG: Record<string, { bg: string; border: string; }> = {
+const COURSE_COLOR_LEGEND: Record<string, { bg: string; border: string; }> = {
   '1º TSAF': { bg: 'bg-blue-100', border: 'border-blue-400' },
-  '2º TSAF': { bg: 'bg-teal-100', border: 'border-teal-400' },
+  '2º TSAF': { bg: 'bg-green-100', border: 'border-green-400' },
   '1º TSEAS': { bg: 'bg-yellow-100', border: 'border-yellow-400' },
   '2º TSEAS': { bg: 'bg-orange-100', border: 'border-orange-400' },
-  'default': { bg: 'bg-gray-100', border: 'border-gray-400' },
+};
+
+const getCourseColor = (courseName: string) => {
+    const name = courseName.toUpperCase();
+    if (name.includes('1') && name.includes('TSAF')) return COURSE_COLOR_LEGEND['1º TSAF'];
+    if (name.includes('2') && name.includes('TSAF')) return COURSE_COLOR_LEGEND['2º TSAF'];
+    if (name.includes('1') && name.includes('TSEAS')) return COURSE_COLOR_LEGEND['1º TSEAS'];
+    if (name.includes('2') && name.includes('TSEAS')) return COURSE_COLOR_LEGEND['2º TSEAS'];
+    return { bg: 'bg-gray-100', border: 'border-gray-400' };
 };
 
 type EnrichedTutorial = Tutorial & {
@@ -197,11 +201,12 @@ const CalendarView: React.FC<{
     groups: Group[];
     allUsers: User[];
     projects: Project[];
+    courses: Course[];
     onEdit: (tutorial: Tutorial) => void;
     onDelete: (tutorial: Tutorial) => void;
     courseDates: { startDate: string; endDate: string; };
     onScheduleNew: (data: Partial<Omit<Tutorial, 'id'>>) => void;
-}> = ({ user, visibleTutorials, groups, allUsers, projects, onEdit, onDelete, courseDates, onScheduleNew }) => {
+}> = ({ user, visibleTutorials, groups, allUsers, projects, courses, onEdit, onDelete, courseDates, onScheduleNew }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [dailyTutorialsPopover, setDailyTutorialsPopover] = useState<{ day: Date; events: CalendarEvent[] } | null>(null);
     const [tooltip, setTooltip] = useState<{ data: TooltipData; x: number; y: number } | null>(null);
@@ -212,12 +217,9 @@ const CalendarView: React.FC<{
         const groupToCourseMap: Record<string, string> = {};
 
         groups.forEach(group => {
-            for (const member of group.members) {
-                const freshMember = allUsers.find(u => u.id === member.id);
-                if (freshMember?.courseGroup) {
-                    groupToCourseMap[group.id] = freshMember.courseGroup;
-                    break;
-                }
+            const course = courses.find(c => c.id === group.courseId);
+            if (course) {
+                groupToCourseMap[group.id] = course.name;
             }
         });
         
@@ -250,7 +252,7 @@ const CalendarView: React.FC<{
             }
         });
         return eventMap;
-    }, [visibleTutorials, groups, allUsers, projects]);
+    }, [visibleTutorials, groups, courses, projects]);
 
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -348,8 +350,7 @@ const CalendarView: React.FC<{
             </div>
             
             <div className="flex flex-wrap items-center justify-center py-2 mb-4 border-t border-b gap-x-4 gap-y-2">
-                {Object.entries(COURSE_COLOR_CONFIG)
-                    .filter(([courseName]) => courseName !== 'default')
+                {Object.entries(COURSE_COLOR_LEGEND)
                     .map(([courseName, colors]) => (
                         <div key={courseName} className="flex items-center gap-1.5">
                             <div className={`w-3 h-3 border ${colors.bg} ${colors.border}`}></div>
@@ -387,7 +388,7 @@ const CalendarView: React.FC<{
                             <span className={`flex items-center justify-center w-7 h-7 text-sm rounded-full ${isToday ? 'bg-green-600 text-white font-bold' : ''}`}>{d.getDate()}</span>
                             <div className="absolute bottom-1 right-1 flex flex-wrap-reverse justify-end gap-1">
                                 {eventsOnDay.map(event => {
-                                    const colors = COURSE_COLOR_CONFIG[event.courseGroup] || COURSE_COLOR_CONFIG['default'];
+                                    const colors = getCourseColor(event.courseGroup);
                                     const isRegistered = event.type === 'registered';
                                     return (
                                         <div 
@@ -479,8 +480,9 @@ const PendingTutorialsModal: React.FC<{
     groups: Group[];
     allUsers: User[];
     projects: Project[];
+    courses: Course[];
     onClose: () => void;
-}> = ({ user, tutors, tutorials, groups, allUsers, projects, onClose }) => {
+}> = ({ user, tutors, tutorials, groups, allUsers, projects, courses, onClose }) => {
     const [selectedTutorId, setSelectedTutorId] = useState(user.role === Role.Tutor ? user.id : '');
 
     const pendingTutorialsByTutor = useMemo(() => {
@@ -498,13 +500,10 @@ const PendingTutorialsModal: React.FC<{
                 const project = projects.find(p => p.groupId === tut.groupId);
                 const isOverdue = new Date(tut.nextDate! + 'T00:00:00') < today;
                 let courseGroup = 'N/A';
-                if (group?.members.length) {
-                    for (const member of group.members) {
-                        const user = allUsers.find(u => u.id === member.id);
-                        if (user?.courseGroup) {
-                            courseGroup = user.courseGroup;
-                            break;
-                        }
+                if (group) {
+                    const course = courses.find(c => c.id === group.courseId);
+                    if (course) {
+                        courseGroup = course.name;
                     }
                 }
                 return {
@@ -519,7 +518,7 @@ const PendingTutorialsModal: React.FC<{
                     isOverdue,
                 };
             });
-    }, [selectedTutorId, tutorials, groups, projects, allUsers]);
+    }, [selectedTutorId, tutorials, groups, projects, courses]);
     
     const pendingTutorialsForStudent = useMemo(() => {
         if (user.role !== Role.Student) return [];
@@ -536,13 +535,10 @@ const PendingTutorialsModal: React.FC<{
                 const project = projects.find(p => p.groupId === tut.groupId);
                 const isOverdue = new Date(tut.nextDate! + 'T00:00:00') < today;
                 let courseGroup = 'N/A';
-                 if (group?.members.length) {
-                    for (const member of group.members) {
-                        const studentUser = allUsers.find(u => u.id === member.id);
-                        if (studentUser?.courseGroup) {
-                            courseGroup = studentUser.courseGroup;
-                            break;
-                        }
+                if (group) {
+                    const course = courses.find(c => c.id === group.courseId);
+                    if (course) {
+                        courseGroup = course.name;
                     }
                 }
                 return {
@@ -557,7 +553,7 @@ const PendingTutorialsModal: React.FC<{
                     isOverdue,
                 };
             });
-    }, [user, tutorials, groups, projects, allUsers]);
+    }, [user, tutorials, groups, projects, courses]);
 
     const tutorialsToShow = user.role === Role.Student ? pendingTutorialsForStudent : pendingTutorialsByTutor;
 
@@ -811,6 +807,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                     groups={groups}
                     allUsers={allUsers}
                     projects={projects}
+                    courses={courses}
                     onEdit={(tut) => setEditingTutorial(tut)}
                     onDelete={(tut) => setTutorialToDelete(tut)}
                     courseDates={courseDates}
@@ -827,12 +824,13 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                         groups={groups}
                         allUsers={allUsers}
                         projects={projects}
+                        courses={courses}
                         onClose={closeModal}
                     />
                 </Modal>
             )}
-            {isCreateModalOpen && <Modal title="Registrar Nueva Tutoría" onClose={closeModal}><TutorialForm tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} onSave={handleSave} onCancel={closeModal} initialData={prefilledData} /></Modal>}
-            {editingTutorial && <Modal title="Editar Tutoría" onClose={closeModal}><TutorialForm tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} onSave={handleSave} onCancel={closeModal} tutorialToEdit={editingTutorial} /></Modal>}
+            {isCreateModalOpen && <Modal title="Registrar Nueva Tutoría" onClose={closeModal}><TutorialForm tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} initialData={prefilledData} /></Modal>}
+            {editingTutorial && <Modal title="Editar Tutoría" onClose={closeModal}><TutorialForm tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} tutorialToEdit={editingTutorial} /></Modal>}
             {tutorialToDelete && (
                 <Modal title="Confirmar Eliminación" onClose={closeModal}>
                     <div className="text-center">
