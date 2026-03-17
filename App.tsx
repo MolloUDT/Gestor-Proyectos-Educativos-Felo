@@ -630,6 +630,7 @@ const App: React.FC = () => {
                             groups={groups}
                             allUsers={users}
                             projects={projects}
+                            courses={courses}
                             onCreateTutorial={handleCreateTutorial}
                             onUpdateTutorial={handleUpdateTutorial}
                             onDeleteTutorial={handleDeleteTutorial}

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { User, Tutorial, Role, Group, Project } from '../types';
+import { User, Tutorial, Role, Group, Project, Course } from '../types';
 import Modal from './Modal';
 import { ChevronDownIcon, EditIcon, TrashIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
 
@@ -9,6 +9,7 @@ interface CalendarProps {
     groups: Group[];
     allUsers: User[];
     projects: Project[];
+    courses: Course[];
     onCreateTutorial: (data: Omit<Tutorial, 'id'>) => void;
     onUpdateTutorial: (id: string, data: Partial<Omit<Tutorial, 'id'>>) => void;
     onDeleteTutorial: (id: string) => void;
@@ -637,7 +638,7 @@ const PendingTutorialsModal: React.FC<{
     );
 };
 
-const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, projects, onCreateTutorial, onUpdateTutorial, onDeleteTutorial, courseDates }) => {
+const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, projects, courses, onCreateTutorial, onUpdateTutorial, onDeleteTutorial, courseDates }) => {
     const [view, setView] = useState('list');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingTutorial, setEditingTutorial] = useState<Tutorial | null>(null);
@@ -663,12 +664,9 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
         const result: Record<string, { group: Group, tutorials: Tutorial[] }[]> = {};
         const groupToCourseMap: Record<string, string> = {};
         groups.forEach(group => {
-            for (const member of group.members) {
-                const freshMember = allUsers.find(u => u.id === member.id);
-                if (freshMember?.courseGroup) {
-                    groupToCourseMap[group.id] = freshMember.courseGroup;
-                    break;
-                }
+            const course = courses.find(c => c.id === group.courseId);
+            if (course) {
+                groupToCourseMap[group.id] = course.name;
             }
         });
 
@@ -694,7 +692,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
             result[courseName].sort((a, b) => a.group.name.localeCompare(b.group.name));
         }
         return result;
-    }, [visibleTutorials, groups, allUsers]);
+    }, [visibleTutorials, groups, courses]);
 
     const toggleExpand = (key: string) => setExpandedKeys(prev => ({ ...prev, [key]: !prev[key] }));
 
