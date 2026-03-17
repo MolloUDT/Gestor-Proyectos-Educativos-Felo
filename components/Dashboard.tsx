@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { User, Task, Role, KanbanStatus, Group, Project, Message, Tutorial, Priority, Difficulty, RA } from '../types';
+import { User, Task, Role, KanbanStatus, Group, Project, Message, Tutorial, Priority, Difficulty, RA, Course } from '../types';
 import { ChevronDownIcon, TrashIcon } from './Icons';
 import PendingMessagesModal from './PendingMessagesModal';
 import Modal from './Modal';
@@ -15,6 +15,7 @@ interface DashboardProps {
     messages: Message[];
     tutorials: Tutorial[];
     ras: RA[];
+    courses: Course[];
     courseDates: { startDate: string; endDate: string; };
     onNavigateToKanban: (projectId: string) => void;
     onSendMessage: (messageData: any) => void;
@@ -178,9 +179,10 @@ const AdminTutorGroupCard: React.FC<{
     tasks: Task[]; 
     allUsers: User[]; 
     tutorials: Tutorial[];
+    courses: Course[];
     onNavigateToKanban: (id: string) => void;
     onShowPendingTasks: (projectId: string) => void;
-}> = ({ group, project, tasks, allUsers, tutorials, onNavigateToKanban, onShowPendingTasks }) => {
+}> = ({ group, project, tasks, allUsers, tutorials, courses, onNavigateToKanban, onShowPendingTasks }) => {
     const { progress, totalTasks, pendingTasks, inProgressTasks, completedTasks, projectValue, achievedValue, pendingValidationCount } = useMemo(() => {
         const groupTasks = tasks.filter(t => t.projectId === project.id);
         const total = groupTasks.length;
@@ -228,15 +230,9 @@ const AdminTutorGroupCard: React.FC<{
     }, [group.members, allUsers]);
     
     const courseGroup = useMemo(() => {
-        if (freshGroupMembers.length > 0) {
-            for (const member of freshGroupMembers) {
-                if (member.courseGroup) {
-                    return member.courseGroup;
-                }
-            }
-        }
-        return 'Curso no definido';
-    }, [freshGroupMembers]);
+        const course = courses.find(c => c.id === group.courseId);
+        return course ? course.name : 'Sin curso asignado';
+    }, [group.courseId, courses]);
 
     const { pastTutorialsCount, nextTutorialDate } = useMemo(() => {
         const today = new Date();
@@ -583,8 +579,13 @@ const StudentProjectDetailCard: React.FC<{
     tutorials: Tutorial[];
     allUsers: User[];
     user: User;
+    courses: Course[];
     onNavigateToKanban: (projectId: string) => void;
-}> = ({ group, project, tasks, tutorials, allUsers, user, onNavigateToKanban }) => {
+}> = ({ group, project, tasks, tutorials, allUsers, user, courses, onNavigateToKanban }) => {
+    const courseName = useMemo(() => {
+        const course = courses.find(c => c.id === group.courseId);
+        return course ? course.name : 'Sin curso asignado';
+    }, [group.courseId, courses]);
     const { progress, totalTasks, pendingTasks, inProgressTasks, completedTasks, projectValue, achievedValue } = useMemo(() => {
         const groupTasks = tasks.filter(t => t.projectId === project.id);
         const total = groupTasks.length;
@@ -742,7 +743,7 @@ const StudentProjectDetailCard: React.FC<{
                     </div>
                     <div className="flex-1 min-w-0">
                         <h3 className="text-xl font-bold text-green-700">{project.name}</h3>
-                        <p className="text-base text-gray-500">{user.courseGroup} - {group.name}</p>
+                        <p className="text-base text-gray-500">{courseName} - {group.name}</p>
                         {tutor && <p className="mt-1 text-sm italic font-bold text-green-800">Tutor/a: {tutor.name}</p>}
                         <div className="pt-2 mt-2 border-t border-gray-200">
                             <h4 className="mb-1 text-sm font-semibold text-gray-600">Componentes del Grupo:</h4>
@@ -880,8 +881,9 @@ const StudentDashboard: React.FC<{
     tasks: Task[];
     tutorials: Tutorial[];
     allUsers: User[];
+    courses: Course[];
     onNavigateToKanban: (projectId: string) => void;
-}> = ({ user, groups, projects, tasks, tutorials, allUsers, onNavigateToKanban }) => {
+}> = ({ user, groups, projects, tasks, tutorials, allUsers, courses, onNavigateToKanban }) => {
     
     const userProjectsWithGroups = useMemo(() => {
         return projects
@@ -912,6 +914,7 @@ const StudentDashboard: React.FC<{
                     tutorials={tutorials}
                     allUsers={allUsers}
                     user={user}
+                    courses={courses}
                     onNavigateToKanban={onNavigateToKanban}
                 />
             ))}
@@ -925,9 +928,10 @@ const AdminTutorDashboard: React.FC<{
     tasks: Task[]; 
     allUsers: User[]; 
     tutorials: Tutorial[];
+    courses: Course[];
     onNavigateToKanban: (projectId: string) => void; 
     onShowPendingTasks: (projectId: string) => void;
-}> = ({ groups, projects, tasks, allUsers, tutorials, onNavigateToKanban, onShowPendingTasks }) => {
+}> = ({ groups, projects, tasks, allUsers, tutorials, courses, onNavigateToKanban, onShowPendingTasks }) => {
     const [expandedCourseGroups, setExpandedCourseGroups] = useState<Record<string, boolean>>({});
 
     const projectsByCourseGroup = useMemo(() => {
@@ -935,26 +939,18 @@ const AdminTutorDashboard: React.FC<{
         
         projects.forEach(project => {
             const group = groups.find(g => g.id === project.groupId);
-            if (group && group.members.length > 0) {
-                let projectCourseGroup: string | undefined;
-                for (const member of group.members) {
-                    const freshMember = allUsers.find(u => u.id === member.id);
-                    if (freshMember && freshMember.courseGroup) {
-                        projectCourseGroup = freshMember.courseGroup;
-                        break;
-                    }
-                }
+            if (group) {
+                const course = courses.find(c => c.id === group.courseId);
+                const projectCourseGroup = course ? course.name : 'Sin curso asignado';
 
-                if (projectCourseGroup) {
-                    if (!result[projectCourseGroup]) {
-                        result[projectCourseGroup] = [];
-                    }
-                    result[projectCourseGroup].push({ project, group });
+                if (!result[projectCourseGroup]) {
+                    result[projectCourseGroup] = [];
                 }
+                result[projectCourseGroup].push({ project, group });
             }
         });
         return result;
-    }, [projects, groups, allUsers]);
+    }, [projects, groups, courses]);
     
     const toggleCourseGroup = (courseGroupName: string) => {
         setExpandedCourseGroups(prev => ({ ...prev, [courseGroupName]: !prev[courseGroupName] }));
@@ -985,6 +981,7 @@ const AdminTutorDashboard: React.FC<{
                                             tasks={tasks}
                                             allUsers={allUsers}
                                             tutorials={tutorials}
+                                            courses={courses}
                                             onNavigateToKanban={onNavigateToKanban}
                                             onShowPendingTasks={onShowPendingTasks}
                                         />
@@ -999,7 +996,7 @@ const AdminTutorDashboard: React.FC<{
     );
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, allUsers, messages, tutorials, ras, courseDates, onNavigateToKanban, onSendMessage, onMarkMessagesAsRead, onUpdateTask, onDeleteTask }) => {
+const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, allUsers, messages, tutorials, ras, courses, courseDates, onNavigateToKanban, onSendMessage, onMarkMessagesAsRead, onUpdateTask, onDeleteTask }) => {
     const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
     const [selectedProjectForPendingTasks, setSelectedProjectForPendingTasks] = useState<string | null>(null);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -1080,6 +1077,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
                     tasks={tasks} 
                     allUsers={allUsers} 
                     tutorials={tutorials}
+                    courses={courses}
                     onNavigateToKanban={onNavigateToKanban} 
                     onShowPendingTasks={handleShowPendingTasks}
                   /> 
@@ -1090,6 +1088,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
                     tasks={tasks} 
                     tutorials={tutorials}
                     allUsers={allUsers}
+                    courses={courses}
                     onNavigateToKanban={onNavigateToKanban} 
                   />}
 

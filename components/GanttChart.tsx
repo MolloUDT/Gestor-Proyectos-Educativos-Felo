@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef } from 'react';
-import { User, Task, Role, Group, Project, KanbanStatus, Priority, RA, Difficulty } from '../types';
+import { User, Task, Role, Group, Project, KanbanStatus, Priority, RA, Difficulty, Course } from '../types';
 import { ChevronDownIcon, TrashIcon, EditIcon } from './Icons';
 import PriorityIcon, { KanbanLegend } from './PriorityIcon';
 import DifficultyIcon from './DifficultyIcon';
@@ -541,11 +541,12 @@ interface GanttChartProps {
     allUsers: User[];
     courseDates: { startDate: string; endDate: string; };
     ras: RA[];
+    courses: Course[];
     onUpdateTask: (id: string, data: Partial<Task>) => void;
     onDeleteTask: (id: string) => void;
 }
 
-const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, courseDates, allUsers, ras, onUpdateTask, onDeleteTask }) => {
+const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, courseDates, allUsers, ras, courses, onUpdateTask, onDeleteTask }) => {
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
     const [expandedCourseGroups, setExpandedCourseGroups] = useState<Record<string, boolean>>({});
 
@@ -570,18 +571,16 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
         });
         visibleProjects.forEach(project => {
             const group = groups.find(g => g.id === project.groupId);
-            if (group && group.members.length > 0) {
-                let projectCourseGroup = 'Curso no definido';
-                for (const member of group.members) {
-                    const freshMember = allUsers.find(u => u.id === member.id);
-                    if (freshMember && freshMember.courseGroup) { projectCourseGroup = freshMember.courseGroup; break; }
-                }
+            if (group) {
+                const course = courses.find(c => c.id === group.courseId);
+                const projectCourseGroup = course ? course.name : 'Curso no definido';
+                
                 if (!result[projectCourseGroup]) result[projectCourseGroup] = [];
                 result[projectCourseGroup].push(project);
             }
         });
         return result;
-    }, [projects, groups, allUsers, user]);
+    }, [projects, groups, courses, user]);
 
     const toggleCourseGroup = (courseGroupName: string) => setExpandedCourseGroups(prev => ({ ...prev, [courseGroupName]: !prev[courseGroupName] }));
 

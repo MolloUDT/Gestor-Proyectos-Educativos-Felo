@@ -516,6 +516,7 @@ const App: React.FC = () => {
                             messages={messages}
                             tutorials={tutorials}
                             ras={ras}
+                            courses={courses}
                             courseDates={courseDates}
                             onNavigateToKanban={handleNavigateToKanban}
                             onSendMessage={handleSendMessage}
@@ -583,6 +584,7 @@ const App: React.FC = () => {
                             courseDates={courseDates} 
                             allUsers={users} 
                             ras={ras}
+                            courses={courses}
                             onUpdateTask={handleUpdateTask}
                             onDeleteTask={handleDeleteTask}
                         />;
