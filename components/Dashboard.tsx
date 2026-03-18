@@ -337,9 +337,11 @@ const AdminTutorGroupCard: React.FC<{
 
     return (
         <div className="w-full p-4 bg-white rounded-lg shadow-md">
-            <div onClick={() => onNavigateToKanban(project.id)} className="cursor-pointer">
                 <div className="flex flex-col md:flex-row items-center gap-6">
-                    <div className="flex items-center justify-center gap-4">
+                    <div 
+                        onClick={() => onNavigateToKanban(project.id)} 
+                        className="flex items-center justify-center gap-4 cursor-pointer hover:bg-green-50 transition-colors rounded-xl p-1"
+                    >
                         <ProgressCircle progress={progress} size={96} />
                         <div className="flex flex-col gap-2">
                            <ValueDisplay value={projectValue} label="Total" colorClass="bg-gray-600" />
@@ -349,8 +351,8 @@ const AdminTutorGroupCard: React.FC<{
                     <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                             <div>
-                                <h3 className="text-xl font-bold text-green-700">{project.name}</h3>
-                                <p className="text-base text-gray-500">{courseGroup} - {group.name}</p>
+                                <h3 className="text-base font-normal text-green-700"><span className="font-bold">Proyecto:</span> {project.name}</h3>
+                                <p className="text-base text-gray-500"><span className="text-black font-bold">Curso:</span> {courseGroup} - <span className="text-black font-bold">Grupo:</span> {group.name}</p>
                             </div>
                             {pendingValidationCount > 0 && (
                                 <button 
@@ -367,13 +369,15 @@ const AdminTutorGroupCard: React.FC<{
                         </div>
                         {tutor && <p className="mt-1 text-sm italic font-bold text-green-800">Tutor/a: {tutor.name}</p>}
                         <div className="pt-2 mt-2 border-t border-gray-200">
-                            <h4 className="mb-1 text-sm font-semibold text-gray-600">Componentes del Grupo:</h4>
-                            <div className="flex flex-wrap gap-x-4 gap-y-1">
+                            <h4 className="mb-1 text-sm font-semibold text-blue-600">Componentes del grupo:</h4>
+                            <div className="flex flex-wrap gap-x-1 gap-y-1">
                                 {freshGroupMembers
                                     .filter(member => member.role === Role.Student)
                                     .sort(sortBySurname)
-                                    .map(member => (
-                                    <span key={member.id} className="text-sm text-gray-800">{member.name}</span>
+                                    .map((member, index, array) => (
+                                    <span key={member.id} className="text-sm text-gray-800">
+                                        {index + 1}. {member.name}{index < array.length - 1 ? ',' : ''}
+                                    </span>
                                 ))}
                             </div>
                         </div>
@@ -382,11 +386,11 @@ const AdminTutorGroupCard: React.FC<{
 
                 <div className="grid grid-cols-1 gap-2 pt-3 mt-3 border-t md:grid-cols-3 border-gray-200">
                     <div className="text-center">
-                        <p className="text-sm font-medium text-gray-500">Inicio de Proyecto</p>
+                        <p className="text-sm font-medium text-green-600">Inicio de proyecto</p>
                         <p className="text-base font-bold text-gray-800">{new Date(project.startDate + 'T00:00:00').toLocaleDateString('es-ES')}</p>
                     </div>
                     <div className="text-center">
-                        <p className="text-sm font-medium text-gray-500">Fin de Proyecto</p>
+                        <p className="text-sm font-medium text-red-600">Fin de proyecto</p>
                         <p className="text-base font-bold text-gray-800">{new Date(project.endDate + 'T00:00:00').toLocaleDateString('es-ES')}</p>
                     </div>
                     <CountdownDisplay endDate={project.endDate} />
@@ -412,26 +416,37 @@ const AdminTutorGroupCard: React.FC<{
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-1 pt-1 mt-1 border-t border-gray-200">
-                <div className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-lg font-bold text-gray-800">{totalTasks}</p>
-                    <p className="text-xs font-medium text-gray-500">Tareas Totales</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-1 pt-1 mt-1 border-t border-gray-200">
+                    <div 
+                        onClick={() => onNavigateToKanban(project.id)} 
+                        className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
+                    >
+                        <p className="text-lg font-bold text-gray-800">{totalTasks}</p>
+                        <p className="text-xs font-medium text-gray-500">Tareas Totales</p>
+                    </div>
+                    <div 
+                        onClick={() => onNavigateToKanban(project.id)} 
+                        className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
+                    >
+                        <p className="text-lg font-bold text-red-600">{pendingTasks}</p>
+                        <p className="text-xs font-medium text-gray-500">Pendientes</p>
+                    </div>
+                    <div 
+                        onClick={() => onNavigateToKanban(project.id)} 
+                        className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
+                    >
+                        <p className="text-lg font-bold text-blue-600">{inProgressTasks}</p>
+                        <p className="text-xs font-medium text-gray-500">En progreso</p>
+                    </div>
+                    <div 
+                        onClick={() => onNavigateToKanban(project.id)} 
+                        className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
+                    >
+                        <p className="text-lg font-bold text-green-600">{completedTasks}</p>
+                        <p className="text-xs font-medium text-gray-500">Completadas</p>
+                    </div>
                 </div>
-                <div className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-lg font-bold text-red-600">{pendingTasks}</p>
-                    <p className="text-xs font-medium text-gray-500">Pendientes</p>
-                </div>
-                <div className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-lg font-bold text-blue-600">{inProgressTasks}</p>
-                    <p className="text-xs font-medium text-gray-500">En progreso</p>
-                </div>
-                <div className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-lg font-bold text-green-600">{completedTasks}</p>
-                    <p className="text-xs font-medium text-gray-500">Completadas</p>
-                </div>
-            </div>
 
             <div className="pt-3 mt-3 border-t border-gray-200">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
@@ -732,9 +747,11 @@ const StudentProjectDetailCard: React.FC<{
 
     return (
         <div className="w-full p-4 bg-white rounded-lg shadow-md">
-            <div onClick={() => onNavigateToKanban(project.id)} className="cursor-pointer">
                 <div className="flex flex-col md:flex-row items-center gap-6">
-                    <div className="flex items-center justify-center gap-4">
+                    <div 
+                        onClick={() => onNavigateToKanban(project.id)} 
+                        className="flex items-center justify-center gap-4 cursor-pointer hover:bg-green-50 transition-colors rounded-xl p-1"
+                    >
                         <ProgressCircle progress={progress} size={96} />
                         <div className="flex flex-col gap-2">
                             <ValueDisplay value={projectValue} label="Total" colorClass="bg-gray-600" />
@@ -742,17 +759,19 @@ const StudentProjectDetailCard: React.FC<{
                         </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                        <h3 className="text-xl font-bold text-green-700">{project.name}</h3>
-                        <p className="text-base text-gray-500">{courseName} - {group.name}</p>
+                        <h3 className="text-base font-normal text-green-700"><span className="font-bold">Proyecto:</span> {project.name}</h3>
+                        <p className="text-base text-gray-500"><span className="text-black font-bold">Curso:</span> {courseName} - <span className="text-black font-bold">Grupo:</span> {group.name}</p>
                         {tutor && <p className="mt-1 text-sm italic font-bold text-green-800">Tutor/a: {tutor.name}</p>}
                         <div className="pt-2 mt-2 border-t border-gray-200">
-                            <h4 className="mb-1 text-sm font-semibold text-gray-600">Componentes del Grupo:</h4>
-                            <div className="flex flex-wrap gap-x-4 gap-y-1">
+                            <h4 className="mb-1 text-sm font-semibold text-blue-600">Componentes del grupo:</h4>
+                            <div className="flex flex-wrap gap-x-1 gap-y-1">
                                 {freshGroupMembers
                                     .filter(member => member.role === Role.Student)
                                     .sort(sortBySurname)
-                                    .map(member => (
-                                    <span key={member.id} className="text-sm text-gray-800">{member.name}</span>
+                                    .map((member, index, array) => (
+                                    <span key={member.id} className="text-sm text-gray-800">
+                                        {index + 1}. {member.name}{index < array.length - 1 ? ',' : ''}
+                                    </span>
                                 ))}
                             </div>
                         </div>
@@ -761,11 +780,11 @@ const StudentProjectDetailCard: React.FC<{
 
                 <div className="grid grid-cols-1 gap-2 pt-3 mt-3 border-t md:grid-cols-3 border-gray-200">
                     <div className="text-center">
-                        <p className="text-sm font-medium text-gray-500">Inicio de Proyecto</p>
+                        <p className="text-sm font-medium text-green-600">Inicio de proyecto</p>
                         <p className="text-base font-bold text-gray-800">{new Date(project.startDate + 'T00:00:00').toLocaleDateString('es-ES')}</p>
                     </div>
                     <div className="text-center">
-                        <p className="text-sm font-medium text-gray-500">Fin de Proyecto</p>
+                        <p className="text-sm font-medium text-red-600">Fin de proyecto</p>
                         <p className="text-base font-bold text-gray-800">{new Date(project.endDate + 'T00:00:00').toLocaleDateString('es-ES')}</p>
                     </div>
                     <CountdownDisplay endDate={project.endDate} />
@@ -791,26 +810,37 @@ const StudentProjectDetailCard: React.FC<{
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-1 pt-1 mt-1 border-t border-gray-200">
-                <div className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-lg font-bold text-gray-800">{totalTasks}</p>
-                    <p className="text-xs font-medium text-gray-500">Tareas Totales</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-1 pt-1 mt-1 border-t border-gray-200">
+                    <div 
+                        onClick={() => onNavigateToKanban(project.id)} 
+                        className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
+                    >
+                        <p className="text-lg font-bold text-gray-800">{totalTasks}</p>
+                        <p className="text-xs font-medium text-gray-500">Tareas Totales</p>
+                    </div>
+                    <div 
+                        onClick={() => onNavigateToKanban(project.id)} 
+                        className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
+                    >
+                        <p className="text-lg font-bold text-red-600">{pendingTasks}</p>
+                        <p className="text-xs font-medium text-gray-500">Pendientes</p>
+                    </div>
+                    <div 
+                        onClick={() => onNavigateToKanban(project.id)} 
+                        className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
+                    >
+                        <p className="text-lg font-bold text-blue-600">{inProgressTasks}</p>
+                        <p className="text-xs font-medium text-gray-500">En progreso</p>
+                    </div>
+                    <div 
+                        onClick={() => onNavigateToKanban(project.id)} 
+                        className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
+                    >
+                        <p className="text-lg font-bold text-green-600">{completedTasks}</p>
+                        <p className="text-xs font-medium text-gray-500">Completadas</p>
+                    </div>
                 </div>
-                <div className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-lg font-bold text-red-600">{pendingTasks}</p>
-                    <p className="text-xs font-medium text-gray-500">Pendientes</p>
-                </div>
-                <div className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-lg font-bold text-blue-600">{inProgressTasks}</p>
-                    <p className="text-xs font-medium text-gray-500">En progreso</p>
-                </div>
-                <div className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-lg font-bold text-green-600">{completedTasks}</p>
-                    <p className="text-xs font-medium text-gray-500">Completadas</p>
-                </div>
-            </div>
 
             <div className="pt-3 mt-3 border-t border-gray-200">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
