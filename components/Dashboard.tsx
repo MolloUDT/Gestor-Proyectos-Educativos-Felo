@@ -18,6 +18,7 @@ interface DashboardProps {
     courses: Course[];
     courseDates: { startDate: string; endDate: string; };
     onNavigateToKanban: (projectId: string) => void;
+    onNavigateToCalendar: (groupId?: string) => void;
     onSendMessage: (messageData: any) => void;
     onMarkMessagesAsRead: (messageIds: string[]) => void;
     onUpdateTask: (id: string, data: Partial<Task>) => void;
@@ -181,8 +182,9 @@ const AdminTutorGroupCard: React.FC<{
     tutorials: Tutorial[];
     courses: Course[];
     onNavigateToKanban: (id: string) => void;
+    onNavigateToCalendar: (groupId?: string) => void;
     onShowPendingTasks: (projectId: string) => void;
-}> = ({ group, project, tasks, allUsers, tutorials, courses, onNavigateToKanban, onShowPendingTasks }) => {
+}> = ({ group, project, tasks, allUsers, tutorials, courses, onNavigateToKanban, onNavigateToCalendar, onShowPendingTasks }) => {
     const { progress, totalTasks, pendingTasks, inProgressTasks, completedTasks, projectValue, achievedValue, pendingValidationCount } = useMemo(() => {
         const groupTasks = tasks.filter(t => t.projectId === project.id);
         const total = groupTasks.length;
@@ -338,10 +340,7 @@ const AdminTutorGroupCard: React.FC<{
     return (
         <div className="w-full p-4 bg-white rounded-lg shadow-md">
                 <div className="flex flex-col md:flex-row items-center gap-6">
-                    <div 
-                        onClick={() => onNavigateToKanban(project.id)} 
-                        className="flex items-center justify-center gap-4 cursor-pointer hover:bg-green-50 transition-colors rounded-xl p-1"
-                    >
+                    <div className="flex items-center justify-center gap-4 rounded-xl p-1">
                         <ProgressCircle progress={progress} size={96} />
                         <div className="flex flex-col gap-2">
                            <ValueDisplay value={projectValue} label="Total" colorClass="bg-gray-600" />
@@ -398,19 +397,31 @@ const AdminTutorGroupCard: React.FC<{
 
                 <div className="pt-1 mt-1 border-t border-gray-200">
                     <div className="grid grid-cols-2 gap-1 md:grid-cols-4">
-                        <div className="p-1 text-center bg-gray-50 rounded-lg">
+                        <div 
+                            onClick={() => onNavigateToCalendar()}
+                            className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
+                        >
                             <p className="text-xs font-medium text-gray-500">Reuniones de Grupo</p>
                             <p className="text-lg font-bold text-blue-600">{groupMeetingsCount}</p>
                         </div>
-                        <div className="p-1 text-center bg-gray-50 rounded-lg">
+                        <div 
+                            onClick={() => onNavigateToCalendar()}
+                            className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
+                        >
                             <p className="text-xs font-medium text-gray-500">Próxima Reunión Grupo</p>
                             <p className="text-sm font-bold text-blue-600 break-words">{nextGroupMeetingDate}</p>
                         </div>
-                        <div className="p-1 text-center bg-gray-50 rounded-lg">
+                        <div 
+                            onClick={() => onNavigateToCalendar()}
+                            className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
+                        >
                             <p className="text-xs font-medium text-gray-500">Tutorías Realizadas</p>
                             <p className="text-lg font-bold text-blue-600">{pastTutorialsCount}</p>
                         </div>
-                        <div className="p-1 text-center bg-gray-50 rounded-lg">
+                        <div 
+                            onClick={() => onNavigateToCalendar()}
+                            className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
+                        >
                             <p className="text-xs font-medium text-gray-500">Próxima Tutoría</p>
                             <p className="text-sm font-bold text-blue-600 break-words">{nextTutorialDate}</p>
                         </div>
@@ -596,7 +607,8 @@ const StudentProjectDetailCard: React.FC<{
     user: User;
     courses: Course[];
     onNavigateToKanban: (projectId: string) => void;
-}> = ({ group, project, tasks, tutorials, allUsers, user, courses, onNavigateToKanban }) => {
+    onNavigateToCalendar: (groupId?: string) => void;
+}> = ({ group, project, tasks, tutorials, allUsers, user, courses, onNavigateToKanban, onNavigateToCalendar }) => {
     const courseName = useMemo(() => {
         const course = courses.find(c => c.id === group.courseId);
         return course ? course.name : 'Sin curso asignado';
@@ -748,10 +760,7 @@ const StudentProjectDetailCard: React.FC<{
     return (
         <div className="w-full p-4 bg-white rounded-lg shadow-md">
                 <div className="flex flex-col md:flex-row items-center gap-6">
-                    <div 
-                        onClick={() => onNavigateToKanban(project.id)} 
-                        className="flex items-center justify-center gap-4 cursor-pointer hover:bg-green-50 transition-colors rounded-xl p-1"
-                    >
+                    <div className="flex items-center justify-center gap-4 rounded-xl p-1">
                         <ProgressCircle progress={progress} size={96} />
                         <div className="flex flex-col gap-2">
                             <ValueDisplay value={projectValue} label="Total" colorClass="bg-gray-600" />
@@ -792,19 +801,31 @@ const StudentProjectDetailCard: React.FC<{
 
                 <div className="pt-1 mt-1 border-t border-gray-200">
                     <div className="grid grid-cols-2 gap-1 md:grid-cols-4">
-                        <div className="p-1 text-center bg-gray-50 rounded-lg">
+                        <div 
+                            onClick={() => onNavigateToCalendar()}
+                            className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
+                        >
                             <p className="text-xs font-medium text-gray-500">Reuniones de Grupo</p>
                             <p className="text-lg font-bold text-blue-600">{groupMeetingsCount}</p>
                         </div>
-                        <div className="p-1 text-center bg-gray-50 rounded-lg">
+                        <div 
+                            onClick={() => onNavigateToCalendar()}
+                            className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
+                        >
                             <p className="text-xs font-medium text-gray-500">Próxima Reunión Grupo</p>
                             <p className="text-sm font-bold text-blue-600 break-words">{nextGroupMeetingDate}</p>
                         </div>
-                        <div className="p-1 text-center bg-gray-50 rounded-lg">
+                        <div 
+                            onClick={() => onNavigateToCalendar()}
+                            className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
+                        >
                             <p className="text-xs font-medium text-gray-500">Tutorías Realizadas</p>
                             <p className="text-lg font-bold text-blue-600">{pastTutorialsCount}</p>
                         </div>
-                        <div className="p-1 text-center bg-gray-50 rounded-lg">
+                        <div 
+                            onClick={() => onNavigateToCalendar()}
+                            className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
+                        >
                             <p className="text-xs font-medium text-gray-500">Próxima Tutoría</p>
                             <p className="text-sm font-bold text-blue-600 break-words">{nextTutorialDate}</p>
                         </div>
@@ -913,7 +934,8 @@ const StudentDashboard: React.FC<{
     allUsers: User[];
     courses: Course[];
     onNavigateToKanban: (projectId: string) => void;
-}> = ({ user, groups, projects, tasks, tutorials, allUsers, courses, onNavigateToKanban }) => {
+    onNavigateToCalendar: (groupId?: string) => void;
+}> = ({ user, groups, projects, tasks, tutorials, allUsers, courses, onNavigateToKanban, onNavigateToCalendar }) => {
     
     const userProjectsWithGroups = useMemo(() => {
         return projects
@@ -946,6 +968,7 @@ const StudentDashboard: React.FC<{
                     user={user}
                     courses={courses}
                     onNavigateToKanban={onNavigateToKanban}
+                    onNavigateToCalendar={onNavigateToCalendar}
                 />
             ))}
         </div>
@@ -960,8 +983,9 @@ const AdminTutorDashboard: React.FC<{
     tutorials: Tutorial[];
     courses: Course[];
     onNavigateToKanban: (projectId: string) => void; 
+    onNavigateToCalendar: (groupId?: string) => void;
     onShowPendingTasks: (projectId: string) => void;
-}> = ({ groups, projects, tasks, allUsers, tutorials, courses, onNavigateToKanban, onShowPendingTasks }) => {
+}> = ({ groups, projects, tasks, allUsers, tutorials, courses, onNavigateToKanban, onNavigateToCalendar, onShowPendingTasks }) => {
     const [expandedCourseGroups, setExpandedCourseGroups] = useState<Record<string, boolean>>({});
 
     const projectsByCourseGroup = useMemo(() => {
@@ -1013,6 +1037,7 @@ const AdminTutorDashboard: React.FC<{
                                             tutorials={tutorials}
                                             courses={courses}
                                             onNavigateToKanban={onNavigateToKanban}
+                                            onNavigateToCalendar={onNavigateToCalendar}
                                             onShowPendingTasks={onShowPendingTasks}
                                         />
                                     ))}
@@ -1026,7 +1051,7 @@ const AdminTutorDashboard: React.FC<{
     );
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, allUsers, messages, tutorials, ras, courses, courseDates, onNavigateToKanban, onSendMessage, onMarkMessagesAsRead, onUpdateTask, onDeleteTask }) => {
+const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, allUsers, messages, tutorials, ras, courses, courseDates, onNavigateToKanban, onNavigateToCalendar, onSendMessage, onMarkMessagesAsRead, onUpdateTask, onDeleteTask }) => {
     const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
     const [selectedProjectForPendingTasks, setSelectedProjectForPendingTasks] = useState<string | null>(null);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -1109,6 +1134,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
                     tutorials={tutorials}
                     courses={courses}
                     onNavigateToKanban={onNavigateToKanban} 
+                    onNavigateToCalendar={onNavigateToCalendar}
                     onShowPendingTasks={handleShowPendingTasks}
                   /> 
                 : <StudentDashboard 
@@ -1120,6 +1146,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
                     allUsers={allUsers}
                     courses={courses}
                     onNavigateToKanban={onNavigateToKanban} 
+                    onNavigateToCalendar={onNavigateToCalendar}
                   />}
 
             {isPendingModalOpen && (

@@ -27,6 +27,7 @@ const App: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [page, setPage] = useState<Page>('dashboard');
     const [selectedKanbanProject, setSelectedKanbanProject] = useState<string | null>(null);
+    const [selectedCalendarGroup, setSelectedCalendarGroup] = useState<string | null>(null);
     const [authError, setAuthError] = useState<string>('');
     const [unreadMessagesToShow, setUnreadMessagesToShow] = useState<Message[]>([]);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -503,6 +504,13 @@ const App: React.FC = () => {
         setSelectedKanbanProject(projectId);
     };
 
+    const handleNavigateToCalendar = (groupId?: string) => {
+        setPage('calendar');
+        if (groupId) {
+            setSelectedCalendarGroup(groupId);
+        }
+    };
+
     const renderPage = useMemo(() => {
         if (!currentUser) return null;
         switch (page) {
@@ -519,6 +527,7 @@ const App: React.FC = () => {
                             courses={courses}
                             courseDates={courseDates}
                             onNavigateToKanban={handleNavigateToKanban}
+                            onNavigateToCalendar={handleNavigateToCalendar}
                             onSendMessage={handleSendMessage}
                             onMarkMessagesAsRead={handleMarkMessagesAsRead}
                             onUpdateTask={handleUpdateTask}
@@ -639,6 +648,8 @@ const App: React.FC = () => {
                             onDeleteTutorial={handleDeleteTutorial}
                             courseDates={courseDates}
                             tasks={tasks}
+                            initialGroupId={selectedCalendarGroup}
+                            onGroupSelected={(groupId) => setSelectedCalendarGroup(groupId)}
                         />;
             case 'logbook':
                 return <Logbook 
@@ -680,6 +691,9 @@ const App: React.FC = () => {
         setPage(newPage);
         if (newPage === 'board') {
             setSelectedKanbanProject(null);
+        }
+        if (newPage === 'calendar') {
+            setSelectedCalendarGroup(null);
         }
     };
 

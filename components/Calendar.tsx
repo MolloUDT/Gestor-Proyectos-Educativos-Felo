@@ -16,6 +16,8 @@ interface CalendarProps {
     onDeleteTutorial: (id: string) => void;
     courseDates: { startDate: string; endDate: string; };
     tasks: Task[];
+    initialGroupId?: string | null;
+    onGroupSelected?: (groupId: string | null) => void;
 }
 
 const formatDate = (date: Date) => {
@@ -636,7 +638,7 @@ const PendingTutorialsModal: React.FC<{
     );
 };
 
-const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, projects, courses, onCreateTutorial, onUpdateTutorial, onDeleteTutorial, courseDates, tasks }) => {
+const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, projects, courses, onCreateTutorial, onUpdateTutorial, onDeleteTutorial, courseDates, tasks, initialGroupId, onGroupSelected }) => {
     const [view, setView] = useState('list');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingTutorial, setEditingTutorial] = useState<Tutorial | null>(null);
@@ -644,6 +646,29 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
     const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
     const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
     const [prefilledData, setPrefilledData] = useState<Partial<Omit<Tutorial, 'id'>> | null>(null);
+
+    useEffect(() => {
+        if (initialGroupId) {
+            const group = groups.find(g => g.id === initialGroupId);
+            if (group) {
+                const course = courses.find(c => c.id === group.courseId);
+                const newExpandedKeys: Record<string, boolean> = {
+                    [`group_${initialGroupId}`]: true
+                };
+                if (course) {
+                    newExpandedKeys[`course_${course.name}`] = true;
+                } else {
+                    newExpandedKeys['course_Curso no asignado'] = true;
+                }
+                setExpandedKeys(prev => ({ ...prev, ...newExpandedKeys }));
+                
+                // Clear the initial group ID after processing to avoid re-expanding on every render
+                if (onGroupSelected) {
+                    onGroupSelected(null);
+                }
+            }
+        }
+    }, [initialGroupId, groups, courses, onGroupSelected]);
     
     const tutors = useMemo(() => allUsers.filter(u => u.role === Role.Tutor), [allUsers]);
 
