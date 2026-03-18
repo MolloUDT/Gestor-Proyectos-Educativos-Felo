@@ -553,7 +553,7 @@ const PendingTasksModal: React.FC<{
                                 className="p-3 border border-red-200 rounded-lg bg-red-50 hover:bg-red-100 cursor-pointer transition-colors flex justify-between items-center group"
                             >
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="font-bold text-red-800 truncate">{task.title}</h4>
+                                    <h4 className="font-bold text-blue-800 truncate">{task.title}</h4>
                                     <p className="text-xs text-red-600 mt-1">Asignado a: {assignee?.name || 'Sin asignar'}</p>
                                     <div className="flex gap-2 mt-2">
                                         <span className="px-2 py-0.5 bg-red-200 text-red-800 text-[10px] font-bold rounded uppercase">{task.status}</span>

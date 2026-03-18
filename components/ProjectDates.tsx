@@ -37,7 +37,7 @@ const ProjectDates: React.FC<ProjectDatesProps> = ({ courseDates, onUpdate }) =>
                             id="startDate"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
-                            className="w-full p-2 mt-2 border border-green-200 bg-green-50 text-green-800 rounded-md text-center [&::-webkit-datetime-edit]:flex [&::-webkit-datetime-edit]:justify-center [&::-webkit-datetime-edit-fields-wrapper]:flex [&::-webkit-datetime-edit-fields-wrapper]:justify-center"
+                            className="w-full py-2 mt-2 border border-green-200 bg-green-50 text-green-800 rounded-md text-center"
                             required
                         />
                     </div>
@@ -48,7 +48,7 @@ const ProjectDates: React.FC<ProjectDatesProps> = ({ courseDates, onUpdate }) =>
                             id="endDate"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
-                            className="w-full p-2 mt-2 border border-red-200 bg-red-50 text-red-800 rounded-md text-center [&::-webkit-datetime-edit]:flex [&::-webkit-datetime-edit]:justify-center [&::-webkit-datetime-edit-fields-wrapper]:flex [&::-webkit-datetime-edit-fields-wrapper]:justify-center"
+                            className="w-full py-2 mt-2 border border-red-200 bg-red-50 text-red-800 rounded-md text-center"
                             required
                         />
                     </div>

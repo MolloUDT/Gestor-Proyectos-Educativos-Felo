@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { User, Role, Course } from '../types';
 import Modal from './Modal';
-import { EditIcon, TrashIcon, PlusCircleIcon, ChevronDownIcon, EyeIcon, EyeOffIcon, UsersIcon } from './Icons';
+import { EditIcon, TrashIcon, PlusCircleIcon, ChevronDownIcon, EyeIcon, EyeOffIcon, UsersIcon, UserIcon } from './Icons';
 
 interface StudentsProps {
     users: User[];
@@ -275,22 +275,19 @@ const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onD
 
     return (
         <div className="p-4 bg-white rounded-lg shadow-md">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Listado de Alumnos por Curso</h2>
-                <div className="flex items-center gap-2">
-                    <button onClick={() => setIsAddCourseModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-black rounded-md hover:bg-gray-800">
-                        <PlusCircleIcon className="w-5 h-5" />
-                        Añadir Curso
-                    </button>
-                    <button onClick={() => setIsBulkModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700">
-                        <UsersIcon className="w-5 h-5" />
-                        Añadir Alumnos a curso
-                    </button>
-                    <button onClick={handleCreate} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">
-                        <PlusCircleIcon className="w-5 h-5" />
-                        Añadir Alumno a curso
-                    </button>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <button onClick={() => setIsAddCourseModalOpen(true)} className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-black rounded-md hover:bg-gray-800 w-full">
+                    <PlusCircleIcon className="w-5 h-5" />
+                    Añadir Curso
+                </button>
+                <button onClick={() => setIsBulkModalOpen(true)} className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 w-full">
+                    <UsersIcon className="w-5 h-5" />
+                    Añadir grupo a curso
+                </button>
+                <button onClick={handleCreate} className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 w-full">
+                    <UserIcon className="w-5 h-5" />
+                    Añadir alumno curso
+                </button>
             </div>
 
             <div className="space-y-2">

@@ -301,7 +301,7 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
                             </button>
                             {isExpanded && (
                                 <div className="p-4 border-t border-gray-200">
-                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2">
                                         {courseGroups.map(group => (
                                             <GroupCard 
                                                 key={group.id} 

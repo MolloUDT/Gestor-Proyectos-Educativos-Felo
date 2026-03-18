@@ -49,7 +49,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, ras, users, onClick, view
         >
             <div className="flex items-start justify-between mb-2">
                 <div className="flex flex-col flex-1 mr-2">
-                    <h4 className="font-semibold text-gray-800 leading-tight">{task.title}</h4>
+                    <h4 className="font-semibold text-blue-800 leading-tight">{task.title}</h4>
                     {!isVerified && (
                         <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider mt-1">
                             ⚠️ Pendiente de revisión
