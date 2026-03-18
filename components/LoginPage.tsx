@@ -37,11 +37,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
                         <p className="text-sm tracking-wider text-gray-500 uppercase">
                             Departamento
                         </p>
-                        <div className="w-1/4 mx-auto mt-1 mb-2 border-t border-gray-300"></div>
+                        <div className="w-1/2 mx-auto mt-1 mb-2 border-t border-gray-300"></div>
                         <p className="text-lg font-bold text-green-700">
                             Actividades Físicas y Deportivas
                         </p>
-                        <p className="mt-2 text-sm tracking-wider text-gray-500 uppercase">
+                        <p className="mt-6 text-sm tracking-wider text-gray-500 uppercase">
                             CIFP Felo Monzón Grau-Bassas
                         </p>
                     </div>

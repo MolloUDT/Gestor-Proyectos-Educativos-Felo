@@ -77,6 +77,7 @@ const Tutors: React.FC<TutorsProps> = ({ users, groups, onCreate, onUpdate, onDe
     const [editingTutor, setEditingTutor] = useState<User | null>(null);
     const [tutorToDelete, setTutorToDelete] = useState<User | null>(null);
     const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+    const [visibleUsernames, setVisibleUsernames] = useState<Record<string, boolean>>({});
 
     const tutors = useMemo(() => {
         return users
@@ -92,6 +93,10 @@ const Tutors: React.FC<TutorsProps> = ({ users, groups, onCreate, onUpdate, onDe
 
     const togglePasswordVisibility = (id: string) => {
         setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }));
+    };
+
+    const toggleUsernameVisibility = (id: string) => {
+        setVisibleUsernames(prev => ({ ...prev, [id]: !prev[id] }));
     };
 
     const handleCreate = () => {
@@ -153,9 +158,20 @@ const Tutors: React.FC<TutorsProps> = ({ users, groups, onCreate, onUpdate, onDe
                     <tbody className="divide-y divide-gray-200">
                         {tutors.map(tutor => (
                             <tr key={tutor.id} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 font-medium text-gray-800">{tutor.name}</td>
-                                <td className="px-4 py-3 text-gray-600">{tutor.username}</td>
-                                <td className="px-4 py-3 text-gray-600">{assignedGroupsCount(tutor.id)}</td>
+                                <td className="px-4 py-3 font-medium text-green-800">{tutor.name}</td>
+                                <td className="px-4 py-3">
+                                    <div className="flex items-center space-x-2">
+                                        <span className="text-gray-600 font-mono">
+                                            {visibleUsernames[tutor.id] ? tutor.username : '••••••••'}
+                                        </span>
+                                        <button onClick={() => toggleUsernameVisibility(tutor.id)} className="text-gray-500 hover:text-gray-700">
+                                            {visibleUsernames[tutor.id] ? <EyeOffIcon className="w-5 h-5"/> : <EyeIcon className="w-5 h-5"/>}
+                                        </button>
+                                    </div>
+                                </td>
+                                <td className={`px-4 py-3 font-medium ${assignedGroupsCount(tutor.id) === 0 ? 'text-red-600' : 'text-green-800'}`}>
+                                    {assignedGroupsCount(tutor.id)}
+                                </td>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center space-x-2">
                                         <span className="text-gray-600 font-mono">
