@@ -286,7 +286,7 @@ const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onD
                 </button>
                 <button onClick={handleCreate} className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 w-full">
                     <UserIcon className="w-5 h-5" />
-                    Añadir alumno curso
+                    Añadir alumno a curso
                 </button>
             </div>
 
