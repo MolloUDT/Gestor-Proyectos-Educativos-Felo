@@ -284,10 +284,10 @@ const AdminTutorGroupCard: React.FC<{
             return acc + (d * p * 3); // VP uses max NPRO value (3)
         }, 0);
 
-        const statsMap = new Map<string, { name: string; tasks: Task[] }>();
+        const statsMap = new Map<string, { firstName: string; lastName: string; tasks: Task[] }>();
         freshGroupMembers.forEach(member => {
             if (member.role === Role.Student) {
-                statsMap.set(member.id, { name: member.name, tasks: [] });
+                statsMap.set(member.id, { firstName: member.firstName, lastName: member.lastName, tasks: [] });
             }
         });
 
@@ -319,7 +319,8 @@ const AdminTutorGroupCard: React.FC<{
 
             return {
                 id,
-                name: statData.name,
+                firstName: statData.firstName,
+                lastName: statData.lastName,
                 completed: calculateTaskStats(completedTasks),
                 inProgress: calculateTaskStats(inProgressTasks),
                 pending: calculateTaskStats(pendingTasks),
@@ -368,7 +369,7 @@ const AdminTutorGroupCard: React.FC<{
                                 </button>
                             )}
                         </div>
-                        {tutor && <p className="mt-1 text-sm italic font-bold text-green-800">Tutor/a: {tutor.name}</p>}
+                        {tutor && <p className="mt-1 text-sm italic font-bold text-green-800">Tutor/a: {tutor.firstName} {tutor.lastName}</p>}
                         <div className="pt-2 mt-2 border-t border-gray-200">
                             <h4 className="mb-1 text-sm font-semibold text-blue-600">Componentes del grupo:</h4>
                             <div className="flex flex-wrap gap-x-1 gap-y-1">
@@ -377,7 +378,7 @@ const AdminTutorGroupCard: React.FC<{
                                     .sort(sortBySurname)
                                     .map((member, index, array) => (
                                     <span key={member.id} className="text-sm text-gray-800">
-                                        {index + 1}. {member.name}{index < array.length - 1 ? ',' : ''}
+                                        {index + 1}. {member.lastName}, {member.firstName}{index < array.length - 1 ? ',' : ''}
                                     </span>
                                 ))}
                             </div>
@@ -487,11 +488,6 @@ const AdminTutorGroupCard: React.FC<{
                 
                 <div className="grid grid-cols-1 gap-2">
                     {memberStats.map(stat => {
-                        const name = stat.name;
-                        const firstSpaceIndex = name.indexOf(' ');
-                        const firstName = firstSpaceIndex === -1 ? name : name.substring(0, firstSpaceIndex);
-                        const lastName = firstSpaceIndex === -1 ? '' : name.substring(firstSpaceIndex + 1);
-
                         return (
                             <div key={stat.id} className="flex items-center p-2 bg-gray-50 rounded-lg border border-gray-200">
                                 <div className="flex items-center w-5/12">
@@ -502,9 +498,9 @@ const AdminTutorGroupCard: React.FC<{
                                         <SmallValueDisplay value={stat.assignedPoints} label="Asumidos" colorClass="bg-gray-500" />
                                         <SmallValueDisplay value={stat.achievedPoints} label="Logrados" colorClass="bg-green-500" />
                                     </div>
-                                    <div className="ml-3 flex-1 min-w-0" title={stat.name}>
-                                        <p className="font-medium text-gray-800 truncate">{firstName}</p>
-                                        {lastName && <p className="text-sm text-gray-600 truncate">{lastName}</p>}
+                                    <div className="ml-3 flex-1 min-w-0" title={`${stat.firstName} ${stat.lastName}`}>
+                                        <p className="font-medium text-gray-800 truncate">{stat.firstName}</p>
+                                        {stat.lastName && <p className="text-sm text-gray-600 truncate">{stat.lastName}</p>}
                                     </div>
                                 </div>
                                 <div className="flex justify-around w-7/12">
@@ -582,7 +578,7 @@ const PendingTasksModal: React.FC<{
                             >
                                 <div className="flex-1 min-w-0">
                                     <h4 className="font-bold text-blue-800 truncate">{task.title}</h4>
-                                    <p className="text-xs text-red-600 mt-1">Asignado a: {assignee?.name || 'Sin asignar'}</p>
+                                    <p className="text-xs text-red-600 mt-1">Asignado a: {assignee ? `${assignee.firstName} ${assignee.lastName}` : 'Sin asignar'}</p>
                                     <div className="flex gap-2 mt-2">
                                         <span className="px-2 py-0.5 bg-red-200 text-red-800 text-[10px] font-bold rounded uppercase">{task.status}</span>
                                         <span className="px-2 py-0.5 bg-white border border-red-200 text-red-700 text-[10px] font-bold rounded uppercase">{task.priority}</span>
@@ -704,10 +700,10 @@ const StudentProjectDetailCard: React.FC<{
             return acc + (d * p * 3);
         }, 0);
 
-        const statsMap = new Map<string, { name: string; tasks: Task[] }>();
+        const statsMap = new Map<string, { firstName: string; lastName: string; tasks: Task[] }>();
         freshGroupMembers.forEach(member => {
             if (member.role === Role.Student) {
-                statsMap.set(member.id, { name: member.name, tasks: [] });
+                statsMap.set(member.id, { firstName: member.firstName, lastName: member.lastName, tasks: [] });
             }
         });
 
@@ -739,7 +735,8 @@ const StudentProjectDetailCard: React.FC<{
 
             return {
                 id,
-                name: statData.name,
+                firstName: statData.firstName,
+                lastName: statData.lastName,
                 completed: calculateTaskStats(completedTasks),
                 inProgress: calculateTaskStats(inProgressTasks),
                 pending: calculateTaskStats(pendingTasks),
@@ -772,7 +769,7 @@ const StudentProjectDetailCard: React.FC<{
                     <div className="flex-1 min-w-0">
                         <h3 className="text-base font-normal text-green-700"><span className="font-bold">Proyecto:</span> {project.name}</h3>
                         <p className="text-base text-gray-500"><span className="text-black font-bold">Curso:</span> {courseName} - <span className="text-black font-bold">Grupo:</span> {group.name}</p>
-                        {tutor && <p className="mt-1 text-sm italic font-bold text-green-800">Tutor/a: {tutor.name}</p>}
+                        {tutor && <p className="mt-1 text-sm italic font-bold text-green-800">Tutor/a: {tutor.firstName} {tutor.lastName}</p>}
                         <div className="pt-2 mt-2 border-t border-gray-200">
                             <h4 className="mb-1 text-sm font-semibold text-blue-600">Componentes del grupo:</h4>
                             <div className="flex flex-wrap gap-x-1 gap-y-1">
@@ -781,7 +778,7 @@ const StudentProjectDetailCard: React.FC<{
                                     .sort(sortBySurname)
                                     .map((member, index, array) => (
                                     <span key={member.id} className="text-sm text-gray-800">
-                                        {index + 1}. {member.name}{index < array.length - 1 ? ',' : ''}
+                                        {index + 1}. {member.lastName}, {member.firstName}{index < array.length - 1 ? ',' : ''}
                                     </span>
                                 ))}
                             </div>
@@ -891,11 +888,6 @@ const StudentProjectDetailCard: React.FC<{
                 
                 <div className="grid grid-cols-1 gap-2">
                     {memberStats.map(stat => {
-                        const name = stat.name;
-                        const firstSpaceIndex = name.indexOf(' ');
-                        const firstName = firstSpaceIndex === -1 ? name : name.substring(0, firstSpaceIndex);
-                        const lastName = firstSpaceIndex === -1 ? '' : name.substring(firstSpaceIndex + 1);
-
                         return (
                             <div key={stat.id} className="flex items-center p-2 bg-gray-50 rounded-lg border border-gray-200">
                                 <div className="flex items-center w-5/12">
@@ -906,9 +898,9 @@ const StudentProjectDetailCard: React.FC<{
                                         <SmallValueDisplay value={stat.assignedPoints} label="Asumidos" colorClass="bg-gray-500" />
                                         <SmallValueDisplay value={stat.achievedPoints} label="Logrados" colorClass="bg-green-500" />
                                     </div>
-                                    <div className="ml-3 flex-1 min-w-0" title={stat.name}>
-                                        <p className="font-medium text-gray-800 truncate">{firstName}</p>
-                                        {lastName && <p className="text-sm text-gray-600 truncate">{lastName}</p>}
+                                    <div className="ml-3 flex-1 min-w-0" title={`${stat.firstName} ${stat.lastName}`}>
+                                        <p className="font-medium text-gray-800 truncate">{stat.firstName}</p>
+                                        {stat.lastName && <p className="text-sm text-gray-600 truncate">{stat.lastName}</p>}
                                     </div>
                                 </div>
                                 <div className="flex justify-around w-7/12">

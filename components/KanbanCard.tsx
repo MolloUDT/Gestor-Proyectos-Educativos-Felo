@@ -76,7 +76,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, ras, users, onClick, view
                     <div className="flex items-center">
                          <span className="text-xs font-medium text-gray-600">
                              <span className="font-semibold">Responsable: </span>
-                             {assignee.name}
+                             {assignee.lastName}, {assignee.firstName}
                          </span>
                     </div>
                 ) : <div/>}

@@ -78,7 +78,7 @@ export const GroupSummaryCard: React.FC<{
             <div className="flex-grow min-w-0">
                 <p className="font-semibold text-green-800 truncate">{project ? project.name : group.name}</p>
                 <p className="text-sm text-gray-500">{group.name}</p>
-                <p className="mt-1 text-xs text-gray-500">Tutor: {tutor ? tutor.name : 'Sin tutor'}</p>
+                <p className="mt-1 text-xs text-gray-500">Tutor: {tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Sin tutor'}</p>
             </div>
             <div className="flex flex-col items-end flex-shrink-0">
                 <div>
@@ -208,7 +208,7 @@ export const GroupCard: React.FC<{
                         members.map(member => (
                             <div key={member.id} className="flex items-center text-sm">
                                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-2 flex-shrink-0"></span>
-                                <span className="font-bold text-gray-700">{member.name}</span>
+                                <span className="font-bold text-gray-700">{member.lastName}, {member.firstName}</span>
                             </div>
                         ))
                     ) : (
@@ -220,7 +220,7 @@ export const GroupCard: React.FC<{
             {/* Footer */}
             <div className="mt-auto pt-3 border-t border-gray-100">
                 <p className="text-xs text-gray-500">
-                    <span className="font-bold text-black">Tutor:</span> <span className="font-semibold text-green-800">{tutor ? tutor.name : 'Sin tutor'}</span>
+                    <span className="font-bold text-black">Tutor:</span> <span className="font-semibold text-green-800">{tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Sin tutor'}</span>
                 </p>
             </div>
 

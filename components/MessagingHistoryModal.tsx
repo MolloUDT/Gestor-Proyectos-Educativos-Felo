@@ -44,7 +44,10 @@ const MessagingHistoryModal: React.FC<Omit<MessagingHistoryModalProps, 'onSendMe
         }
     };
     
-    const findUserName = (id: string) => allUsers.find(u => u.id === id)?.name || 'Desconocido';
+    const findUserName = (id: string) => {
+        const u = allUsers.find(u => u.id === id);
+        return u ? `${u.lastName}, ${u.firstName}` : 'Desconocido';
+    };
 
     return (
         <>

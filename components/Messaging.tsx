@@ -173,7 +173,7 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
     const renderRecipientSelector = () => {
         if (!activeTab) return null;
 
-        const filteredTutors = availableTutors.filter(t => t.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        const filteredTutors = availableTutors.filter(t => (t.firstName + ' ' + t.lastName).toLowerCase().includes(searchTerm.toLowerCase()));
 
         switch (activeTab) {
             case 'tutors':
@@ -192,7 +192,7 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
                                             <input type="checkbox" className="mr-2" checked={selectedTutorIds.includes(tutor.id)} onChange={() => {
                                                 setSelectedTutorIds(prev => prev.includes(tutor.id) ? prev.filter(id => id !== tutor.id) : [...prev, tutor.id]);
                                             }} />
-                                            {tutor.name} {tutor.role === Role.Admin && '(Admin)'}
+                                            {tutor.lastName}, {tutor.firstName} {tutor.role === Role.Admin && '(Admin)'}
                                         </label>
                                     </li>
                                 ))}
@@ -209,7 +209,7 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
                                     const tutor = availableTutors.find(t => t.id === id);
                                     return (
                                         <li key={id} className="flex items-center justify-between p-2 bg-green-50 rounded">
-                                            <span className="text-gray-800">{tutor?.name}</span>
+                                            <span className="text-gray-800">{tutor?.lastName}, {tutor?.firstName}</span>
                                             <button onClick={() => setSelectedTutorIds(prev => prev.filter(tid => tid !== id))}><XIcon className="w-4 h-4 text-gray-500"/></button>
                                         </li>
                                     );
@@ -271,13 +271,16 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
                                             </div>
                                             {expandedCourses[course] && (
                                                 <ul className="pl-4 py-1 border-l border-r border-b rounded-b-md">
-                                                    {items.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase())).map(item => (
+                                                    {items.filter(item => {
+                                                        const name = isGroupMode ? (item as Group).name : `${(item as User).firstName} ${(item as User).lastName}`;
+                                                        return name.toLowerCase().includes(searchTerm.toLowerCase());
+                                                    }).map(item => (
                                                         <li key={item.id}>
                                                             <label className="flex items-center p-1 rounded hover:bg-gray-50 cursor-pointer text-gray-800">
                                                                 <input type="checkbox" className="mr-2" checked={selectedIds.includes(item.id)} onChange={() => {
                                                                     setSelectedIds(prev => prev.includes(item.id) ? prev.filter(id => id !== item.id) : [...prev, item.id]);
                                                                 }} />
-                                                                {item.name}
+                                                                {isGroupMode ? (item as Group).name : `${(item as User).lastName}, ${(item as User).firstName}`}
                                                                 {isGroupMode && <span className="ml-2 text-xs text-gray-500">({projects.find(p=>p.groupId === (item as Group).id)?.name || 'Sin proyecto'})</span>}
                                                             </label>
                                                         </li>
@@ -299,7 +302,7 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
                                     const item = (isGroupMode ? availableGroups : availableStudents).find(i => i.id === id);
                                     return (
                                         <li key={id} className="flex items-center justify-between p-2 bg-green-50 rounded">
-                                            <span className="text-gray-800">{item?.name}</span>
+                                            <span className="text-gray-800">{isGroupMode ? item?.name : `${(item as User)?.lastName}, ${(item as User)?.firstName}`}</span>
                                             <button onClick={() => setSelectedIds(prev => prev.filter(itemId => itemId !== id))}><XIcon className="w-4 h-4 text-gray-500"/></button>
                                         </li>
                                     );

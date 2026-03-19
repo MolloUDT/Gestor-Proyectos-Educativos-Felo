@@ -12,41 +12,55 @@ interface StudentsProps {
     onCreateCourse: (name: string) => void;
     onUpdateCourse: (courseId: string, name: string) => void;
     onDeleteCourse: (courseId: string) => void;
-    onCreate: (data: { name: string; username?: string; password?: string; courseId: string }) => void;
-    onCreateBulk: (students: { name: string; password: string; courseId: string }[]) => void;
-    onUpdate: (id: string, data: { name: string; username?: string; password?: string; courseId: string }) => void;
+    onCreate: (data: { firstName: string; lastName: string; username?: string; password?: string; courseId: string }) => void;
+    onCreateBulk: (students: { firstName: string; lastName: string; password: string; courseId: string }[]) => void;
+    onUpdate: (id: string, data: { firstName: string; lastName: string; username?: string; password?: string; courseId: string }) => void;
     onDelete: (id: string) => void;
     onNavigateToGroup?: (groupId: string) => void;
 }
 
 const StudentForm: React.FC<{
     student: Partial<User> | null;
-    onSave: (data: { name: string; username?: string; password?: string, courseId: string }) => void;
+    onSave: (data: { firstName: string; lastName: string; username?: string; password?: string, courseId: string }) => void;
     onCancel: () => void;
     courses: Course[];
 }> = ({ student, onSave, onCancel, courses }) => {
-    const [name, setName] = useState(student?.name || '');
+    const [firstName, setFirstName] = useState(student?.firstName || '');
+    const [lastName, setLastName] = useState(student?.lastName || '');
     const [username, setUsername] = useState(student?.username || '');
     const [password, setPassword] = useState('');
     const [courseId, setCourseId] = useState(student?.courseId || '');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({ name, ...(username && { username }), ...(password && { password }), courseId });
+        onSave({ firstName, lastName, ...(username && { username }), ...(password && { password }), courseId });
     };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-                <label htmlFor="studentName" className="block text-sm font-medium text-gray-700">Nombre y Apellidos</label>
-                <input
-                    type="text"
-                    id="studentName"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full p-2 mt-1 border border-gray-300 rounded-md"
-                    required
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label htmlFor="studentFirstName" className="block text-sm font-medium text-gray-700">Nombre</label>
+                    <input
+                        type="text"
+                        id="studentFirstName"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="w-full p-2 mt-1 border border-gray-300 rounded-md"
+                        required
+                    />
+                </div>
+                <div>
+                    <label htmlFor="studentLastName" className="block text-sm font-medium text-gray-700">Apellidos</label>
+                    <input
+                        type="text"
+                        id="studentLastName"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="w-full p-2 mt-1 border border-gray-300 rounded-md"
+                        required
+                    />
+                </div>
             </div>
             <div>
                 <label htmlFor="studentUsername" className="block text-sm font-medium text-gray-700">Nombre de usuario (opcional)</label>
@@ -95,7 +109,7 @@ const StudentForm: React.FC<{
 };
 
 const BulkStudentForm: React.FC<{
-    onSave: (students: { name: string; password: string; courseId: string }[]) => void;
+    onSave: (students: { firstName: string; lastName: string; password: string; courseId: string }[]) => void;
     onCancel: () => void;
     courses: Course[];
 }> = ({ onSave, onCancel, courses }) => {
@@ -121,17 +135,18 @@ const BulkStudentForm: React.FC<{
 
             const studentsToCreate = rows.map((row, index) => {
                 const columns = row.split('\t'); // Tab is the standard delimiter for spreadsheet pasting
-                if (columns.length !== 2) {
-                    throw new Error(`Error en la fila ${index + 1}: Se esperan 2 columnas (Nombre y Contraseña), pero se encontraron ${columns.length}. Asegúrate de copiar solo esas dos columnas.`);
+                if (columns.length !== 3) {
+                    throw new Error(`Error en la fila ${index + 1}: Se esperan 3 columnas (Nombre, Apellidos y Contraseña), pero se encontraron ${columns.length}. Asegúrate de copiar solo esas tres columnas.`);
                 }
                 
-                const name = columns[0].trim();
-                const password = columns[1].trim();
-                if (!name || !password) {
-                    throw new Error(`Error en la fila ${index + 1}: El nombre y la contraseña no pueden estar vacíos.`);
+                const firstName = columns[0].trim();
+                const lastName = columns[1].trim();
+                const password = columns[2].trim();
+                if (!firstName || !lastName || !password) {
+                    throw new Error(`Error en la fila ${index + 1}: El nombre, apellidos y la contraseña no pueden estar vacíos.`);
                 }
                 
-                return { name, password, courseId };
+                return { firstName, lastName, password, courseId };
             });
             onSave(studentsToCreate);
         } catch (err: any) {
@@ -147,7 +162,7 @@ const BulkStudentForm: React.FC<{
                 <p className="font-semibold">Instrucciones:</p>
                 <ul className="mt-1 list-disc list-inside">
                     <li>Abre tu hoja de cálculo (Excel, Google Sheets, etc.).</li>
-                    <li>Asegúrate de tener <strong>dos columnas</strong>: Nombre y Contraseña.</li>
+                    <li>Asegúrate de tener <strong>tres columnas</strong>: Nombre, Apellidos y Contraseña.</li>
                     <li>Selecciona y copia (Ctrl+C) las filas de los alumnos.</li>
                     <li>Pega (Ctrl+V) el contenido en el cuadro de texto de abajo.</li>
                 </ul>
@@ -173,7 +188,7 @@ const BulkStudentForm: React.FC<{
                     value={pastedText}
                     onChange={(e) => setPastedText(e.target.value)}
                     className="w-full p-2 mt-1 font-mono text-sm border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
-                    placeholder={`Nombre Alumno 1\tContraseña1\nNombre Alumno 2\tContraseña2`}
+                    placeholder={`Nombre\tApellidos\tContraseña1\nNombre\tApellidos\tContraseña2`}
                     required
                 />
             </div>
@@ -201,6 +216,7 @@ const Students: React.FC<StudentsProps> = ({ users, courses, groups, projects, o
     const [isEditCourseModalOpen, setIsEditCourseModalOpen] = useState(false);
     const [isDeleteCourseModalOpen, setIsDeleteCourseModalOpen] = useState(false);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+    const [isSearchErrorModalOpen, setIsSearchErrorModalOpen] = useState(false);
     const [searchName, setSearchName] = useState('');
     const [searchResultStudent, setSearchResultStudent] = useState<User | null>(null);
     const [editingStudent, setEditingStudent] = useState<User | null>(null);
@@ -257,7 +273,7 @@ const Students: React.FC<StudentsProps> = ({ users, courses, groups, projects, o
         }
     };
 
-    const handleSave = (studentData: { name: string; username?: string; password?: string, courseId: string }) => {
+    const handleSave = (studentData: { firstName: string; lastName: string; username?: string; password?: string, courseId: string }) => {
         if (editingStudent) {
             onUpdate(editingStudent.id, studentData);
         } else {
@@ -275,7 +291,7 @@ const Students: React.FC<StudentsProps> = ({ users, courses, groups, projects, o
         }
     };
 
-    const handleBulkSave = (studentsToCreate: { name: string; password: string; courseId: string }[]) => {
+    const handleBulkSave = (studentsToCreate: { firstName: string; lastName: string; password: string; courseId: string }[]) => {
         onCreateBulk(studentsToCreate);
         setIsBulkModalOpen(false);
     };
@@ -286,14 +302,14 @@ const Students: React.FC<StudentsProps> = ({ users, courses, groups, projects, o
 
         const student = users.find(u => 
             u.role === Role.Student && 
-            u.name.toLowerCase().includes(searchName.toLowerCase())
+            u.lastName.toLowerCase().includes(searchName.toLowerCase())
         );
 
         if (student) {
             setSearchResultStudent(student);
             setIsInfoModalOpen(true);
         } else {
-            alert('No se encontró ningún alumno con esos apellidos.');
+            setIsSearchErrorModalOpen(true);
         }
     };
 
@@ -332,7 +348,7 @@ const Students: React.FC<StudentsProps> = ({ users, courses, groups, projects, o
             <div className="mb-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                 <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-end gap-4">
                     <div className="flex-1 w-full">
-                        <label htmlFor="searchStudent" className="block text-sm font-medium text-gray-700 mb-1">Información sobre el alumno. Escribe sólo los apellidos del alumno</label>
+                        <label htmlFor="searchStudent" className="block text-sm font-medium text-gray-700 mb-1">Información sobre el alumno: escribe únicamente los apellidos del alumno</label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <InfoIcon className="h-5 w-5 text-gray-400" />
@@ -389,6 +405,7 @@ const Students: React.FC<StudentsProps> = ({ users, courses, groups, projects, o
                                             <table className="w-full text-left table-auto">
                                                 <thead>
                                                     <tr>
+                                                        <th className="px-4 py-2 font-semibold text-gray-600">Apellidos</th>
                                                         <th className="px-4 py-2 font-semibold text-gray-600">Nombre</th>
                                                         <th className="px-4 py-2 font-semibold text-gray-600">Nombre de usuario</th>
                                                         <th className="px-4 py-2 font-semibold text-gray-600">Contraseña</th>
@@ -397,9 +414,10 @@ const Students: React.FC<StudentsProps> = ({ users, courses, groups, projects, o
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-gray-200">
-                                                    {students.map(student => (
+                                                    {students.sort((a, b) => a.lastName.localeCompare(b.lastName)).map(student => (
                                                         <tr key={student.id}>
-                                                            <td className="px-4 py-2 font-medium text-gray-800">{student.name}</td>
+                                                            <td className="px-4 py-2 font-medium text-gray-800">{student.lastName}</td>
+                                                            <td className="px-4 py-2 font-medium text-gray-800">{student.firstName}</td>
                                                             <td className="px-4 py-2">
                                                                 <div className="flex items-center space-x-2">
                                                                     <span className="text-gray-600 font-mono">
@@ -525,7 +543,7 @@ const Students: React.FC<StudentsProps> = ({ users, courses, groups, projects, o
                 <Modal title="Confirmar Eliminación" onClose={() => setStudentToDelete(null)}>
                     <div className="text-center">
                         <p className="text-lg text-gray-700">¿Estás seguro de que quieres eliminar al alumno?</p>
-                        <p className="my-2 text-xl font-bold text-red-600">"{studentToDelete.name}"</p>
+                        <p className="my-2 text-xl font-bold text-red-600">"{studentToDelete.firstName} {studentToDelete.lastName}"</p>
                         <div className="flex justify-center mt-6 space-x-4">
                             <button onClick={() => setStudentToDelete(null)} className="px-6 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
                                 Cancelar
@@ -538,11 +556,19 @@ const Students: React.FC<StudentsProps> = ({ users, courses, groups, projects, o
                 </Modal>
             )}
 
+            {isSearchErrorModalOpen && (
+                <Modal title="Búsqueda sin resultados" onClose={() => setIsSearchErrorModalOpen(false)}>
+                    <p className="text-gray-700">Con este criterio de búsqueda no encuentro ningún alumno. Asegúrate de haber tecleado los dos apellidos del alumno y de escribirlos correctamente.</p>
+                    <div className="mt-4 flex justify-end">
+                        <button onClick={() => setIsSearchErrorModalOpen(false)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Cerrar</button>
+                    </div>
+                </Modal>
+            )}
             {isInfoModalOpen && searchResultStudent && (
-                <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)} title="Información Detallada del Alumno">
+                <Modal onClose={() => setIsInfoModalOpen(false)} title="Información Detallada del Alumno">
                     <div className="space-y-4">
                         <div className="pb-4 border-b border-gray-100">
-                            <h3 className="text-lg font-bold text-gray-900">{searchResultStudent.name}</h3>
+                            <h3 className="text-lg font-bold text-gray-900">{searchResultStudent.firstName} {searchResultStudent.lastName}</h3>
                             <div className="mt-2 space-y-2">
                                 <div>
                                     <span className="text-xs font-semibold text-gray-500 uppercase">Nombre de usuario</span>

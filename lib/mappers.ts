@@ -2,7 +2,8 @@ import { User, Group, Project, Task, RA, Tutorial, StoredFile, Message, SessionL
 
 export const mapUser = (row: any): User => ({
     id: row.id,
-    name: row.name,
+    firstName: row.first_name || '',
+    lastName: row.last_name || '',
     username: row.username,
     password: row.password,
     role: row.role as Role,

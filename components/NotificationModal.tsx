@@ -15,7 +15,7 @@ const NotificationModal: React.FC<NotificationModalProps> = ({ messages, allUser
     
     const findSenderName = (senderId: string) => {
         const sender = allUsers.find(u => u.id === senderId);
-        return sender ? sender.name : 'Desconocido';
+        return sender ? `${sender.lastName}, ${sender.firstName}` : 'Desconocido';
     };
 
     const allAreReplies = messages.every(msg => !!msg.originalMessageId);

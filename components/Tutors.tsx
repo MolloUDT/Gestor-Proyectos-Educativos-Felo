@@ -7,37 +7,51 @@ import { EditIcon, TrashIcon, PlusCircleIcon, EyeIcon, EyeOffIcon } from './Icon
 interface TutorsProps {
     users: User[];
     groups: Group[];
-    onCreate: (data: { name: string; username?: string; password?: string }) => void;
-    onUpdate: (id: string, data: { name: string; username?: string; password?: string }) => void;
+    onCreate: (data: { firstName: string; lastName: string; username?: string; password?: string }) => void;
+    onUpdate: (id: string, data: { firstName: string; lastName: string; username?: string; password?: string }) => void;
     onDelete: (id: string) => void;
 }
 
 const TutorForm: React.FC<{
     tutor: Partial<User> | null;
-    onSave: (data: { name: string; username?: string; password?: string }) => void;
+    onSave: (data: { firstName: string; lastName: string; username?: string; password?: string }) => void;
     onCancel: () => void;
 }> = ({ tutor, onSave, onCancel }) => {
-    const [name, setName] = useState(tutor?.name || '');
+    const [firstName, setFirstName] = useState(tutor?.firstName || '');
+    const [lastName, setLastName] = useState(tutor?.lastName || '');
     const [username, setUsername] = useState(tutor?.username || '');
     const [password, setPassword] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({ name, ...(username && { username }), ...(password && { password }) });
+        onSave({ firstName, lastName, ...(username && { username }), ...(password && { password }) });
     };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-                <label htmlFor="tutorName" className="block text-sm font-medium text-gray-700">Nombre y Apellidos</label>
-                <input
-                    type="text"
-                    id="tutorName"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full p-2 mt-1 border border-gray-300 rounded-md"
-                    required
-                />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">Nombre</label>
+                    <input
+                        type="text"
+                        id="firstName"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="w-full p-2 mt-1 border border-gray-300 rounded-md"
+                        required
+                    />
+                </div>
+                <div>
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">Apellidos</label>
+                    <input
+                        type="text"
+                        id="lastName"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="w-full p-2 mt-1 border border-gray-300 rounded-md"
+                        required
+                    />
+                </div>
             </div>
             <div>
                 <label htmlFor="tutorUsername" className="block text-sm font-medium text-gray-700">Nombre de usuario (opcional)</label>
@@ -82,13 +96,7 @@ const Tutors: React.FC<TutorsProps> = ({ users, groups, onCreate, onUpdate, onDe
     const tutors = useMemo(() => {
         return users
             .filter(u => u.role === Role.Tutor)
-            .sort((a, b) => {
-                const getSurname = (name: string) => {
-                    const parts = name.trim().split(/\s+/);
-                    return parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
-                };
-                return getSurname(a.name).localeCompare(getSurname(b.name), 'es');
-            });
+            .sort((a, b) => a.lastName.toLowerCase().localeCompare(b.lastName.toLowerCase(), 'es'));
     }, [users]);
 
     const togglePasswordVisibility = (id: string) => {
@@ -120,7 +128,7 @@ const Tutors: React.FC<TutorsProps> = ({ users, groups, onCreate, onUpdate, onDe
         }
     };
 
-    const handleSave = (tutorData: { name: string; username?: string; password?: string }) => {
+    const handleSave = (tutorData: { firstName: string; lastName: string; username?: string; password?: string }) => {
         if (editingTutor) {
             onUpdate(editingTutor.id, tutorData);
         } else {
@@ -158,7 +166,7 @@ const Tutors: React.FC<TutorsProps> = ({ users, groups, onCreate, onUpdate, onDe
                     <tbody className="divide-y divide-gray-200">
                         {tutors.map(tutor => (
                             <tr key={tutor.id} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 font-medium text-green-800">{tutor.name}</td>
+                                <td className="px-4 py-3 font-medium text-green-800">{tutor.lastName}, {tutor.firstName}</td>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center space-x-2">
                                         <span className="text-gray-600 font-mono">
@@ -212,7 +220,7 @@ const Tutors: React.FC<TutorsProps> = ({ users, groups, onCreate, onUpdate, onDe
                 <Modal title="Confirmar Eliminación" onClose={() => setTutorToDelete(null)}>
                     <div className="text-center">
                         <p className="text-lg text-gray-700">¿Estás seguro de que quieres eliminar al tutor?</p>
-                        <p className="my-2 text-xl font-bold text-red-600">"{tutorToDelete.name}"</p>
+                        <p className="my-2 text-xl font-bold text-red-600">"{tutorToDelete.firstName} {tutorToDelete.lastName}"</p>
                         {assignedGroupsCount(tutorToDelete.id) > 0 &&
                             <p className="text-sm text-yellow-700 bg-yellow-100 p-2 rounded-md">
                                 Este tutor está asignado a {assignedGroupsCount(tutorToDelete.id)} grupo(s). Al eliminarlo, estos grupos quedarán sin tutor.

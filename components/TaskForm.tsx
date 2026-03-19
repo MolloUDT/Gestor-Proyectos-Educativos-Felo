@@ -105,7 +105,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, co
                     <label className="block text-sm font-medium text-gray-700">Asignado a</label>
                     <select name="assigneeId" value={formData.assigneeId} onChange={handleChange} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required>
                         <option value="">Seleccionar miembro</option>
-                        {assignees.filter(a => a.role !== Role.Tutor).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                        {assignees.filter(a => a.role !== Role.Tutor).map(a => <option key={a.id} value={a.id}>{a.lastName}, {a.firstName}</option>)}
                     </select>
                 </div>
                 <div className="relative">

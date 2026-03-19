@@ -95,7 +95,7 @@ const GanttTaskForm: React.FC<{
                     <label className="block text-sm font-medium text-gray-700">Asignado a</label>
                     <select name="assigneeId" value={formData.assigneeId} onChange={handleChange} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required>
                         <option value="">Seleccionar miembro</option>
-                        {assignees.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                        {assignees.map(a => <option key={a.id} value={a.id}>{a.lastName}, {a.firstName}</option>)}
                     </select>
                 </div>
                 <div>
@@ -627,7 +627,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
                                 <div className="flex-grow min-w-0">
                                     <p className="font-semibold text-green-800 truncate">{project.name}</p>
                                     <p className="text-sm text-gray-500">{group.name}</p>
-                                    <p className="mt-1 text-xs text-gray-500">Tutor: {tutor ? tutor.name : 'Sin tutor'}</p>
+                                    <p className="mt-1 text-xs text-gray-500">Tutor: {tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Sin tutor'}</p>
                                 </div>
                                 <div className="flex flex-col items-end flex-shrink-0">
                                     <div>
@@ -679,7 +679,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
                                                         <div className="flex-grow min-w-0">
                                                             <p className="font-semibold text-green-800 truncate">{project.name}</p>
                                                             <p className="text-sm text-gray-500">{group?.name}</p>
-                                                            <p className="mt-1 text-xs text-gray-500">Tutor: {tutor ? tutor.name : 'Sin tutor'}</p>
+                                                            <p className="mt-1 text-xs text-gray-500">Tutor: {tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Sin tutor'}</p>
                                                         </div>
                                                         <div className="flex flex-col items-end flex-shrink-0">
                                                             <div>

@@ -31,7 +31,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onSave }) =>
                     <label className="block text-sm font-medium text-gray-700">Nombre y Apellidos</label>
                     <input
                         type="text"
-                        value={user.name}
+                        value={`${user.firstName} ${user.lastName}`}
                         className="w-full p-2 mt-1 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed"
                         disabled
                     />

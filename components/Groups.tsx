@@ -141,7 +141,7 @@ const GroupForm: React.FC<{
                             required
                         >
                             <option value="">Selecciona un tutor</option>
-                            {allTutors.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            {allTutors.map(t => <option key={t.id} value={t.id}>{t.lastName}, {t.firstName}</option>)}
                         </select>
                     </div>
                 ) : (
@@ -150,7 +150,7 @@ const GroupForm: React.FC<{
                         <input
                             type="text"
                             id="tutorName"
-                            value={user.name}
+                            value={`${user.firstName} ${user.lastName}`}
                             readOnly
                             className="w-full p-2 mt-1 font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed"
                         />
@@ -183,7 +183,7 @@ const GroupForm: React.FC<{
                                             onChange={() => handleToggleMember(s.id)}
                                             className="mr-2"
                                         />
-                                        {s.name}
+                                        {s.lastName}, {s.firstName}
                                     </label>
                                 ))
                             ) : (

@@ -280,18 +280,19 @@ const App: React.FC = () => {
         await fetchAllData();
     };
 
-    const handleCreateTutor = async (tutorData: { name: string; username?: string; password?: string }) => {
+    const handleCreateTutor = async (tutorData: { firstName: string; lastName: string; username?: string; password?: string }) => {
         await supabase.from('users').insert({
-            name: tutorData.name,
-            username: tutorData.username || tutorData.name.split(' ')[0].toLowerCase() + Date.now().toString().slice(-4),
+            first_name: tutorData.firstName,
+            last_name: tutorData.lastName,
+            username: tutorData.username || tutorData.firstName.toLowerCase() + Date.now().toString().slice(-4),
             password: tutorData.password || 'password',
             role: Role.Tutor
         });
         await fetchAllData();
     };
 
-    const handleUpdateTutor = async (tutorId: string, tutorData: { name: string; username?: string; password?: string }) => {
-        const updateData: any = { name: tutorData.name };
+    const handleUpdateTutor = async (tutorId: string, tutorData: { firstName: string; lastName: string; username?: string; password?: string }) => {
+        const updateData: any = { first_name: tutorData.firstName, last_name: tutorData.lastName };
         if (tutorData.username) updateData.username = tutorData.username;
         if (tutorData.password) updateData.password = tutorData.password;
         await supabase.from('users').update(updateData).eq('id', tutorId);
@@ -303,10 +304,11 @@ const App: React.FC = () => {
         await fetchAllData();
     };
 
-    const handleCreateStudent = async (studentData: { name: string; username?: string; password?: string; courseId: string }) => {
+    const handleCreateStudent = async (studentData: { firstName: string; lastName: string; username?: string; password?: string; courseId: string }) => {
         const { error } = await supabase.from('users').insert({
-            name: studentData.name,
-            username: studentData.username || studentData.name.split(' ')[0].toLowerCase() + Date.now().toString().slice(-4),
+            first_name: studentData.firstName,
+            last_name: studentData.lastName,
+            username: studentData.username || studentData.firstName.toLowerCase() + Date.now().toString().slice(-4),
             password: studentData.password || 'password',
             role: Role.Student,
             course_id: studentData.courseId
@@ -315,11 +317,12 @@ const App: React.FC = () => {
         await fetchAllData();
     };
 
-    const handleCreateStudentsBulk = async (studentsData: { name: string; password: string; courseId: string }[]) => {
+    const handleCreateStudentsBulk = async (studentsData: { firstName: string; lastName: string; password: string; courseId: string }[]) => {
         const timestamp = Date.now();
         const inserts = studentsData.map((studentData, index) => ({
-            name: studentData.name.trim(),
-            username: studentData.name.trim().split(' ')[0].toLowerCase() + timestamp.toString().slice(-4) + index,
+            first_name: studentData.firstName.trim(),
+            last_name: studentData.lastName.trim(),
+            username: studentData.firstName.trim().toLowerCase() + timestamp.toString().slice(-4) + index,
             password: studentData.password.trim(),
             role: Role.Student,
             course_id: studentData.courseId
@@ -329,8 +332,8 @@ const App: React.FC = () => {
         await fetchAllData();
     };
 
-    const handleUpdateStudent = async (studentId: string, studentData: { name: string; username?: string; password?: string; courseId: string }) => {
-        const updateData: any = { name: studentData.name, course_id: studentData.courseId };
+    const handleUpdateStudent = async (studentId: string, studentData: { firstName: string; lastName: string; username?: string; password?: string; courseId: string }) => {
+        const updateData: any = { first_name: studentData.firstName, last_name: studentData.lastName, course_id: studentData.courseId };
         if (studentData.username) updateData.username = studentData.username;
         if (studentData.password) updateData.password = studentData.password;
         const { error } = await supabase.from('users').update(updateData).eq('id', studentId);

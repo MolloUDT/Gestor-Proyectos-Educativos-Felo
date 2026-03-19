@@ -53,7 +53,10 @@ interface PendingMessagesModalProps {
 const PendingMessagesModal: React.FC<PendingMessagesModalProps> = ({ user, messages, allUsers, onClose, onSendMessage, onMarkMessagesAsRead }) => {
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
 
-    const findSenderName = (senderId: string) => allUsers.find(u => u.id === senderId)?.name || 'Desconocido';
+    const findSenderName = (senderId: string) => {
+        const u = allUsers.find(u => u.id === senderId);
+        return u ? `${u.lastName}, ${u.firstName}` : 'Desconocido';
+    };
 
     const handleSendReply = (body: string) => {
         if (replyingTo) {

@@ -31,7 +31,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, toggleSidebar, pageTitl
                     onClick={() => setDropdownOpen(!dropdownOpen)}
                 >
                     <div className="text-right">
-                        <span className="block text-sm font-medium text-gray-800">{user.name}</span>
+                        <span className="block text-sm font-medium text-gray-800">{user.firstName} {user.lastName}</span>
                         <span className="block text-xs text-gray-500">{user.role}</span>
                     </div>
                 </div>

@@ -102,7 +102,7 @@ const TutorialForm: React.FC<{
                 <label className="block text-sm font-medium text-gray-700">Tutor</label>
                 <select value={tutorId} onChange={e => setTutorId(e.target.value)} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required>
                     <option value="">Seleccionar tutor</option>
-                    {tutors.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    {tutors.map(t => <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>)}
                 </select>
             </div>
             <div>
@@ -584,14 +584,14 @@ const PendingTutorialsModal: React.FC<{
                     >
                         <option value="">-- Elige un tutor --</option>
                         {tutors.map(tutor => (
-                            <option key={tutor.id} value={tutor.id}>{tutor.name}</option>
+                            <option key={tutor.id} value={tutor.id}>{tutor.firstName} {tutor.lastName}</option>
                         ))}
                     </select>
                 </div>
             )}
              {user.role === Role.Tutor && (
                  <div className="p-3 bg-gray-100 rounded-md">
-                    <p className="text-sm text-gray-800">Mostrando reuniones pendientes para: <span className="font-semibold">{user.name}</span></p>
+                    <p className="text-sm text-gray-800">Mostrando reuniones pendientes para: <span className="font-semibold">{user.firstName} {user.lastName}</span></p>
                 </div>
             )}
             {user.role === Role.Student && (

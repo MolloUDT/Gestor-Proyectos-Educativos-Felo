@@ -51,7 +51,7 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, cou
         const timeStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         
         // Header with blank line after
-        const header = `<p class="logbook-header"><strong>[${user.name} - ${dateStr} ${timeStr}]</strong></p><p><br></p>`;
+        const header = `<p class="logbook-header"><strong>[${user.firstName} ${user.lastName} - ${dateStr} ${timeStr}]</strong></p><p><br></p>`;
         const existingContent = group.logbook || '';
         const newContent = header + existingContent;
         
@@ -82,14 +82,14 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, cou
                         // A safer way is to find the first newline or just place it at the end of the header.
                         // Since we prepend, the header is at the start.
                         // Let's try to find the length of the header string.
-                        const headerText = `[${user.name} - ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}\n\n`;
+                        const headerText = `[${user.firstName} ${user.lastName} - ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}\n\n`;
                         editor.setSelection(headerText.length, 0);
                     }
                 }
             }, 200);
             return () => clearTimeout(timer);
         }
-    }, [selectedGroupId, user.name]);
+    }, [selectedGroupId, user.firstName, user.lastName]);
 
     const modules = {
         toolbar: [
@@ -133,6 +133,14 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, cou
                     <div className="p-4 bg-green-50 border-b border-green-100">
                         <h3 className="text-lg font-bold text-green-800">{selectedProject?.name}</h3>
                         <p className="text-sm text-green-600">Grupo: {selectedGroup?.name}</p>
+                        {selectedGroup && (
+                            <p className="mt-1 text-xs text-green-700 italic">
+                                Tutor: {(() => {
+                                    const tutor = allUsers.find(u => u.id === selectedGroup.tutorId);
+                                    return tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Sin tutor';
+                                })()}
+                            </p>
+                        )}
                     </div>
                     <div className="p-6">
                         <div className="mb-4">

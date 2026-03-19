@@ -30,7 +30,8 @@ export interface Course {
 
 export interface User {
     id: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     username: string;
     password?: string; // Should not be stored long-term
     role: Role;
