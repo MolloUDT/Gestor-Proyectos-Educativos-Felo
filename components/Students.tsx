@@ -33,7 +33,18 @@ const StudentForm: React.FC<{
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({ firstName, lastName, ...(username && { username }), ...(password && { password }), courseId });
+        
+        // Generate defaults if blank
+        const finalUsername = username.trim() || `${firstName.slice(0, 3).toLowerCase()}${lastName.slice(0, 3).toLowerCase()}`;
+        const finalPassword = password.trim() || `${firstName.slice(0, 3).toLowerCase()}${lastName.slice(0, 3).toLowerCase()}`;
+        
+        onSave({ 
+            firstName, 
+            lastName, 
+            username: finalUsername, 
+            password: finalPassword, 
+            courseId 
+        });
     };
 
     return (
@@ -63,7 +74,7 @@ const StudentForm: React.FC<{
                 </div>
             </div>
             <div>
-                <label htmlFor="studentUsername" className="block text-sm font-medium text-gray-700">Nombre de usuario (opcional)</label>
+                <label htmlFor="studentUsername" className="block text-sm font-medium text-gray-700">Nombre de usuario para acceder al aplicativo</label>
                 <input
                     type="text"
                     id="studentUsername"
@@ -74,7 +85,9 @@ const StudentForm: React.FC<{
                 />
             </div>
             <div>
-                <label htmlFor="courseId" className="block text-sm font-medium text-gray-700">Curso</label>
+                <label htmlFor="courseId" className="block text-sm font-medium text-gray-700">
+                    Curso {!courseId && <span className="text-red-600 italic text-xs">(recuerda seleccionar un curso para este alumno)</span>}
+                </label>
                 <select
                     id="courseId"
                     value={courseId}
@@ -82,13 +95,13 @@ const StudentForm: React.FC<{
                     className="w-full p-2 mt-1 border border-gray-300 rounded-md"
                     required
                 >
-                    <option value="">Selecciona un curso</option>
+                    <option value="" className="font-bold text-red-600">Selecciona un curso</option>
                     {courses.map(course => <option key={course.id} value={course.id}>{course.name}</option>)}
                 </select>
             </div>
             <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                    {student ? 'Nueva Contraseña (opcional)' : 'Contraseña'}
+                    Contraseña
                 </label>
                 <input
                     type="password"
@@ -96,8 +109,7 @@ const StudentForm: React.FC<{
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full p-2 mt-1 border border-gray-300 rounded-md"
-                    placeholder={student ? 'Dejar en blanco para no cambiar' : ''}
-                    required={!student}
+                    placeholder="Se generará automáticamente si se deja en blanco"
                 />
             </div>
             <div className="flex justify-end pt-4 space-x-2">
