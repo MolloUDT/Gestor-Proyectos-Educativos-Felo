@@ -43,6 +43,57 @@ export const CountdownDisplay: React.FC<{ endDate: string }> = ({ endDate }) => 
     );
 };
 
+export const GroupSummaryCard: React.FC<{
+    group: Group;
+    projects: Project[];
+    allUsers: User[];
+    tasks: Task[];
+    onCardClick: () => void;
+}> = ({ group, projects, allUsers, tasks, onCardClick }) => {
+    const project = projects.find(p => p.groupId === group.id);
+    const tutor = allUsers.find(u => u.id === group.tutorId);
+    
+    const progress = useMemo(() => {
+        if (!project) return 0;
+        const groupTasks = tasks.filter(t => t.projectId === project.id);
+        const total = groupTasks.length;
+        const completed = groupTasks.filter(t => t.status === KanbanStatus.Done).length;
+        return total > 0 ? Math.round((completed / total) * 100) : 0;
+    }, [project, tasks]);
+
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return 'N/A';
+        const date = new Date(dateStr + 'T00:00:00');
+        return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    return (
+        <button 
+            onClick={onCardClick} 
+            className="flex items-center w-full p-3 text-left text-gray-700 transition-colors bg-white border rounded-md shadow-sm gap-4 hover:bg-green-50 hover:border-green-300"
+        >
+            <div>
+                <ProgressCircle progress={progress} size={48} showText={true} />
+            </div>
+            <div className="flex-grow min-w-0">
+                <p className="font-semibold text-green-800 truncate">{project ? project.name : group.name}</p>
+                <p className="text-sm text-gray-500">{group.name}</p>
+                <p className="mt-1 text-xs text-gray-500">Tutor: {tutor ? tutor.name : 'Sin tutor'}</p>
+            </div>
+            <div className="flex flex-col items-end flex-shrink-0">
+                <div>
+                    <p className="text-sm font-medium text-gray-800">{formatDate(project?.startDate || '')}</p>
+                    <p className="text-xs text-right text-gray-500">Inicio</p>
+                </div>
+                <div className="mt-1">
+                    <p className="text-sm font-medium text-gray-800">{formatDate(project?.endDate || '')}</p>
+                    <p className="text-xs text-right text-gray-500">Fin</p>
+                </div>
+            </div>
+        </button>
+    );
+};
+
 export const GroupCard: React.FC<{ 
     group: Group; 
     projects: Project[]; 

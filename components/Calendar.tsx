@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { User, Tutorial, Role, Group, Project, Course, Task } from '../types';
 import Modal from './Modal';
 import { ChevronDownIcon, EditIcon, TrashIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
-import { GroupCard } from './GroupCard';
+import { GroupCard, GroupSummaryCard } from './GroupCard';
 
 interface CalendarProps {
     user: User;
@@ -791,13 +791,11 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                                             const isGroupExpanded = expandedKeys[`group_${group.id}`];
                                             return (
                                                 <div key={group.id} className="mb-4">
-                                                    <GroupCard 
+                                                    <GroupSummaryCard 
                                                         group={group}
                                                         projects={projects}
                                                         allUsers={allUsers}
                                                         tasks={tasks}
-                                                        user={user}
-                                                        courses={courses}
                                                         onCardClick={() => toggleExpand(`group_${group.id}`)}
                                                     />
                                                     {isGroupExpanded && (

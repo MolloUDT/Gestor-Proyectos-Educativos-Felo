@@ -3,7 +3,7 @@ import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { User, Group, Project, Course, Task, Role } from '../types';
 import { ChevronDownIcon, SaveIcon, ArrowLeftIcon } from './Icons';
-import { GroupCard } from './GroupCard';
+import { GroupCard, GroupSummaryCard } from './GroupCard';
 
 interface LogbookProps {
     user: User;
@@ -188,14 +188,12 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, cou
                                 <div className="p-4 border-t border-gray-200">
                                     <div className="grid grid-cols-1 gap-6">
                                         {projectsData.map(({ project, group }) => (
-                                            <GroupCard 
+                                            <GroupSummaryCard 
                                                 key={project.id}
                                                 group={group}
                                                 projects={projects}
                                                 allUsers={allUsers}
                                                 tasks={tasks}
-                                                user={user}
-                                                courses={courses}
                                                 onCardClick={() => handleSelectGroup(group)}
                                             />
                                         ))}

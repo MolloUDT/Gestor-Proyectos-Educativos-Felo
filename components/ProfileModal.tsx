@@ -49,7 +49,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onSave }) =>
                 </div>
 
                 <div>
-                    <label htmlFor="profileUsername" className="block text-sm font-medium text-gray-700">Nombre de Usuario</label>
+                    <label htmlFor="profileUsername" className="block text-sm font-medium text-gray-700">Nombre de usuario</label>
                     <input
                         type="text"
                         id="profileUsername"

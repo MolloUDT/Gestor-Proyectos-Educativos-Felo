@@ -40,7 +40,7 @@ const TutorForm: React.FC<{
                 />
             </div>
             <div>
-                <label htmlFor="tutorUsername" className="block text-sm font-medium text-gray-700">Nombre de Usuario (opcional)</label>
+                <label htmlFor="tutorUsername" className="block text-sm font-medium text-gray-700">Nombre de usuario (opcional)</label>
                 <input
                     type="text"
                     id="tutorUsername"
@@ -149,9 +149,9 @@ const Tutors: React.FC<TutorsProps> = ({ users, groups, onCreate, onUpdate, onDe
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-4 py-3 font-semibold text-gray-600">Nombre</th>
-                            <th className="px-4 py-3 font-semibold text-gray-600">Nombre de Usuario</th>
-                            <th className="px-4 py-3 font-semibold text-gray-600">Grupos Asignados</th>
+                            <th className="px-4 py-3 font-semibold text-gray-600">Nombre de usuario</th>
                             <th className="px-4 py-3 font-semibold text-gray-600">Contraseña</th>
+                            <th className="px-4 py-3 font-semibold text-gray-600">Grupos asignados</th>
                             <th className="px-4 py-3 font-semibold text-gray-600">Acciones</th>
                         </tr>
                     </thead>
@@ -169,9 +169,6 @@ const Tutors: React.FC<TutorsProps> = ({ users, groups, onCreate, onUpdate, onDe
                                         </button>
                                     </div>
                                 </td>
-                                <td className={`px-4 py-3 font-medium ${assignedGroupsCount(tutor.id) === 0 ? 'text-red-600' : 'text-green-800'}`}>
-                                    {assignedGroupsCount(tutor.id)}
-                                </td>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center space-x-2">
                                         <span className="text-gray-600 font-mono">
@@ -181,6 +178,9 @@ const Tutors: React.FC<TutorsProps> = ({ users, groups, onCreate, onUpdate, onDe
                                             {visiblePasswords[tutor.id] ? <EyeOffIcon className="w-5 h-5"/> : <EyeIcon className="w-5 h-5"/>}
                                         </button>
                                     </div>
+                                </td>
+                                <td className={`px-4 py-3 font-medium ${assignedGroupsCount(tutor.id) === 0 ? 'text-red-600' : 'text-green-800'}`}>
+                                    {assignedGroupsCount(tutor.id)}
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="flex space-x-4">

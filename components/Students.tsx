@@ -1,19 +1,22 @@
 
 import React, { useState, useMemo } from 'react';
-import { User, Role, Course } from '../types';
+import { User, Role, Course, Group, Project } from '../types';
 import Modal from './Modal';
-import { EditIcon, TrashIcon, PlusCircleIcon, ChevronDownIcon, EyeIcon, EyeOffIcon, UsersIcon, UserIcon } from './Icons';
+import { EditIcon, TrashIcon, PlusCircleIcon, ChevronDownIcon, EyeIcon, EyeOffIcon, UsersIcon, UserIcon, InfoIcon } from './Icons';
 
 interface StudentsProps {
     users: User[];
     courses: Course[];
+    groups: Group[];
+    projects: Project[];
+    onCreateCourse: (name: string) => void;
     onUpdateCourse: (courseId: string, name: string) => void;
     onDeleteCourse: (courseId: string) => void;
-    onCreateCourse: (name: string) => void;
     onCreate: (data: { name: string; username?: string; password?: string; courseId: string }) => void;
     onCreateBulk: (students: { name: string; password: string; courseId: string }[]) => void;
     onUpdate: (id: string, data: { name: string; username?: string; password?: string; courseId: string }) => void;
     onDelete: (id: string) => void;
+    onNavigateToGroup?: (groupId: string) => void;
 }
 
 const StudentForm: React.FC<{
@@ -46,7 +49,7 @@ const StudentForm: React.FC<{
                 />
             </div>
             <div>
-                <label htmlFor="studentUsername" className="block text-sm font-medium text-gray-700">Nombre de Usuario (opcional)</label>
+                <label htmlFor="studentUsername" className="block text-sm font-medium text-gray-700">Nombre de usuario (opcional)</label>
                 <input
                     type="text"
                     id="studentUsername"
@@ -191,17 +194,21 @@ const BulkStudentForm: React.FC<{
     );
 };
 
-const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onDeleteCourse, onCreateCourse, onCreate, onCreateBulk, onUpdate, onDelete }) => {
+const Students: React.FC<StudentsProps> = ({ users, courses, groups, projects, onUpdateCourse, onDeleteCourse, onCreateCourse, onCreate, onCreateBulk, onUpdate, onDelete, onNavigateToGroup }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
     const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
     const [isEditCourseModalOpen, setIsEditCourseModalOpen] = useState(false);
     const [isDeleteCourseModalOpen, setIsDeleteCourseModalOpen] = useState(false);
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+    const [searchName, setSearchName] = useState('');
+    const [searchResultStudent, setSearchResultStudent] = useState<User | null>(null);
     const [editingStudent, setEditingStudent] = useState<User | null>(null);
     const [studentToDelete, setStudentToDelete] = useState<User | null>(null);
     const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
     const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+    const [visibleUsernames, setVisibleUsernames] = useState<Record<string, boolean>>({});
     const [newCourseName, setNewCourseName] = useState('');
     const [editingCourse, setEditingCourse] = useState<Course | null>(null);
 
@@ -219,6 +226,14 @@ const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onD
 
     const togglePasswordVisibility = (id: string) => {
         setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }));
+    };
+
+    const toggleUsernameVisibility = (id: string) => {
+        setVisibleUsernames(prev => ({ ...prev, [id]: !prev[id] }));
+    };
+
+    const assignedGroupsCount = (student: User) => {
+        return student.groupIds?.length || 0;
     };
 
     const handleCreate = () => {
@@ -265,11 +280,35 @@ const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onD
         setIsBulkModalOpen(false);
     };
 
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!searchName.trim()) return;
+
+        const student = users.find(u => 
+            u.role === Role.Student && 
+            u.name.toLowerCase().includes(searchName.toLowerCase())
+        );
+
+        if (student) {
+            setSearchResultStudent(student);
+            setIsInfoModalOpen(true);
+        } else {
+            alert('No se encontró ningún alumno con esos apellidos.');
+        }
+    };
+
     const handleEditCourse = () => {
         if (editingCourse && editingCourse.name) {
             // This needs to be implemented in App.tsx and passed down
             setEditingCourse(null);
             setIsEditCourseModalOpen(false);
+        }
+    };
+
+    const handleGroupClick = (groupId: string) => {
+        if (onNavigateToGroup) {
+            onNavigateToGroup(groupId);
+            setIsInfoModalOpen(false);
         }
     };
 
@@ -288,6 +327,33 @@ const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onD
                     <UserIcon className="w-5 h-5" />
                     Añadir alumno a curso
                 </button>
+            </div>
+
+            <div className="mb-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-end gap-4">
+                    <div className="flex-1 w-full">
+                        <label htmlFor="searchStudent" className="block text-sm font-medium text-gray-700 mb-1">Información sobre el alumno. Escribe sólo los apellidos del alumno</label>
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <InfoIcon className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <input
+                                type="text"
+                                id="searchStudent"
+                                value={searchName}
+                                onChange={(e) => setSearchName(e.target.value)}
+                                placeholder="Escribe únicamente los apellidos del alumno"
+                                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            />
+                        </div>
+                    </div>
+                    <button
+                        type="submit"
+                        className="px-6 py-2 bg-orange-600 text-white font-semibold rounded-md hover:bg-orange-700 transition-colors"
+                    >
+                        Buscar
+                    </button>
+                </form>
             </div>
 
             <div className="space-y-2">
@@ -324,8 +390,9 @@ const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onD
                                                 <thead>
                                                     <tr>
                                                         <th className="px-4 py-2 font-semibold text-gray-600">Nombre</th>
-                                                        <th className="px-4 py-2 font-semibold text-gray-600">Nombre de Usuario</th>
+                                                        <th className="px-4 py-2 font-semibold text-gray-600">Nombre de usuario</th>
                                                         <th className="px-4 py-2 font-semibold text-gray-600">Contraseña</th>
+                                                        <th className="px-4 py-2 font-semibold text-gray-600">Grupos asignados</th>
                                                         <th className="px-4 py-2 font-semibold text-gray-600">Acciones</th>
                                                     </tr>
                                                 </thead>
@@ -333,7 +400,16 @@ const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onD
                                                     {students.map(student => (
                                                         <tr key={student.id}>
                                                             <td className="px-4 py-2 font-medium text-gray-800">{student.name}</td>
-                                                            <td className="px-4 py-2 text-gray-600">{student.username}</td>
+                                                            <td className="px-4 py-2">
+                                                                <div className="flex items-center space-x-2">
+                                                                    <span className="text-gray-600 font-mono">
+                                                                        {visibleUsernames[student.id] ? student.username : '••••••••'}
+                                                                    </span>
+                                                                    <button onClick={() => toggleUsernameVisibility(student.id)} className="text-gray-500 hover:text-gray-700">
+                                                                        {visibleUsernames[student.id] ? <EyeOffIcon className="w-5 h-5"/> : <EyeIcon className="w-5 h-5"/>}
+                                                                    </button>
+                                                                </div>
+                                                            </td>
                                                             <td className="px-4 py-2">
                                                                 <div className="flex items-center space-x-2">
                                                                     <span className="text-gray-600 font-mono">
@@ -343,6 +419,9 @@ const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onD
                                                                         {visiblePasswords[student.id] ? <EyeOffIcon className="w-5 h-5"/> : <EyeIcon className="w-5 h-5"/>}
                                                                     </button>
                                                                 </div>
+                                                            </td>
+                                                            <td className={`px-4 py-2 font-medium ${assignedGroupsCount(student) === 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                                                {assignedGroupsCount(student)}
                                                             </td>
                                                             <td className="px-4 py-2">
                                                                 <div className="flex space-x-4">
@@ -453,6 +532,84 @@ const Students: React.FC<StudentsProps> = ({ users, courses, onUpdateCourse, onD
                             </button>
                             <button onClick={handleConfirmDelete} className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">
                                 Sí, Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {isInfoModalOpen && searchResultStudent && (
+                <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)} title="Información Detallada del Alumno">
+                    <div className="space-y-4">
+                        <div className="pb-4 border-b border-gray-100">
+                            <h3 className="text-lg font-bold text-gray-900">{searchResultStudent.name}</h3>
+                            <div className="mt-2 space-y-2">
+                                <div>
+                                    <span className="text-xs font-semibold text-gray-500 uppercase">Nombre de usuario</span>
+                                    <div className="flex items-center space-x-2">
+                                        <span className="text-sm text-gray-700 font-mono">
+                                            {visibleUsernames[searchResultStudent.id] ? searchResultStudent.username : '••••••••'}
+                                        </span>
+                                        <button onClick={() => toggleUsernameVisibility(searchResultStudent.id)} className="text-gray-400 hover:text-gray-600">
+                                            {visibleUsernames[searchResultStudent.id] ? <EyeOffIcon className="w-4 h-4"/> : <EyeIcon className="w-4 h-4"/>}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span className="text-xs font-semibold text-gray-500 uppercase">Contraseña</span>
+                                    <div className="flex items-center space-x-2">
+                                        <span className="text-sm text-gray-700 font-mono">
+                                            {visiblePasswords[searchResultStudent.id] ? searchResultStudent.password : '••••••••'}
+                                        </span>
+                                        <button onClick={() => togglePasswordVisibility(searchResultStudent.id)} className="text-gray-400 hover:text-gray-600">
+                                            {visiblePasswords[searchResultStudent.id] ? <EyeOffIcon className="w-4 h-4"/> : <EyeIcon className="w-4 h-4"/>}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Curso</h4>
+                            <p className="mt-1 text-gray-900 font-medium">
+                                {courses.find(c => c.id === searchResultStudent.courseId)?.name || 'No asignado'}
+                            </p>
+                        </div>
+
+                        <div>
+                            <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Grupos y Proyectos</h4>
+                            <div className="mt-2 space-y-3">
+                                {groups.filter(g => searchResultStudent.groupIds?.includes(g.id)).length > 0 ? (
+                                    groups.filter(g => searchResultStudent.groupIds?.includes(g.id)).map(group => {
+                                        const associatedProject = projects.find(p => p.groupId === group.id);
+                                        return (
+                                            <div 
+                                                key={group.id} 
+                                                onClick={() => handleGroupClick(group.id)}
+                                                className="p-3 bg-blue-50 rounded-md border border-blue-100 cursor-pointer hover:bg-blue-100 transition-colors"
+                                            >
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <p className="font-bold text-blue-900">
+                                                            <span className="font-semibold text-blue-700">Nombre del grupo:</span> {group.name}
+                                                        </p>
+                                                        <p className="font-bold text-blue-900 mt-1">
+                                                            <span className="font-semibold text-blue-700">Nombre del proyecto:</span> {associatedProject?.name || 'Sin proyecto asociado'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <p className="text-red-600 italic font-medium">Este alumno no pertenece a ningún grupo.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end pt-4">
+                            <button onClick={() => setIsInfoModalOpen(false)} className="px-6 py-2 bg-gray-900 text-white rounded-md hover:bg-black transition-colors">
+                                Cerrar
                             </button>
                         </div>
                     </div>

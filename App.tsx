@@ -28,6 +28,7 @@ const App: React.FC = () => {
     const [page, setPage] = useState<Page>('dashboard');
     const [selectedKanbanProject, setSelectedKanbanProject] = useState<string | null>(null);
     const [selectedCalendarGroup, setSelectedCalendarGroup] = useState<string | null>(null);
+    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
     const [authError, setAuthError] = useState<string>('');
     const [unreadMessagesToShow, setUnreadMessagesToShow] = useState<Message[]>([]);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -511,6 +512,11 @@ const App: React.FC = () => {
         }
     };
 
+    const handleNavigateToGroup = (groupId: string) => {
+        setPage('dashboard');
+        setSelectedGroupId(groupId);
+    };
+
     const renderPage = useMemo(() => {
         if (!currentUser) return null;
         switch (page) {
@@ -526,6 +532,7 @@ const App: React.FC = () => {
                             ras={ras}
                             courses={courses}
                             courseDates={courseDates}
+                            selectedGroupId={selectedGroupId}
                             onNavigateToKanban={handleNavigateToKanban}
                             onNavigateToCalendar={handleNavigateToCalendar}
                             onSendMessage={handleSendMessage}
@@ -542,6 +549,8 @@ const App: React.FC = () => {
                 return <Students 
                             users={users}
                             courses={courses}
+                            groups={groups}
+                            projects={projects}
                             onCreateCourse={handleCreateCourse}
                             onUpdateCourse={handleUpdateCourse}
                             onDeleteCourse={handleDeleteCourse}
@@ -549,6 +558,7 @@ const App: React.FC = () => {
                             onCreateBulk={handleCreateStudentsBulk}
                             onUpdate={handleUpdateStudent}
                             onDelete={handleDeleteStudent}
+                            onNavigateToGroup={handleNavigateToGroup}
                         />;
             case 'ras':
                 return <RAs
