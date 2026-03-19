@@ -378,7 +378,7 @@ const AdminTutorGroupCard: React.FC<{
                                     .sort(sortBySurname)
                                     .map((member, index, array) => (
                                     <span key={member.id} className="text-sm text-gray-800">
-                                        {index + 1}. {member.lastName}, {member.firstName}{index < array.length - 1 ? ',' : ''}
+                                        {index + 1}. {member.lastName}, {member.firstName}{index < array.length - 1 ? ' |' : ''}
                                     </span>
                                 ))}
                             </div>
@@ -778,7 +778,7 @@ const StudentProjectDetailCard: React.FC<{
                                     .sort(sortBySurname)
                                     .map((member, index, array) => (
                                     <span key={member.id} className="text-sm text-gray-800">
-                                        {index + 1}. {member.lastName}, {member.firstName}{index < array.length - 1 ? ',' : ''}
+                                        {index + 1}. {member.lastName}, {member.firstName}{index < array.length - 1 ? ' |' : ''}
                                     </span>
                                 ))}
                             </div>
