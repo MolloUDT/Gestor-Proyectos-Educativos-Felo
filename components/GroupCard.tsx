@@ -76,18 +76,18 @@ export const GroupSummaryCard: React.FC<{
                 <ProgressCircle progress={progress} size={48} showText={true} />
             </div>
             <div className="flex-grow min-w-0">
-                <p className="font-semibold text-green-800 truncate">{project ? project.name : group.name}</p>
-                <p className="text-sm text-gray-500">{group.name}</p>
-                <p className="mt-1 text-xs text-gray-500">Tutor: {tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Sin tutor'}</p>
+                <p className="font-semibold text-green-800 truncate">Proyecto: {project ? project.name : group.name}</p>
+                <p className="text-sm text-gray-500">Grupo: {group.name}</p>
+                <p className="mt-1 text-xs text-blue-600">Tutor: {tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Sin tutor'}</p>
             </div>
             <div className="flex flex-col items-end flex-shrink-0">
                 <div>
-                    <p className="text-sm font-medium text-gray-800">{formatDate(project?.startDate || '')}</p>
                     <p className="text-xs text-right text-gray-500">Inicio</p>
+                    <p className="text-sm font-medium text-green-600">{formatDate(project?.startDate || '')}</p>
                 </div>
                 <div className="mt-1">
-                    <p className="text-sm font-medium text-gray-800">{formatDate(project?.endDate || '')}</p>
                     <p className="text-xs text-right text-gray-500">Fin</p>
+                    <p className="text-sm font-medium text-red-600">{formatDate(project?.endDate || '')}</p>
                 </div>
             </div>
         </button>

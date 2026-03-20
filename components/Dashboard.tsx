@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { User, Task, Role, KanbanStatus, Group, Project, Message, Tutorial, Priority, Difficulty, RA, Course } from '../types';
 import { ChevronDownIcon, TrashIcon } from './Icons';
+import { ProgressCircle } from './ProgressCircle';
 import PendingMessagesModal from './PendingMessagesModal';
 import Modal from './Modal';
 import TaskForm from './TaskForm';
@@ -86,76 +87,7 @@ const CountdownDisplay: React.FC<{ endDate: string }> = ({ endDate }) => {
     );
 };
 
-const ProgressCircle: React.FC<{ progress: number; size?: number }> = ({ progress, size = 64 }) => {
-    const strokeWidth = size < 50 ? 6 : 8;
 
-    if (progress === 100) {
-        return (
-            <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-                    <circle
-                        className="text-green-500"
-                        fill="currentColor"
-                        r={size / 2}
-                        cx={size / 2}
-                        cy={size / 2}
-                    />
-                </svg>
-                <span className={`absolute font-bold text-white ${size < 50 ? 'text-xs' : 'text-base'}`}>{progress}%</span>
-            </div>
-        );
-    }
-    
-    if (progress <= 0) {
-         return (
-            <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-                    <circle
-                        className="text-red-500"
-                        fill="currentColor"
-                        r={size / 2}
-                        cx={size / 2}
-                        cy={size / 2}
-                    />
-                </svg>
-                <span className={`absolute font-bold text-white ${size < 50 ? 'text-xs' : 'text-base'}`}>{progress}%</span>
-            </div>
-        );
-    }
-
-    const radius = size / 2 - strokeWidth / 2;
-    const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (progress / 100) * circumference;
-
-    const progressColorClass = useMemo(() => {
-        if (progress <= 40) return 'text-red-500';
-        if (progress <= 79) return 'text-yellow-500';
-        return 'text-green-500';
-    }, [progress]);
-
-    return (
-        <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-            <svg className="absolute" width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-                <circle className="text-gray-200" strokeWidth={strokeWidth} stroke="currentColor" fill="transparent" r={radius} cx={size/2} cy={size/2} />
-                <circle
-                    className={progressColorClass}
-                    strokeWidth={strokeWidth}
-                    strokeDasharray={circumference}
-                    strokeDashoffset={offset}
-                    strokeLinecap="round"
-                    stroke="currentColor"
-                    fill="transparent"
-                    r={radius}
-                    cx={size/2}
-                    cy={size/2}
-                    style={{ transition: 'stroke-dashoffset 0.5s ease-in-out' }}
-                    transform={`rotate(-90 ${size/2} ${size/2})`}
-                />
-            </svg>
-            <span className={`font-bold text-gray-700 ${size < 50 ? 'text-xs' : 'text-base'}`}>{progress}%</span>
-        </div>
-    );
-};
 
 const difficultyWeights: { [key in Difficulty]: number } = {
     [Difficulty.Level1]: 1,
@@ -344,7 +276,7 @@ const AdminTutorGroupCard: React.FC<{
         <div className={`w-full p-4 bg-white rounded-lg shadow-md transition-all duration-500 ${highlight ? 'ring-4 ring-orange-500 ring-offset-2 scale-[1.02]' : ''}`}>
                 <div className="flex flex-col md:flex-row items-center gap-6">
                     <div className="flex items-center justify-center gap-4 rounded-xl p-1">
-                        <ProgressCircle progress={progress} size={96} />
+                        <ProgressCircle progress={progress} size={96} showText={true} />
                         <div className="flex flex-col gap-2">
                            <ValueDisplay value={projectValue} label="Total" colorClass="bg-gray-600" />
                            <ValueDisplay value={achievedValue} label="Actual" colorClass="bg-green-600" />
@@ -378,7 +310,7 @@ const AdminTutorGroupCard: React.FC<{
                                     .sort(sortBySurname)
                                     .map((member, index, array) => (
                                     <span key={member.id} className="text-sm text-gray-800">
-                                        {index + 1}. {member.lastName}, {member.firstName}{index < array.length - 1 ? ' |' : ''}
+                                        <span className="font-bold">{index + 1}.</span> {member.lastName}, {member.firstName}{index < array.length - 1 ? ' |' : ''}
                                     </span>
                                 ))}
                             </div>
@@ -760,7 +692,7 @@ const StudentProjectDetailCard: React.FC<{
         <div className="w-full p-4 bg-white rounded-lg shadow-md">
                 <div className="flex flex-col md:flex-row items-center gap-6">
                     <div className="flex items-center justify-center gap-4 rounded-xl p-1">
-                        <ProgressCircle progress={progress} size={96} />
+                        <ProgressCircle progress={progress} size={96} showText={true} />
                         <div className="flex flex-col gap-2">
                             <ValueDisplay value={projectValue} label="Total" colorClass="bg-gray-600" />
                             <ValueDisplay value={achievedValue} label="Actual" colorClass="bg-green-600" />
@@ -778,7 +710,7 @@ const StudentProjectDetailCard: React.FC<{
                                     .sort(sortBySurname)
                                     .map((member, index, array) => (
                                     <span key={member.id} className="text-sm text-gray-800">
-                                        {index + 1}. {member.lastName}, {member.firstName}{index < array.length - 1 ? ' |' : ''}
+                                        <span className="font-bold">{index + 1}.</span> {member.lastName}, {member.firstName}{index < array.length - 1 ? ' |' : ''}
                                     </span>
                                 ))}
                             </div>
@@ -982,6 +914,7 @@ const AdminTutorDashboard: React.FC<{
     onShowPendingTasks: (projectId: string) => void;
 }> = ({ groups, projects, tasks, allUsers, tutorials, courses, selectedGroupId, onNavigateToKanban, onNavigateToCalendar, onShowPendingTasks }) => {
     const [expandedCourseGroups, setExpandedCourseGroups] = useState<Record<string, boolean>>({});
+    const [selectedProjectForCourse, setSelectedProjectForCourse] = useState<Record<string, string | null>>({});
 
     useEffect(() => {
         if (selectedGroupId) {
@@ -1016,7 +949,10 @@ const AdminTutorDashboard: React.FC<{
     }, [projects, groups, courses]);
     
     const toggleCourseGroup = (courseGroupName: string) => {
-        setExpandedCourseGroups(prev => ({ ...prev, [courseGroupName]: !prev[courseGroupName] }));
+        setExpandedCourseGroups(prev => {
+            const isCurrentlyExpanded = !!prev[courseGroupName];
+            return { [courseGroupName]: !isCurrentlyExpanded };
+        });
     };
 
     return (
@@ -1035,23 +971,73 @@ const AdminTutorDashboard: React.FC<{
                         </button>
                         {isExpanded && (
                             <div className="p-4 border-t border-gray-200">
-                                <div className="grid grid-cols-1 gap-6">
-                                    {projectsData.map(({ project, group }) => (
-                                        <AdminTutorGroupCard
-                                            key={project.id}
-                                            group={group}
-                                            project={project}
-                                            tasks={tasks}
-                                            allUsers={allUsers}
-                                            tutorials={tutorials}
-                                            courses={courses}
-                                            highlight={group.id === selectedGroupId}
-                                            onNavigateToKanban={onNavigateToKanban}
-                                            onNavigateToCalendar={onNavigateToCalendar}
-                                            onShowPendingTasks={onShowPendingTasks}
-                                        />
-                                    ))}
-                                </div>
+                                {!selectedProjectForCourse[courseGroup] ? (
+                                    <div className="space-y-2 mb-4">
+                                        {projectsData.map(({ project, group }) => {
+                                            const tutor = allUsers.find(u => u.id === group.tutorId);
+                                            const progress = Math.round((tasks.filter(t => t.projectId === project.id && t.status === KanbanStatus.Done).length / (tasks.filter(t => t.projectId === project.id).length || 1)) * 100);
+                                            
+                                            return (
+                                                <button
+                                                    key={project.id}
+                                                    onClick={() => setSelectedProjectForCourse(prev => ({ ...prev, [courseGroup]: project.id }))}
+                                                    className={`flex items-center w-full p-3 text-left transition-colors border rounded-md shadow-sm gap-4 ${
+                                                        selectedProjectForCourse[courseGroup] === project.id
+                                                            ? 'bg-blue-50 border-blue-300'
+                                                            : 'bg-white border-gray-200 hover:bg-green-50 hover:border-green-300'
+                                                    }`}
+                                                >
+                                                    <div>
+                                                        <ProgressCircle progress={progress} size={48} showText={true} />
+                                                    </div>
+                                                    <div className="flex-grow min-w-0">
+                                                        <p className="font-semibold text-green-800 truncate">Proyecto: {project.name}</p>
+                                                        <p className="text-sm text-gray-500">Grupo: {group.name}</p>
+                                                        <p className="mt-1 text-xs text-blue-600">Tutor: {tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Sin tutor'}</p>
+                                                    </div>
+                                                    <div className="flex flex-col items-end flex-shrink-0">
+                                                        <div>
+                                                            <p className="text-xs text-right text-gray-500">Inicio</p>
+                                                            <p className="text-sm font-medium text-green-600">{new Date(project.startDate + 'T00:00:00').toLocaleDateString('es-ES')}</p>
+                                                        </div>
+                                                        <div className="mt-1">
+                                                            <p className="text-xs text-right text-gray-500">Fin</p>
+                                                            <p className="text-sm font-medium text-red-600">{new Date(project.endDate + 'T00:00:00').toLocaleDateString('es-ES')}</p>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <>
+                                        <button 
+                                            onClick={() => setSelectedProjectForCourse(prev => ({ ...prev, [courseGroup]: null }))} 
+                                            className="mb-4 text-sm text-blue-600 hover:underline flex items-center"
+                                        >
+                                            <ChevronDownIcon className="w-4 h-4 mr-1 rotate-90" /> Volver al listado de grupos
+                                        </button>
+                                        <div className="grid grid-cols-1 gap-6">
+                                            {projectsData
+                                                .filter(p => p.project.id === selectedProjectForCourse[courseGroup])
+                                                .map(({ project, group }) => (
+                                                    <AdminTutorGroupCard
+                                                        key={project.id}
+                                                        group={group}
+                                                        project={project}
+                                                        tasks={tasks}
+                                                        allUsers={allUsers}
+                                                        tutorials={tutorials}
+                                                        courses={courses}
+                                                        highlight={group.id === selectedGroupId}
+                                                        onNavigateToKanban={onNavigateToKanban}
+                                                        onNavigateToCalendar={onNavigateToCalendar}
+                                                        onShowPendingTasks={onShowPendingTasks}
+                                                    />
+                                                ))}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>

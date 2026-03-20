@@ -140,6 +140,7 @@ const App: React.FC = () => {
     }, [fetchAllData]);
 
     const handleLogin = useCallback(async (username: string, password: string): Promise<void> => {
+        console.log("Attempting login for:", username);
         // Buscar directamente en la tabla users
         const { data: usersData, error: userError } = await supabase
             .from('users')
@@ -148,11 +149,16 @@ const App: React.FC = () => {
             .eq('password', password)
             .single();
 
+        if (userError) {
+            console.error("Login error from Supabase:", userError);
+        }
+        
         if (userError || !usersData) {
             setAuthError('Usuario o contraseña incorrectos.');
             return;
         }
 
+        console.log("Login successful for:", usersData);
         const user = mapUser(usersData);
         setCurrentUser(user);
         setAuthError('');
@@ -645,6 +651,7 @@ const App: React.FC = () => {
                             allUsers={users}
                             projects={projects}
                             courses={courses}
+                            tasks={tasks}
                             onUploadFile={handleUploadFile}
                             onDeleteFile={handleDeleteFile}
                         />;

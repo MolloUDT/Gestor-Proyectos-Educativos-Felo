@@ -1,7 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
-import { User, Role, StoredFile, Group, Project, Course } from '../types';
+import { User, Role, StoredFile, Group, Project, Course, Task } from '../types';
 import { ChevronDownIcon, TrashIcon } from './Icons';
+import { GroupCard, GroupSummaryCard } from './GroupCard';
 import Modal from './Modal';
 
 interface FilesProps {
@@ -11,11 +12,12 @@ interface FilesProps {
     allUsers: User[];
     projects: Project[];
     courses: Course[];
+    tasks: Task[];
     onUploadFile: (file: File, groupId: string) => void;
     onDeleteFile: (fileId: string) => void;
 }
 
-const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, courses, onUploadFile, onDeleteFile }) => {
+const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, courses, tasks, onUploadFile, onDeleteFile }) => {
     const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
     const [fileToDelete, setFileToDelete] = useState<StoredFile | null>(null);
 
@@ -79,18 +81,13 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
 
                                     return (
                                     <div key={group.id} className="mb-2 border-l-2 border-green-200">
-                                        <button onClick={() => toggleExpand(`group_${group.id}`)} className="flex items-center justify-between w-full p-3 text-left hover:bg-gray-50 focus:outline-none">
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center">
-                                                    <h4 className="font-semibold text-green-800">{group.name}</h4>
-                                                    <span className="ml-3 px-2 py-0.5 text-xs font-semibold text-gray-700 bg-gray-200 rounded-full">{groupFiles.length} archivos</span>
-                                                </div>
-                                                {project && (
-                                                    <p className="mt-1 text-sm italic text-gray-500 truncate">{project.name}</p>
-                                                )}
-                                            </div>
-                                            <ChevronDownIcon className={`flex-shrink-0 w-5 h-5 ml-2 text-gray-500 transition-transform ${expandedKeys[`group_${group.id}`] ? 'rotate-180' : ''}`} />
-                                        </button>
+                                        <GroupSummaryCard 
+                                            group={group}
+                                            projects={projects}
+                                            allUsers={allUsers}
+                                            tasks={tasks}
+                                            onCardClick={() => toggleExpand(`group_${group.id}`)}
+                                        />
                                         {expandedKeys[`group_${group.id}`] && (
                                             <div className="pl-6 pr-2 pb-2 mt-1 space-y-2">
                                                 <div className="flex justify-end mb-2">
