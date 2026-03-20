@@ -11,9 +11,9 @@ interface CalendarProps {
     allUsers: User[];
     projects: Project[];
     courses: Course[];
-    onCreateTutorial: (data: Omit<Tutorial, 'id'>) => void;
-    onUpdateTutorial: (id: string, data: Partial<Omit<Tutorial, 'id'>>) => void;
-    onDeleteTutorial: (id: string) => void;
+    onCreateTutorial: (data: Omit<Tutorial, 'id'>) => Promise<any>;
+    onUpdateTutorial: (id: string, data: Partial<Omit<Tutorial, 'id'>>) => Promise<any>;
+    onDeleteTutorial: (id: string) => Promise<void>;
     courseDates: { startDate: string; endDate: string; };
     tasks: Task[];
     initialGroupId?: string | null;
@@ -28,38 +28,79 @@ const formatDate = (date: Date) => {
 };
 
 const TutorialForm: React.FC<{
+    user: User;
     tutors: User[];
     groups: Group[];
     allUsers: User[];
     projects: Project[];
     courses: Course[];
-    onSave: (data: { id?: string, payload: Omit<Tutorial, 'id'>}) => void;
+    onSave: (data: { id?: string, payload: Omit<Tutorial, 'id'>}) => Promise<any>;
     onCancel: () => void;
     tutorialToEdit?: Tutorial | null;
     initialData?: Partial<Omit<Tutorial, 'id'>> | null;
-}> = ({ tutors, groups, allUsers, projects, courses, onSave, onCancel, tutorialToEdit, initialData }) => {
+}> = ({ user, tutors, groups, allUsers, projects, courses, onSave, onCancel, tutorialToEdit, initialData }) => {
     const [date, setDate] = useState(tutorialToEdit?.date || initialData?.date || formatDate(new Date()));
-    const [tutorId, setTutorId] = useState(tutorialToEdit?.tutorId || initialData?.tutorId || '');
-    const [groupId, setGroupId] = useState(tutorialToEdit?.groupId || initialData?.groupId || '');
+    const [time, setTime] = useState(tutorialToEdit?.time || initialData?.time || '');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    
+    // Pre-fill tutor and group for students
+    const defaultTutorId = useMemo(() => {
+        if (tutorialToEdit?.tutorId) return tutorialToEdit.tutorId;
+        if (initialData?.tutorId) return initialData.tutorId;
+        if (user.role === Role.Tutor) return user.id;
+        if (user.role === Role.Student && user.groupIds.length > 0) {
+            const firstGroup = groups.find(g => g.id === user.groupIds[0]);
+            return firstGroup?.tutorId || '';
+        }
+        return '';
+    }, [user, groups, tutorialToEdit, initialData]);
+
+    const defaultGroupId = useMemo(() => {
+        if (tutorialToEdit?.groupId) return tutorialToEdit.groupId;
+        if (initialData?.groupId) return initialData.groupId;
+        if (user.role === Role.Tutor && groups.filter(g => g.tutorId === user.id).length === 1) {
+            return groups.find(g => g.tutorId === user.id)?.id || '';
+        }
+        if (user.role === Role.Student && user.groupIds.length > 0) {
+            return user.groupIds[0];
+        }
+        return '';
+    }, [user, groups, tutorialToEdit, initialData]);
+
+    const [tutorId, setTutorId] = useState(defaultTutorId);
+    const [groupId, setGroupId] = useState(defaultGroupId);
     const [summary, setSummary] = useState(tutorialToEdit?.summary || '');
-    const [location, setLocation] = useState(tutorialToEdit?.location || '');
-    const [nextDate, setNextDate] = useState(tutorialToEdit?.nextDate || '');
-    const [nextLocation, setNextLocation] = useState(tutorialToEdit?.nextLocation || '');
-    const [nextTime, setNextTime] = useState(tutorialToEdit?.nextTime || '');
+    const [location, setLocation] = useState(tutorialToEdit?.location || initialData?.location || '');
+    const [status, setStatus] = useState<'scheduled' | 'held'>(tutorialToEdit?.status || 'scheduled');
+    const [attendeeIds, setAttendeeIds] = useState<string[]>(tutorialToEdit?.attendeeIds || []);
+    const [nextDate, setNextDate] = useState('');
+    const [nextLocation, setNextLocation] = useState(tutorialToEdit?.location || initialData?.location || '');
+    const [nextTime, setNextTime] = useState(tutorialToEdit?.time || initialData?.time || '');
     const todayStr = useMemo(() => formatDate(new Date()), []);
 
     useEffect(() => {
-        if (tutorialToEdit?.tutorId !== tutorId) {
+        if (!tutorialToEdit && tutorId) {
              setGroupId('');
         }
     }, [tutorId, tutorialToEdit]);
+
+    const groupMembers = useMemo(() => {
+        const group = groups.find(g => g.id === groupId);
+        return group ? group.members : [];
+    }, [groupId, groups]);
 
     const availableGroupsByCourse = useMemo(() => {
         if (!tutorId) {
             return {};
         }
         
-        const filteredGroups = groups.filter(group => group.tutorId === tutorId);
+        let filteredGroups = groups.filter(group => group.tutorId === tutorId);
+        
+        // If user is a student, further filter to only show groups they belong to
+        if (user.role === Role.Student) {
+            filteredGroups = filteredGroups.filter(group => user.groupIds.includes(group.id));
+        }
 
         const result: Record<string, Group[]> = {};
         filteredGroups.forEach(group => {
@@ -72,39 +113,131 @@ const TutorialForm: React.FC<{
             result[courseName].push(group);
         });
         return result;
-    }, [tutorId, groups, courses]);
+    }, [tutorId, groups, courses, user]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (nextDate && nextDate < todayStr) {
-            alert('No se pueden agendar reuniones con fecha anterior a la actual.');
-            return;
+        setIsSubmitting(true);
+        setError(null);
+
+        try {
+            const err = await onSave({ 
+                id: tutorialToEdit?.id, 
+                payload: { 
+                    date, 
+                    time, 
+                    tutorId, 
+                    groupId, 
+                    summary, 
+                    location, 
+                    status,
+                    attendeeIds 
+                } 
+            });
+
+            if (err) {
+                setError(err.message || "Error al guardar la tutoría. Por favor, revisa los permisos o contacta con soporte.");
+                setIsSubmitting(false);
+                return;
+            }
+
+            if (nextDate) {
+                const nextErr = await onSave({
+                    payload: {
+                        date: nextDate,
+                        time: nextTime,
+                        location: nextLocation,
+                        tutorId,
+                        groupId,
+                        summary: '',
+                        attendeeIds: [],
+                        status: 'scheduled'
+                    }
+                });
+                if (nextErr) {
+                    console.error("Error creating next tutorial:", nextErr);
+                }
+            }
+        } catch (err: any) {
+            setError(err.message || "Error inesperado al guardar la tutoría.");
+            setIsSubmitting(false);
         }
-        onSave({ 
-            id: tutorialToEdit?.id, 
-            payload: { date, tutorId, groupId, summary, location, nextDate, nextLocation, nextTime } 
-        });
     };
+
+    const isRegistration = !!tutorialToEdit || (user.role !== Role.Student && status === 'held');
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
+            {!tutorialToEdit && user.role !== Role.Student && (
+                <div className="flex p-1 bg-gray-100 rounded-lg w-fit">
+                    <button
+                        type="button"
+                        onClick={() => setStatus('scheduled')}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${status === 'scheduled' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Agendar futura
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setStatus('held')}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${status === 'held' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Registrar celebrada
+                    </button>
+                </div>
+            )}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Fecha de la tutoría</label>
-                    <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required />
+                    <input 
+                        type="date" 
+                        value={date} 
+                        onChange={e => setDate(e.target.value)} 
+                        className="w-full p-2 mt-1 border border-gray-300 rounded-md" 
+                        required 
+                        disabled={isRegistration && status === 'held'}
+                    />
                 </div>
-                 <div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Hora de la tutoría</label>
+                    <input 
+                        type="time" 
+                        value={time} 
+                        onChange={e => setTime(e.target.value)} 
+                        className="w-full p-2 mt-1 border border-gray-300 rounded-md" 
+                        required 
+                        disabled={isRegistration && status === 'held'}
+                    />
+                </div>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
                     <label className="block text-sm font-medium text-gray-700">Lugar de reunión</label>
-                    <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Sala de reuniones, Aula 102, Online..." className="w-full p-2 mt-1 border border-gray-300 rounded-md" />
+                    <input 
+                        type="text" 
+                        value={location} 
+                        onChange={e => setLocation(e.target.value)} 
+                        placeholder="Ej: Sala de reuniones, Aula 102, Online..." 
+                        className="w-full p-2 mt-1 border border-gray-300 rounded-md" 
+                        disabled={isRegistration && status === 'held'}
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Tutor</label>
+                    <select 
+                        value={tutorId} 
+                        onChange={e => setTutorId(e.target.value)} 
+                        className="w-full p-2 mt-1 border border-gray-300 rounded-md" 
+                        required
+                        disabled={isRegistration}
+                    >
+                        <option value="">Seleccionar tutor</option>
+                        {tutors.map(t => <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>)}
+                    </select>
                 </div>
             </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Tutor</label>
-                <select value={tutorId} onChange={e => setTutorId(e.target.value)} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required>
-                    <option value="">Seleccionar tutor</option>
-                    {tutors.map(t => <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>)}
-                </select>
-            </div>
+
             <div>
                 <label className="block text-sm font-medium text-gray-700">Grupo</label>
                 <select 
@@ -112,7 +245,7 @@ const TutorialForm: React.FC<{
                     onChange={e => setGroupId(e.target.value)} 
                     className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
                     required 
-                    disabled={!tutorId}
+                    disabled={!tutorId || isRegistration}
                 >
                     <option value="">{tutorId ? 'Seleccionar grupo' : 'Seleccione un tutor primero'}</option>
                     {Object.keys(availableGroupsByCourse).sort().map(courseName => (
@@ -128,28 +261,82 @@ const TutorialForm: React.FC<{
                     ))}
                 </select>
             </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Contenido de la reunión</label>
-                <textarea value={summary} onChange={e => setSummary(e.target.value)} rows={5} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required />
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Fecha para la próxima tutoría</label>
-                <input type="date" value={nextDate} onChange={e => setNextDate(e.target.value)} min={date > todayStr ? date : todayStr} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required />
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Lugar de próxima reunión</label>
-                    <input type="text" value={nextLocation} onChange={e => setNextLocation(e.target.value)} placeholder="Ej: Sala de reuniones, Aula 102, Online..." className="w-full p-2 mt-1 border border-gray-300 rounded-md" />
+
+            {isRegistration && (
+                <>
+                    <div className="border-t pt-4 mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Asistencia de integrantes</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded-md bg-gray-50">
+                            {groupMembers.map(member => (
+                                <label key={member.id} className="flex items-center space-x-2 text-sm">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={attendeeIds.includes(member.id)}
+                                        onChange={e => {
+                                            if (e.target.checked) {
+                                                setAttendeeIds([...attendeeIds, member.id]);
+                                            } else {
+                                                setAttendeeIds(attendeeIds.filter(id => id !== member.id));
+                                            }
+                                        }}
+                                        className="rounded text-green-600 focus:ring-green-500"
+                                    />
+                                    <span>{member.firstName} {member.lastName}</span>
+                                </label>
+                            ))}
+                            {groupMembers.length === 0 && <p className="text-xs text-gray-500 italic">No hay integrantes en este grupo</p>}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Contenido de la reunión</label>
+                        <textarea 
+                            value={summary} 
+                            onChange={e => setSummary(e.target.value)} 
+                            rows={5} 
+                            className="w-full p-2 mt-1 border border-gray-300 rounded-md" 
+                            required={status === 'held'}
+                            placeholder="Registra lo tratado en la reunión..."
+                        />
+                    </div>
+                </>
+            )}
+
+            {/* Próxima reunión (opcional) */}
+            {status === 'held' && (
+                <div className="p-4 mt-6 border rounded-lg bg-blue-50 border-blue-100">
+                    <h4 className="mb-3 text-sm font-semibold text-blue-800">Agendar próxima reunión (opcional)</h4>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Fecha</label>
+                            <input type="date" value={nextDate} onChange={e => setNextDate(e.target.value)} className="w-full p-2 mt-1 border border-gray-300 rounded-md" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Hora</label>
+                            <input type="time" value={nextTime} onChange={e => setNextTime(e.target.value)} className="w-full p-2 mt-1 border border-gray-300 rounded-md" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Lugar</label>
+                            <input type="text" value={nextLocation} onChange={e => setNextLocation(e.target.value)} placeholder="Ej: Aula 102" className="w-full p-2 mt-1 border border-gray-300 rounded-md" />
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Hora de próxima reunión</label>
-                    <input type="time" value={nextTime} onChange={e => setNextTime(e.target.value)} className="w-full p-2 mt-1 border border-gray-300 rounded-md" />
+            )}
+
+            {error && (
+                <div className="p-3 text-sm text-red-700 bg-red-100 rounded-md border border-red-200">
+                    {error}
                 </div>
-            </div>
+            )}
+
             <div className="flex justify-end pt-4 space-x-2">
-                <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancelar</button>
-                <button type="submit" className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700">
-                    {tutorialToEdit ? 'Guardar Cambios' : 'Registrar'}
+                <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200" disabled={isSubmitting}>Cancelar</button>
+                <button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className={`px-4 py-2 text-white rounded-md transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''} ${status === 'held' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                >
+                    {isSubmitting ? 'Guardando...' : (tutorialToEdit ? 'Guardar cambios' : (status === 'held' ? 'Registrar reunión' : (user.role === Role.Student ? 'Solicitar Tutoría' : 'Agendar Tutoría')))}
                 </button>
             </div>
         </form>
@@ -228,7 +415,6 @@ const CalendarView: React.FC<{
         });
         
         const eventMap: Record<string, CalendarEvent[]> = {};
-        const registeredSet = new Set<string>(visibleTutorials.map(t => `${t.groupId}-${t.date}`));
 
         visibleTutorials.forEach(tut => {
             const group = groupMap.get(tut.groupId);
@@ -239,20 +425,21 @@ const CalendarView: React.FC<{
                 courseGroup: groupToCourseMap[tut.groupId] || 'default',
             };
 
-            const registeredEvent: RegisteredEvent = { ...tut, ...enrichedBase, type: 'registered' };
-            if (!eventMap[tut.date]) eventMap[tut.date] = [];
-            eventMap[tut.date].push(registeredEvent);
-
-            if (tut.nextDate && !registeredSet.has(`${tut.groupId}-${tut.nextDate}`)) {
+            if (tut.status === 'held') {
+                const registeredEvent: RegisteredEvent = { ...tut, ...enrichedBase, type: 'registered' };
+                if (!eventMap[tut.date]) eventMap[tut.date] = [];
+                eventMap[tut.date].push(registeredEvent);
+            } else {
+                // status is 'scheduled' or undefined (default to scheduled)
                 const scheduledEvent: ScheduledEvent = {
                     type: 'scheduled',
-                    id: `scheduled-${tut.id}`,
-                    date: tut.nextDate,
+                    id: tut.id,
+                    date: tut.date,
                     ...enrichedBase,
                     originalTutorial: tut,
                 };
-                if (!eventMap[tut.nextDate]) eventMap[tut.nextDate] = [];
-                eventMap[tut.nextDate].push(scheduledEvent);
+                if (!eventMap[tut.date]) eventMap[tut.date] = [];
+                eventMap[tut.date].push(scheduledEvent);
             }
         });
         return eventMap;
@@ -288,8 +475,10 @@ const CalendarView: React.FC<{
             if (event.type === 'registered') {
                 onEdit(event);
             } else {
-                onScheduleNew({ date: event.date, groupId: event.originalTutorial.groupId, tutorId: event.originalTutorial.tutorId });
+                onEdit(event.originalTutorial);
             }
+        } else if (eventsOnDay.length === 0) {
+            onScheduleNew({ date: formatDate(day) });
         } else if (eventsOnDay.length > 1) {
             setDailyTutorialsPopover({ day, events: eventsOnDay });
         }
@@ -402,16 +591,17 @@ const CalendarView: React.FC<{
                                                 if (isRegistered) {
                                                     onEdit(event);
                                                 } else {
-                                                    onScheduleNew({ date: event.date, groupId: event.originalTutorial.groupId, tutorId: event.originalTutorial.tutorId });
+                                                    onEdit(event.originalTutorial);
                                                 }
                                             }}
                                             onMouseMove={(e) => {
+                                                const tut = isRegistered ? event : event.originalTutorial;
                                                 const data: TooltipData = {
                                                     groupName: event.groupName,
                                                     projectName: event.projectName,
-                                                    summary: event.type === 'registered' ? event.summary : "Próxima reunión agendada.",
-                                                    location: event.type === 'registered' ? event.location : event.originalTutorial.nextLocation || 'Lugar por definir',
-                                                    time: event.type === 'registered' ? undefined : event.originalTutorial.nextTime || 'Hora por definir'
+                                                    summary: isRegistered ? tut.summary : "Próxima reunión agendada.",
+                                                    location: tut.location || 'Lugar por definir',
+                                                    time: tut.time || 'Hora por definir'
                                                 };
                                                 setTooltip({ data, x: e.clientX, y: e.clientY });
                                             }}
@@ -449,7 +639,7 @@ const CalendarView: React.FC<{
                                         if (isRegistered) {
                                             onEdit(event);
                                         } else {
-                                            onScheduleNew({ date: event.date, groupId: event.originalTutorial.groupId, tutorId: event.originalTutorial.tutorId });
+                                            onEdit(event.originalTutorial);
                                         }
                                         setDailyTutorialsPopover(null); 
                                     }}
@@ -460,6 +650,10 @@ const CalendarView: React.FC<{
                                             {event.groupName}
                                         </p>
                                         <p className="mt-1 text-sm italic text-gray-600 truncate">{event.projectName}</p>
+                                        <div className="flex gap-2 mt-1">
+                                            <span className="text-xs text-gray-500">🕒 {isRegistered ? event.time : event.originalTutorial.time || 'Por definir'}</span>
+                                            <span className="text-xs text-gray-500">📍 {isRegistered ? event.location : event.originalTutorial.location || 'Por definir'}</span>
+                                        </div>
                                         {isRegistered && <p className="mt-1 text-xs text-gray-500 truncate">{event.summary}</p>}
                                     </div>
                                     <div className="flex-shrink-0 ml-4">
@@ -486,7 +680,8 @@ const PendingTutorialsModal: React.FC<{
     projects: Project[];
     courses: Course[];
     onClose: () => void;
-}> = ({ user, tutors, tutorials, groups, allUsers, projects, courses, onClose }) => {
+    onEdit: (tutorial: Tutorial) => void;
+}> = ({ user, tutors, tutorials, groups, allUsers, projects, courses, onClose, onEdit }) => {
     const [selectedTutorId, setSelectedTutorId] = useState(user.role === Role.Tutor ? user.id : '');
 
     const pendingTutorialsByTutor = useMemo(() => {
@@ -494,15 +689,13 @@ const PendingTutorialsModal: React.FC<{
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const registeredSet = new Set<string>(tutorials.map(t => `${t.groupId}-${t.date}`));
-
         return tutorials
-            .filter(tut => tut.tutorId === selectedTutorId && tut.nextDate && !registeredSet.has(`${tut.groupId}-${tut.nextDate}`))
-            .sort((a, b) => new Date(a.nextDate!).getTime() - new Date(b.nextDate!).getTime())
+            .filter(tut => tut.tutorId === selectedTutorId && tut.status === 'scheduled')
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
             .map(tut => {
                 const group = groups.find(g => g.id === tut.groupId);
                 const project = projects.find(p => p.groupId === tut.groupId);
-                const isOverdue = new Date(tut.nextDate! + 'T00:00:00') < today;
+                const isOverdue = new Date(tut.date + 'T00:00:00') < today;
                 let courseGroup = 'N/A';
                 if (group) {
                     const course = courses.find(c => c.id === group.courseId);
@@ -511,15 +704,16 @@ const PendingTutorialsModal: React.FC<{
                     }
                 }
                 return {
-                    id: `pending-${tut.id}`,
-                    date: tut.nextDate!,
+                    id: tut.id,
+                    date: tut.date,
                     reunionStatus: isOverdue ? 'Reunión no celebrada' : 'Reunión por celebrar',
-                    location: tut.nextLocation || 'No especificado',
-                    time: tut.nextTime || 'No especificada',
+                    location: tut.location || 'No especificado',
+                    time: tut.time || 'No especificada',
                     courseGroup,
                     groupName: group?.name || 'Grupo Desconocido',
                     projectName: project?.name || 'Sin Proyecto',
                     isOverdue,
+                    originalTutorial: tut
                 };
             });
     }, [selectedTutorId, tutorials, groups, projects, courses]);
@@ -529,15 +723,13 @@ const PendingTutorialsModal: React.FC<{
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const registeredSet = new Set<string>(tutorials.map(t => `${t.groupId}-${t.date}`));
-
         return tutorials
-            .filter(tut => user.groupIds.includes(tut.groupId) && tut.nextDate && !registeredSet.has(`${tut.groupId}-${tut.nextDate}`))
-            .sort((a, b) => new Date(a.nextDate!).getTime() - new Date(b.nextDate!).getTime())
+            .filter(tut => user.groupIds.includes(tut.groupId) && tut.status === 'scheduled')
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
             .map(tut => {
                 const group = groups.find(g => g.id === tut.groupId);
                 const project = projects.find(p => p.groupId === tut.groupId);
-                const isOverdue = new Date(tut.nextDate! + 'T00:00:00') < today;
+                const isOverdue = new Date(tut.date + 'T00:00:00') < today;
                 let courseGroup = 'N/A';
                 if (group) {
                     const course = courses.find(c => c.id === group.courseId);
@@ -546,15 +738,16 @@ const PendingTutorialsModal: React.FC<{
                     }
                 }
                 return {
-                    id: `pending-student-${tut.id}`,
-                    date: tut.nextDate!,
+                    id: tut.id,
+                    date: tut.date,
                     reunionStatus: isOverdue ? 'Reunión no celebrada' : 'Reunión por celebrar',
-                    location: tut.nextLocation || 'No especificado',
-                    time: tut.nextTime || 'No especificada',
+                    location: tut.location || 'No especificado',
+                    time: tut.time || 'No especificada',
                     courseGroup,
                     groupName: group?.name || 'Grupo Desconocido',
                     projectName: project?.name || 'Sin Proyecto',
                     isOverdue,
+                    originalTutorial: tut
                 };
             });
     }, [user, tutorials, groups, projects, courses]);
@@ -617,7 +810,11 @@ const PendingTutorialsModal: React.FC<{
                             </thead>
                             <tbody className="divide-y">
                                 {tutorialsToShow.map(tut => (
-                                    <tr key={tut.id} className={`hover:bg-gray-50 ${tut.isOverdue ? 'bg-red-50 text-red-800' : 'text-green-800'}`}>
+                                    <tr 
+                                        key={tut.id} 
+                                        className={`hover:bg-gray-50 cursor-pointer ${tut.isOverdue ? 'bg-red-50 text-red-800' : 'text-green-800'}`}
+                                        onClick={() => onEdit(tut.originalTutorial)}
+                                    >
                                         <td className="px-3 py-2 text-sm">{new Date(tut.date + 'T00:00:00').toLocaleDateString('es-ES')}</td>
                                         <td className={`px-3 py-2 text-sm ${tut.isOverdue ? 'font-semibold' : ''}`}>{tut.reunionStatus}</td>
                                         <td className="px-3 py-2 text-sm">{tut.location}</td>
@@ -679,7 +876,10 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
             ? groups.filter(g => g.tutorId === user.id).map(g => g.id)
             : user.groupIds;
         
-        return tutorials.filter(t => userGroupIds.includes(t.groupId));
+        return tutorials.filter(t => 
+            userGroupIds.includes(t.groupId) || 
+            (user.role === Role.Tutor && t.tutorId === user.id)
+        );
     }, [user, tutorials, groups]);
 
 
@@ -739,18 +939,23 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
         setIsCreateModalOpen(true);
     };
 
-    const handleSave = ({ id, payload }: { id?: string; payload: Omit<Tutorial, 'id'>}) => {
+    const handleSave = async ({ id, payload }: { id?: string; payload: Omit<Tutorial, 'id'>}) => {
+        let err;
         if (id) {
-            onUpdateTutorial(id, payload);
+            err = await onUpdateTutorial(id, payload);
         } else {
-            onCreateTutorial(payload);
+            err = await onCreateTutorial(payload);
         }
-        closeModal();
+        
+        if (!err) {
+            closeModal();
+        }
+        return err;
     };
 
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = async () => {
         if (tutorialToDelete) {
-            onDeleteTutorial(tutorialToDelete.id);
+            await onDeleteTutorial(tutorialToDelete.id);
         }
         closeModal();
     };
@@ -765,11 +970,9 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                     <button onClick={() => setView(v => v === 'list' ? 'calendar' : 'list')} className="flex-1 px-2 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors truncate">
                         {view === 'list' ? 'Calendario' : 'Lista'}
                     </button>
-                    {(user.role === Role.Admin || user.role === Role.Tutor) && (
-                        <button onClick={handleCreate} className="flex-1 px-2 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors truncate">
-                            Registrar
-                        </button>
-                    )}
+                    <button onClick={handleCreate} className="flex-1 px-2 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors truncate">
+                        Solicitar Tutoría
+                    </button>
                 </div>
             </div>
             
@@ -809,7 +1012,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                                                                     <div className="flex-1 min-w-0">
                                                                         <p className="font-semibold text-gray-700">{new Date(tutorial.date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                                                                         <p className="mt-1 text-sm text-gray-600 truncate">{tutorial.summary}</p>
-                                                                        {tutorial.nextDate && <p className="pt-2 mt-2 text-xs text-blue-600 border-t"><strong className="font-semibold">Próxima reunión:</strong> {new Date(tutorial.nextDate  + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</p>}
                                                                     </div>
                                                                     {(user.role === Role.Admin || user.id === tutorial.tutorId) && (
                                                                         <div className="flex flex-shrink-0 ml-4 space-x-1">
@@ -856,11 +1058,15 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                         projects={projects}
                         courses={courses}
                         onClose={closeModal}
+                        onEdit={(tut) => {
+                            setEditingTutorial(tut);
+                            setIsPendingModalOpen(false);
+                        }}
                     />
                 </Modal>
             )}
-            {isCreateModalOpen && <Modal title="Registrar Nueva Tutoría" onClose={closeModal}><TutorialForm tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} initialData={prefilledData} /></Modal>}
-            {editingTutorial && <Modal title="Editar Tutoría" onClose={closeModal}><TutorialForm tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} tutorialToEdit={editingTutorial} /></Modal>}
+            {isCreateModalOpen && <Modal title="Solicitar Tutoría" onClose={closeModal}><TutorialForm user={user} tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} initialData={prefilledData} /></Modal>}
+            {editingTutorial && <Modal title="Editar Tutoría" onClose={closeModal}><TutorialForm user={user} tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} tutorialToEdit={editingTutorial} /></Modal>}
             {tutorialToDelete && (
                 <Modal title="Confirmar Eliminación" onClose={closeModal}>
                     <div className="text-center">

@@ -434,32 +434,94 @@ const App: React.FC = () => {
     };
 
     const handleCreateTutorial = async (tutorialData: Omit<Tutorial, 'id'>) => {
-        await supabase.from('tutorials').insert({
+        const payload: any = {
             date: tutorialData.date,
+            time: tutorialData.time,
             summary: tutorialData.summary,
             group_id: tutorialData.groupId,
             tutor_id: tutorialData.tutorId,
             location: tutorialData.location,
-            next_date: tutorialData.nextDate,
-            next_location: tutorialData.nextLocation,
-            next_time: tutorialData.nextTime
-        });
+            status: tutorialData.status,
+            attendee_ids: tutorialData.attendeeIds,
+            next_date: tutorialData.date // Fallback for old schema constraint
+        };
+
+        let { error } = await supabase.from('tutorials').insert(payload);
+        let retries = 0;
+        
+        while (error && retries < 5) {
+            const msg = error.message.toLowerCase();
+            if (msg.includes('status')) {
+                delete payload.status;
+            } else if (msg.includes('attendee_ids')) {
+                delete payload.attendee_ids;
+            } else if (msg.includes('location')) {
+                delete payload.location;
+            } else if (msg.includes('time')) {
+                delete payload.time;
+            } else if (msg.includes('next_date')) {
+                delete payload.next_date;
+            } else {
+                break;
+            }
+            
+            const { error: retryError } = await supabase.from('tutorials').insert(payload);
+            error = retryError;
+            retries++;
+        }
+
+        if (error) {
+            console.error("Final error creating tutorial after retries:", error);
+            return error;
+        }
         await fetchAllData();
+        return null;
     };
     
     const handleUpdateTutorial = async (tutorialId: string, tutorialData: Partial<Omit<Tutorial, 'id'>>) => {
         const updateData: any = {};
-        if (tutorialData.date !== undefined) updateData.date = tutorialData.date;
+        if (tutorialData.date !== undefined) {
+            updateData.date = tutorialData.date;
+            updateData.next_date = tutorialData.date; // Fallback for old schema constraint
+        }
+        if (tutorialData.time !== undefined) updateData.time = tutorialData.time;
         if (tutorialData.summary !== undefined) updateData.summary = tutorialData.summary;
         if (tutorialData.groupId !== undefined) updateData.group_id = tutorialData.groupId;
         if (tutorialData.tutorId !== undefined) updateData.tutor_id = tutorialData.tutorId;
         if (tutorialData.location !== undefined) updateData.location = tutorialData.location;
-        if (tutorialData.nextDate !== undefined) updateData.next_date = tutorialData.nextDate;
-        if (tutorialData.nextLocation !== undefined) updateData.next_location = tutorialData.nextLocation;
-        if (tutorialData.nextTime !== undefined) updateData.next_time = tutorialData.nextTime;
+        if (tutorialData.status !== undefined) updateData.status = tutorialData.status;
+        if (tutorialData.attendeeIds !== undefined) updateData.attendee_ids = tutorialData.attendeeIds;
         
-        await supabase.from('tutorials').update(updateData).eq('id', tutorialId);
+        let { error } = await supabase.from('tutorials').update(updateData).eq('id', tutorialId);
+        let retries = 0;
+        
+        while (error && retries < 5) {
+            const msg = error.message.toLowerCase();
+            if (msg.includes('status')) {
+                delete updateData.status;
+            } else if (msg.includes('attendee_ids')) {
+                delete updateData.attendee_ids;
+            } else if (msg.includes('location')) {
+                delete updateData.location;
+            } else if (msg.includes('time')) {
+                delete updateData.time;
+            } else if (msg.includes('next_date')) {
+                delete updateData.next_date;
+            } else {
+                break;
+            }
+            
+            const { error: retryError } = await supabase.from('tutorials').update(updateData).eq('id', tutorialId);
+            error = retryError;
+            retries++;
+        }
+
+        if (error) {
+            console.error("Final error updating tutorial after retries:", error);
+            return error;
+        }
         await fetchAllData();
+        return null;
     };
 
     const handleDeleteTutorial = async (tutorialId: string) => {

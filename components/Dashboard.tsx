@@ -107,6 +107,25 @@ const statusWeights: { [key in KanbanStatus]: number } = {
     [KanbanStatus.Done]: 3,
 };
 
+const calculateProjectProgress = (projectTasks: Task[]) => {
+    if (projectTasks.length === 0) return 0;
+    
+    const calculatedProjectValue = projectTasks.reduce((acc, task) => {
+        const d = difficultyWeights[task.difficulty] || 1;
+        const p = priorityWeights[task.priority] || 1;
+        return acc + (d * p * 3); // Max potential value (status weight 3)
+    }, 0);
+
+    const calculatedAchievedValue = projectTasks.reduce((acc, task) => {
+        const d = difficultyWeights[task.difficulty] || 1;
+        const p = priorityWeights[task.priority] || 1;
+        const s = statusWeights[task.status] || 0;
+        return acc + (d * p * s);
+    }, 0);
+
+    return calculatedProjectValue > 0 ? Math.round((calculatedAchievedValue / calculatedProjectValue) * 100) : 0;
+};
+
 const AdminTutorGroupCard: React.FC<{ 
     group: Group; 
     project: Project; 
@@ -129,15 +148,15 @@ const AdminTutorGroupCard: React.FC<{
         }
         
         const calculatedProjectValue = groupTasks.reduce((acc, task) => {
-            const d = difficultyWeights[task.difficulty];
-            const p = priorityWeights[task.priority];
-            return acc + (d * p * 3); // Max potential value
+            const d = difficultyWeights[task.difficulty] || 1;
+            const p = priorityWeights[task.priority] || 1;
+            return acc + (d * p * 3);
         }, 0);
 
         const calculatedAchievedValue = groupTasks.reduce((acc, task) => {
-            const d = difficultyWeights[task.difficulty];
-            const p = priorityWeights[task.priority];
-            const s = statusWeights[task.status];
+            const d = difficultyWeights[task.difficulty] || 1;
+            const p = priorityWeights[task.priority] || 1;
+            const s = statusWeights[task.status] || 0;
             return acc + (d * p * s);
         }, 0);
         
@@ -171,23 +190,22 @@ const AdminTutorGroupCard: React.FC<{
     }, [group.courseId, courses]);
 
     const { pastTutorialsCount, nextTutorialDate } = useMemo(() => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const todayStr = new Date().toISOString().split('T')[0];
         const groupTutorials = tutorials.filter(t => t.groupId === group.id);
-        const pastTutorials = groupTutorials.filter(t => new Date(t.date + 'T00:00:00') < today);
+        const pastTutorials = groupTutorials.filter(t => t.status === 'held');
         const futureTutorials = groupTutorials
-            .filter(t => t.nextDate && new Date(t.nextDate + 'T00:00:00') >= today)
-            .sort((a, b) => new Date(a.nextDate).getTime() - new Date(b.nextDate).getTime());
+            .filter(t => t.status === 'scheduled' && t.date >= todayStr)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
         const nextDateInfo = futureTutorials.length > 0
-            ? `${new Date(futureTutorials[0].nextDate + 'T00:00:00').toLocaleDateString('es-ES')} ${futureTutorials[0].nextTime ? `a las ${futureTutorials[0].nextTime}`: ''}`
+            ? `${new Date(futureTutorials[0].date + 'T00:00:00').toLocaleDateString('es-ES')}`
             : 'No agendada';
 
         return { pastTutorialsCount: pastTutorials.length, nextTutorialDate: nextDateInfo };
     }, [tutorials, group.id]);
 
-    const groupMeetingsCount = 0; // Placeholder
-    const nextGroupMeetingDate = "No agendada"; // Placeholder
+    const groupMeetingsCount = pastTutorialsCount;
+    const nextGroupMeetingDate = nextTutorialDate;
 
     const calculateTaskStats = (tasks: Task[]) => {
         const stats = {
@@ -551,15 +569,15 @@ const StudentProjectDetailCard: React.FC<{
         }
         
         const calculatedProjectValue = groupTasks.reduce((acc, task) => {
-            const d = difficultyWeights[task.difficulty];
-            const p = priorityWeights[task.priority];
-            return acc + (d * p * 3); // Max potential value
+            const d = difficultyWeights[task.difficulty] || 1;
+            const p = priorityWeights[task.priority] || 1;
+            return acc + (d * p * 3);
         }, 0);
 
         const calculatedAchievedValue = groupTasks.reduce((acc, task) => {
-            const d = difficultyWeights[task.difficulty];
-            const p = priorityWeights[task.priority];
-            const s = statusWeights[task.status];
+            const d = difficultyWeights[task.difficulty] || 1;
+            const p = priorityWeights[task.priority] || 1;
+            const s = statusWeights[task.status] || 0;
             return acc + (d * p * s);
         }, 0);
         
@@ -587,23 +605,22 @@ const StudentProjectDetailCard: React.FC<{
     }, [group.members, allUsers]);
 
     const { pastTutorialsCount, nextTutorialDate } = useMemo(() => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const todayStr = new Date().toISOString().split('T')[0];
         const groupTutorials = tutorials.filter(t => t.groupId === group.id);
-        const pastTutorials = groupTutorials.filter(t => new Date(t.date + 'T00:00:00') < today);
+        const pastTutorials = groupTutorials.filter(t => t.status === 'held');
         const futureTutorials = groupTutorials
-            .filter(t => t.nextDate && new Date(t.nextDate + 'T00:00:00') >= today)
-            .sort((a, b) => new Date(a.nextDate).getTime() - new Date(b.nextDate).getTime());
+            .filter(t => t.status === 'scheduled' && t.date >= todayStr)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
         const nextDateInfo = futureTutorials.length > 0
-            ? `${new Date(futureTutorials[0].nextDate + 'T00:00:00').toLocaleDateString('es-ES')} ${futureTutorials[0].nextTime ? `a las ${futureTutorials[0].nextTime}`: ''}`
+            ? `${new Date(futureTutorials[0].date + 'T00:00:00').toLocaleDateString('es-ES')}`
             : 'No agendada';
 
         return { pastTutorialsCount: pastTutorials.length, nextTutorialDate: nextDateInfo };
     }, [tutorials, group.id]);
 
-    const groupMeetingsCount = 0; // Placeholder
-    const nextGroupMeetingDate = "No agendada"; // Placeholder
+    const groupMeetingsCount = pastTutorialsCount;
+    const nextGroupMeetingDate = nextTutorialDate;
 
     const calculateTaskStats = (tasks: Task[]) => {
         const stats = {
@@ -975,7 +992,8 @@ const AdminTutorDashboard: React.FC<{
                                     <div className="space-y-2 mb-4">
                                         {projectsData.map(({ project, group }) => {
                                             const tutor = allUsers.find(u => u.id === group.tutorId);
-                                            const progress = Math.round((tasks.filter(t => t.projectId === project.id && t.status === KanbanStatus.Done).length / (tasks.filter(t => t.projectId === project.id).length || 1)) * 100);
+                                            const projectTasks = tasks.filter(t => t.projectId === project.id);
+                                            const progress = calculateProjectProgress(projectTasks);
                                             
                                             return (
                                                 <button

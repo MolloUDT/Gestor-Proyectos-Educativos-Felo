@@ -89,13 +89,13 @@ export interface SessionLog {
 export interface Tutorial {
     id: string;
     date: string; // ISO 8601 format: 'YYYY-MM-DD'
+    time?: string;
     summary: string;
     groupId: string;
     tutorId: string;
     location?: string;
-    nextDate: string; // ISO 8601 format: 'YYYY-MM-DD'
-    nextLocation?: string;
-    nextTime?: string;
+    attendeeIds?: string[];
+    status?: 'scheduled' | 'held';
 }
 
 export interface StoredFile {

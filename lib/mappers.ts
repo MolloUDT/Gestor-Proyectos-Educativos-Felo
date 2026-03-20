@@ -29,20 +29,29 @@ export const mapProject = (row: any): Project => ({
     endDate: row.end_date,
 });
 
-export const mapTask = (row: any): Task => ({
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    status: row.status as KanbanStatus,
-    priority: row.priority as Priority,
-    difficulty: row.difficulty as Difficulty,
-    assigneeId: row.assignee_id,
-    startDate: row.start_date,
-    endDate: row.end_date,
-    raId: row.ra_id,
-    projectId: row.project_id,
-    isVerified: row.is_verified,
-});
+export const mapTask = (row: any): Task => {
+    let status = row.status as KanbanStatus;
+    // Handle potential English status or variations from old data
+    const rawStatus = String(row.status || '').toLowerCase();
+    if (rawStatus === 'backlog' || rawStatus === 'todo' || rawStatus === 'pendiente') status = KanbanStatus.Backlog;
+    else if (rawStatus === 'doing' || rawStatus === 'in-progress' || rawStatus === 'en progreso') status = KanbanStatus.Doing;
+    else if (rawStatus === 'done' || rawStatus === 'completed' || rawStatus === 'realizadas') status = KanbanStatus.Done;
+
+    return {
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        status: status,
+        priority: row.priority as Priority,
+        difficulty: row.difficulty as Difficulty,
+        assigneeId: row.assignee_id,
+        startDate: row.start_date,
+        endDate: row.end_date,
+        raId: row.ra_id,
+        projectId: row.project_id,
+        isVerified: row.is_verified,
+    };
+};
 
 export const mapRA = (row: any): RA => ({
     id: row.id,
@@ -51,17 +60,48 @@ export const mapRA = (row: any): RA => ({
     description: row.description,
 });
 
-export const mapTutorial = (row: any): Tutorial => ({
-    id: row.id,
-    date: row.date,
-    summary: row.summary,
-    groupId: row.group_id,
-    tutorId: row.tutor_id,
-    location: row.location || undefined,
-    nextDate: row.next_date,
-    nextLocation: row.next_location || undefined,
-    nextTime: row.next_time || undefined,
-});
+export const mapTutorial = (row: any): Tutorial => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tutorialDate = row.date ? new Date(row.date + 'T00:00:00') : null;
+    
+    // Improved status inference for old data or missing columns
+    let inferredStatus: 'scheduled' | 'held' = 'scheduled';
+    
+    if (row.status === 'held' || row.status === 'scheduled') {
+        inferredStatus = row.status;
+    } else {
+        // If no status column or invalid status, infer from summary and date
+        const summary = row.summary || '';
+        const hasRealSummary = summary.trim().length > 0 && 
+                             !summary.toLowerCase().includes('resumen de la tutoría') &&
+                             !summary.toLowerCase().includes('plantilla');
+        
+        if (hasRealSummary) {
+            inferredStatus = 'held';
+        } else {
+            // Default to scheduled, especially if it's in the future or a pending past one
+            inferredStatus = 'scheduled';
+        }
+    }
+
+    // Safety check: future tutorials should always be 'scheduled'
+    if (tutorialDate && tutorialDate > today) {
+        inferredStatus = 'scheduled';
+    }
+
+    return {
+        id: row.id,
+        date: row.date ? row.date.split('T')[0] : '',
+        time: row.time || '',
+        summary: row.summary || '',
+        groupId: row.group_id,
+        tutorId: row.tutor_id,
+        location: row.location || undefined,
+        status: inferredStatus,
+        attendeeIds: row.attendee_ids || [],
+    };
+};
 
 export const mapStoredFile = (row: any): StoredFile => ({
     id: row.id,

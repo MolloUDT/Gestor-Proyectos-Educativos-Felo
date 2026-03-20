@@ -87,11 +87,11 @@ export const MOCK_TASKS: Task[] = [
 
 // TUTORIALS
 export const MOCK_TUTORIALS: Tutorial[] = [
-    { id: 'tut-1', date: '2025-10-15', summary: 'Revisión inicial del proyecto y asignación de roles.', groupId: 'group-1', tutorId: 'user-2', nextDate: '2025-10-29', location: 'Sala de reuniones 1', nextLocation: 'Aula 203', nextTime: '10:00' },
-    { id: 'tut-2', date: '2025-10-29', summary: 'Seguimiento de tareas de backend y resolución de dudas sobre la API.', groupId: 'group-1', tutorId: 'user-2', nextDate: '2025-11-12', location: 'Aula 203', nextLocation: 'Online', nextTime: '11:30' },
-    { id: 'tut-3', date: '2025-11-12', summary: 'Próxima revisión de prototipo funcional.', groupId: 'group-1', tutorId: 'user-2', location: 'Online', nextDate: '2025-11-26', nextLocation: 'Sala de reuniones 1', nextTime: '10:00' },
-    { id: 'tut-4', date: '2025-10-20', summary: 'Definición de la estrategia de comunicación y marketing.', groupId: 'group-2', tutorId: 'user-12', nextDate: '2025-11-03', location: 'Biblioteca', nextLocation: 'Sala de reuniones 2', nextTime: '09:00' },
-    { id: 'tut-5', date: '2025-11-03', summary: 'Revisión de contactos de patrocinadores.', groupId: 'group-2', tutorId: 'user-12', location: 'Sala de reuniones 2', nextDate: '2025-11-17', nextLocation: 'Biblioteca', nextTime: '09:30' },
+    { id: 'tut-1', date: '2025-10-15', time: '10:00', summary: 'Revisión inicial del proyecto y asignación de roles.', groupId: 'group-1', tutorId: 'user-2', location: 'Sala de reuniones 1', status: 'held', attendeeIds: [] },
+    { id: 'tut-2', date: '2025-10-29', time: '11:30', summary: 'Seguimiento de tareas de backend y resolución de dudas sobre la API.', groupId: 'group-1', tutorId: 'user-2', location: 'Aula 203', status: 'held', attendeeIds: [] },
+    { id: 'tut-3', date: '2025-11-12', time: '10:00', summary: 'Próxima revisión de prototipo funcional.', groupId: 'group-1', tutorId: 'user-2', location: 'Online', status: 'held', attendeeIds: [] },
+    { id: 'tut-4', date: '2025-10-20', time: '09:00', summary: 'Definición de la estrategia de comunicación y marketing.', groupId: 'group-2', tutorId: 'user-12', location: 'Biblioteca', status: 'held', attendeeIds: [] },
+    { id: 'tut-5', date: '2025-11-03', time: '09:30', summary: 'Revisión de contactos de patrocinadores.', groupId: 'group-2', tutorId: 'user-12', location: 'Sala de reuniones 2', status: 'held', attendeeIds: [] },
 ];
 
 // FILES
