@@ -49,8 +49,8 @@ const TutorialForm: React.FC<{
         if (tutorialToEdit?.tutorId) return tutorialToEdit.tutorId;
         if (initialData?.tutorId) return initialData.tutorId;
         if (user.role === Role.Tutor) return user.id;
-        if (user.role === Role.Student && user.groupIds.length > 0) {
-            const firstGroup = groups.find(g => g.id === user.groupIds[0]);
+        if (user.role === Role.Student && (user.groupIds || []).length > 0) {
+            const firstGroup = groups.find(g => g.id === (user.groupIds || [])[0]);
             return firstGroup?.tutorId || '';
         }
         return '';
@@ -62,8 +62,8 @@ const TutorialForm: React.FC<{
         if (user.role === Role.Tutor && groups.filter(g => g.tutorId === user.id).length === 1) {
             return groups.find(g => g.tutorId === user.id)?.id || '';
         }
-        if (user.role === Role.Student && user.groupIds.length > 0) {
-            return user.groupIds[0];
+        if (user.role === Role.Student && (user.groupIds || []).length > 0) {
+            return (user.groupIds || [])[0];
         }
         return '';
     }, [user, groups, tutorialToEdit, initialData]);
@@ -99,7 +99,7 @@ const TutorialForm: React.FC<{
         
         // If user is a student, further filter to only show groups they belong to
         if (user.role === Role.Student) {
-            filteredGroups = filteredGroups.filter(group => user.groupIds.includes(group.id));
+            filteredGroups = filteredGroups.filter(group => (user.groupIds || []).includes(group.id));
         }
 
         const result: Record<string, Group[]> = {};
@@ -168,24 +168,6 @@ const TutorialForm: React.FC<{
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
-            {!tutorialToEdit && user.role !== Role.Student && (
-                <div className="flex p-1 bg-gray-100 rounded-lg w-fit">
-                    <button
-                        type="button"
-                        onClick={() => setStatus('scheduled')}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${status === 'scheduled' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                        Agendar futura
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setStatus('held')}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${status === 'held' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                        Registrar celebrada
-                    </button>
-                </div>
-            )}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Fecha de la tutoría</label>
@@ -724,7 +706,7 @@ const PendingTutorialsModal: React.FC<{
         today.setHours(0, 0, 0, 0);
 
         return tutorials
-            .filter(tut => user.groupIds.includes(tut.groupId) && tut.status === 'scheduled')
+            .filter(tut => (user.groupIds || []).includes(tut.groupId) && tut.status === 'scheduled')
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
             .map(tut => {
                 const group = groups.find(g => g.id === tut.groupId);
@@ -843,6 +825,8 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
     const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
     const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
     const [prefilledData, setPrefilledData] = useState<Partial<Omit<Tutorial, 'id'>> | null>(null);
+    const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+    const [selectedGroupId, setSelectedGroupId] = useState<string>('');
 
     useEffect(() => {
         if (initialGroupId) {
@@ -870,17 +854,53 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
     const tutors = useMemo(() => allUsers.filter(u => u.role === Role.Tutor), [allUsers]);
 
     const visibleTutorials = useMemo(() => {
-        if (user.role === Role.Admin) return tutorials;
-        
-        const userGroupIds = user.role === Role.Tutor
-            ? groups.filter(g => g.tutorId === user.id).map(g => g.id)
-            : user.groupIds;
-        
-        return tutorials.filter(t => 
-            userGroupIds.includes(t.groupId) || 
-            (user.role === Role.Tutor && t.tutorId === user.id)
-        );
-    }, [user, tutorials, groups]);
+        let filtered = tutorials;
+        if (user.role !== Role.Admin) {
+            const userGroupIds = user.role === Role.Tutor
+                ? groups.filter(g => g.tutorId === user.id).map(g => g.id)
+                : (user.groupIds || []);
+            
+            filtered = tutorials.filter(t => 
+                userGroupIds.includes(t.groupId) || 
+                (user.role === Role.Tutor && t.tutorId === user.id)
+            );
+        }
+
+        if (selectedCourseId) {
+            const groupsInCourse = groups.filter(g => g.courseId === selectedCourseId).map(g => g.id);
+            filtered = filtered.filter(t => groupsInCourse.includes(t.groupId));
+        }
+
+        if (selectedGroupId) {
+            filtered = filtered.filter(t => t.groupId === selectedGroupId);
+        }
+
+        return filtered;
+    }, [user, tutorials, groups, selectedCourseId, selectedGroupId]);
+
+    const availableGroupsForFilter = useMemo(() => {
+        let availableGroups = groups;
+        if (user.role !== Role.Admin) {
+            const userGroupIds = user.role === Role.Tutor
+                ? groups.filter(g => g.tutorId === user.id).map(g => g.id)
+                : (user.groupIds || []);
+            availableGroups = availableGroups.filter(g => userGroupIds.includes(g.id));
+        }
+        if (selectedCourseId) {
+            availableGroups = availableGroups.filter(g => g.courseId === selectedCourseId);
+        }
+        return availableGroups;
+    }, [groups, user, selectedCourseId]);
+
+    // Reset group filter if selected course changes and group is not in course
+    useEffect(() => {
+        if (selectedGroupId && selectedCourseId) {
+            const group = groups.find(g => g.id === selectedGroupId);
+            if (group && group.courseId !== selectedCourseId) {
+                setSelectedGroupId('');
+            }
+        }
+    }, [selectedCourseId, selectedGroupId, groups]);
 
 
     const tutorialsByCourseAndGroup = useMemo(() => {
@@ -962,7 +982,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
 
     return (
         <div>
-            <div className="mb-6">
+            <div className="mb-6 space-y-4">
                 <div className="flex gap-2">
                      <button onClick={() => setIsPendingModalOpen(true)} className="flex-1 px-2 py-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors truncate">
                         Pendientes
@@ -973,6 +993,38 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                     <button onClick={handleCreate} className="flex-1 px-2 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors truncate">
                         Solicitar Tutoría
                     </button>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <div className="flex-1">
+                        <label htmlFor="course-filter" className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Curso</label>
+                        <select
+                            id="course-filter"
+                            value={selectedCourseId}
+                            onChange={(e) => setSelectedCourseId(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                        >
+                            <option value="">Todos los cursos</option>
+                            {courses.map(course => (
+                                <option key={course.id} value={course.id}>{course.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="flex-1">
+                        <label htmlFor="group-filter" className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Grupo</label>
+                        <select
+                            id="group-filter"
+                            value={selectedGroupId}
+                            onChange={(e) => setSelectedGroupId(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                            disabled={availableGroupsForFilter.length === 0}
+                        >
+                            <option value="">Todos los grupos</option>
+                            {availableGroupsForFilter.map(group => (
+                                <option key={group.id} value={group.id}>{group.name}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
             
