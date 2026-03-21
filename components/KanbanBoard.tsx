@@ -146,7 +146,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
 
     const projectsByCourse = useMemo(() => {
         const result: Record<string, Project[]> = {};
-        projects.forEach(project => {
+        projects.filter(p => relevantProjectIds.includes(p.id)).forEach(project => {
             const group = groups.find(g => g.id === project.groupId);
             const course = group ? courses.find(c => c.id === group.courseId) : null;
             const courseName = course ? course.name : 'Proyectos sin curso asignado';
@@ -157,7 +157,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
             result[courseName].push(project);
         });
         return result;
-    }, [projects, groups, courses]);
+    }, [projects, groups, courses, relevantProjectIds]);
 
     const toggleCourseGroup = (courseName: string) => {
         setExpandedCourseGroups(prev => ({ ...prev, [courseName]: !prev[courseName] }));

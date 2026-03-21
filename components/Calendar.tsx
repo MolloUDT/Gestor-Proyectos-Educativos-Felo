@@ -38,7 +38,8 @@ const TutorialForm: React.FC<{
     onCancel: () => void;
     tutorialToEdit?: Tutorial | null;
     initialData?: Partial<Omit<Tutorial, 'id'>> | null;
-}> = ({ user, tutors, groups, allUsers, projects, courses, onSave, onCancel, tutorialToEdit, initialData }) => {
+    readOnly?: boolean;
+}> = ({ user, tutors, groups, allUsers, projects, courses, onSave, onCancel, tutorialToEdit, initialData, readOnly = false }) => {
     const [date, setDate] = useState(tutorialToEdit?.date || initialData?.date || formatDate(new Date()));
     const [time, setTime] = useState(tutorialToEdit?.time || initialData?.time || '');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -221,9 +222,9 @@ const TutorialForm: React.FC<{
                         type="date" 
                         value={date} 
                         onChange={e => setDate(e.target.value)} 
-                        className="w-full p-2 mt-1 border border-gray-300 rounded-md" 
+                        className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
                         required 
-                        disabled={isRegistration && status === 'held'}
+                        disabled={readOnly || (isRegistration && status === 'held')}
                     />
                 </div>
                 <div>
@@ -234,9 +235,9 @@ const TutorialForm: React.FC<{
                         type="time" 
                         value={time} 
                         onChange={e => setTime(e.target.value)} 
-                        className="w-full p-2 mt-1 border border-gray-300 rounded-md" 
+                        className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
                         required 
-                        disabled={isRegistration && status === 'held'}
+                        disabled={readOnly || (isRegistration && status === 'held')}
                     />
                 </div>
             </div>
@@ -249,8 +250,8 @@ const TutorialForm: React.FC<{
                         value={location} 
                         onChange={e => setLocation(e.target.value)} 
                         placeholder="Ej: Sala de reuniones, Aula 102, Online..." 
-                        className="w-full p-2 mt-1 border border-gray-300 rounded-md" 
-                        disabled={isRegistration && status === 'held'}
+                        className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
+                        disabled={readOnly || (isRegistration && status === 'held')}
                     />
                 </div>
                 <div>
@@ -258,9 +259,9 @@ const TutorialForm: React.FC<{
                     <select 
                         value={tutorId} 
                         onChange={e => setTutorId(e.target.value)} 
-                        className="w-full p-2 mt-1 border border-gray-300 rounded-md" 
+                        className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
                         required
-                        disabled={isRegistration}
+                        disabled={readOnly || isRegistration}
                     >
                         <option value="">Seleccionar tutor</option>
                         {tutors.map(t => <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>)}
@@ -275,7 +276,7 @@ const TutorialForm: React.FC<{
                     onChange={e => setGroupId(e.target.value)} 
                     className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
                     required 
-                    disabled={!tutorId || isRegistration}
+                    disabled={readOnly || !tutorId || isRegistration}
                 >
                     <option value="">{tutorId ? 'Seleccionar grupo' : 'Seleccione un tutor primero'}</option>
                     {Object.keys(availableGroupsByCourse).sort().map(courseName => (
@@ -309,7 +310,8 @@ const TutorialForm: React.FC<{
                                                 setAttendeeIds(attendeeIds.filter(id => id !== member.id));
                                             }
                                         }}
-                                        className="rounded text-green-600 focus:ring-green-500"
+                                        disabled={readOnly}
+                                        className="rounded text-green-600 focus:ring-green-500 disabled:opacity-50"
                                     />
                                     <span>{member.firstName} {member.lastName}</span>
                                 </label>
@@ -324,16 +326,17 @@ const TutorialForm: React.FC<{
                             value={summary} 
                             onChange={e => setSummary(e.target.value)} 
                             rows={5} 
-                            className="w-full p-2 mt-1 border border-gray-300 rounded-md" 
+                            className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
                             required={status === 'held'}
                             placeholder="Registra lo tratado en la reunión..."
+                            disabled={readOnly}
                         />
                     </div>
                 </>
             )}
 
             {/* Próxima reunión (opcional) */}
-            {status === 'held' && (
+            {status === 'held' && !readOnly && (
                 <div className="p-4 mt-6 border rounded-lg bg-blue-50 border-blue-100">
                     <h4 className="mb-3 text-sm font-semibold text-blue-800">Agendar próxima reunión (opcional)</h4>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -360,35 +363,41 @@ const TutorialForm: React.FC<{
             )}
 
             <div className="flex justify-end pt-4 space-x-2">
-                <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200" disabled={isSubmitting}>Cancelar</button>
-                <button 
-                    type="submit" 
-                    onClick={() => { statusRef.current = status; }}
-                    disabled={isSubmitting}
-                    className={`px-4 py-2 text-white rounded-md transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''} ${status === 'held' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
-                >
-                    {isSubmitting ? 'Guardando...' : (tutorialToEdit ? 'Guardar cambios' : (status === 'held' ? 'Registrar reunión' : (user.role === Role.Student ? 'Solicitar Tutoría' : 'Agendar Tutoría')))}
+                <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200" disabled={isSubmitting}>
+                    {readOnly ? 'Cerrar' : 'Cancelar'}
                 </button>
-                {tutorialToEdit && status === 'scheduled' && (
-                    <button 
-                        type="submit" 
-                        onClick={() => { statusRef.current = 'held'; }}
-                        disabled={isSubmitting}
-                        className={`px-4 py-2 text-white rounded-md transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''} bg-green-600 hover:bg-green-700`}
-                    >
-                        {type === 'group_meeting' ? 'Reunión realizada' : 'Tutoría realizada'}
-                    </button>
+                {!readOnly && (
+                    <>
+                        <button 
+                            type="submit" 
+                            onClick={() => { statusRef.current = status; }}
+                            disabled={isSubmitting}
+                            className={`px-4 py-2 text-white rounded-md transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''} ${status === 'held' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                        >
+                            {isSubmitting ? 'Guardando...' : (tutorialToEdit ? 'Guardar cambios' : (status === 'held' ? 'Registrar reunión' : (type === 'group_meeting' ? 'Agendar Reunión' : (user.role === Role.Student ? 'Solicitar Tutoría' : 'Agendar Tutoría'))))}
+                        </button>
+                        {tutorialToEdit && status === 'scheduled' && (
+                            <button 
+                                type="submit" 
+                                onClick={() => { statusRef.current = 'held'; }}
+                                disabled={isSubmitting}
+                                className={`px-4 py-2 text-white rounded-md transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''} bg-green-600 hover:bg-green-700`}
+                            >
+                                {type === 'group_meeting' ? 'Reunión realizada' : 'Tutoría realizada'}
+                            </button>
+                        )}
+                    </>
                 )}
             </div>
         </form>
     );
 };
 
-const COURSE_COLOR_LEGEND: Record<string, { bg: string; border: string; }> = {
-  '1º TSAF': { bg: 'bg-blue-100', border: 'border-blue-400' },
-  '2º TSAF': { bg: 'bg-green-100', border: 'border-green-400' },
-  '1º TSEAS': { bg: 'bg-yellow-100', border: 'border-yellow-400' },
-  '2º TSEAS': { bg: 'bg-orange-100', border: 'border-orange-400' },
+const COURSE_COLOR_LEGEND: Record<string, { bg: string; border: string; text: string; }> = {
+  '1º TSAF': { bg: 'bg-blue-100', border: 'border-blue-400', text: 'text-blue-700' },
+  '2º TSAF': { bg: 'bg-green-100', border: 'border-green-400', text: 'text-green-700' },
+  '1º TSEAS': { bg: 'bg-yellow-100', border: 'border-yellow-400', text: 'text-yellow-700' },
+  '2º TSEAS': { bg: 'bg-orange-100', border: 'border-orange-400', text: 'text-orange-700' },
 };
 
 const getCourseColor = (courseName: string) => {
@@ -397,7 +406,7 @@ const getCourseColor = (courseName: string) => {
     if (name.includes('2') && name.includes('TSAF')) return COURSE_COLOR_LEGEND['2º TSAF'];
     if (name.includes('1') && name.includes('TSEAS')) return COURSE_COLOR_LEGEND['1º TSEAS'];
     if (name.includes('2') && name.includes('TSEAS')) return COURSE_COLOR_LEGEND['2º TSEAS'];
-    return { bg: 'bg-gray-100', border: 'border-gray-400' };
+    return { bg: 'bg-gray-100', border: 'border-gray-400', text: 'text-gray-700' };
 };
 
 type EnrichedTutorial = Tutorial & {
@@ -591,11 +600,30 @@ const CalendarView: React.FC<{
             <div className="flex flex-wrap items-center justify-center py-2 mb-4 border-t border-b gap-x-4 gap-y-2">
                 {Object.entries(COURSE_COLOR_LEGEND)
                     .map(([courseName, colors]) => (
-                        <div key={courseName} className="flex items-center gap-1.5">
-                            <div className={`w-3 h-3 border ${colors.bg} ${colors.border}`}></div>
-                            <span className="text-xs text-gray-600">{courseName}</span>
-                        </div>
+                        <span key={courseName} className={`text-xs font-medium ${colors.text}`}>{courseName}</span>
                     ))}
+                <div className="flex items-center gap-4 ml-4 pl-4 border-l">
+                    <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 border rounded-full bg-gray-200 border-gray-400"></div>
+                        <span className="text-xs text-gray-600">Tutoría Agendada</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 border rounded-full bg-gray-200 border-gray-400 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                        </div>
+                        <span className="text-xs text-gray-600">Tutoría Realizada</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 border rounded-sm bg-gray-200 border-gray-400"></div>
+                        <span className="text-xs text-gray-600">Reunión Grupo Agendada</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 border rounded-sm bg-gray-200 border-gray-400 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                        </div>
+                        <span className="text-xs text-gray-600">Reunión Grupo Realizada</span>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-7 text-center text-sm font-semibold text-gray-500">
@@ -629,6 +657,7 @@ const CalendarView: React.FC<{
                                 {eventsOnDay.map(event => {
                                     const colors = getCourseColor(event.courseGroup);
                                     const isRegistered = event.eventType === 'registered';
+                                    const tut = isRegistered ? event : event.originalTutorial;
                                     return (
                                         <div 
                                             key={event.id} 
@@ -641,7 +670,6 @@ const CalendarView: React.FC<{
                                                 }
                                             }}
                                             onMouseMove={(e) => {
-                                                const tut = isRegistered ? event : event.originalTutorial;
                                                 const data: TooltipData = {
                                                     groupName: event.groupName,
                                                     projectName: event.projectName,
@@ -653,7 +681,7 @@ const CalendarView: React.FC<{
                                                 setTooltip({ data, x: e.clientX, y: e.clientY });
                                             }}
                                             onMouseLeave={() => setTooltip(null)}
-                                            className={`w-3 h-3 border cursor-pointer ${colors.bg} ${colors.border} ${isRegistered ? 'rounded-sm flex items-center justify-center' : 'rounded-full'}`}
+                                            className={`w-3 h-3 border cursor-pointer ${colors.bg} ${colors.border} ${tut.type === 'group_meeting' ? 'rounded-sm' : 'rounded-full'} ${isRegistered ? 'flex items-center justify-center' : ''}`}
                                         >
                                             {isRegistered && (
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500 opacity-75">
@@ -1061,7 +1089,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                         {view === 'list' ? 'Calendario' : 'Lista'}
                     </button>
                     <button onClick={handleCreate} className="flex-1 px-2 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors truncate">
-                        Solicitar Tutoría
+                        {user.role === Role.Student ? 'Nueva Reunión / Tutoría' : 'Agendar Tutoría'}
                     </button>
                 </div>
 
@@ -1142,7 +1170,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                                                                         </div>
                                                                         <p className="text-sm text-gray-600 truncate">{tutorial.summary}</p>
                                                                     </div>
-                                                                    {(user.role === Role.Admin || user.id === tutorial.tutorId) && (
+                                                                    {(user.role === Role.Admin || user.id === tutorial.tutorId || (user.role === Role.Student && tutorial.type === 'group_meeting' && (user.groupIds || []).includes(tutorial.groupId))) && (
                                                                         <div className="flex flex-shrink-0 ml-4 space-x-1">
                                                                             <div onClick={(e) => { e.stopPropagation(); setEditingTutorial(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-blue-100 hover:text-blue-600" aria-label="Editar tutoría"><EditIcon className="w-4 h-4" /></div>
                                                                             <div onClick={(e) => { e.stopPropagation(); setTutorialToDelete(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-red-100 hover:text-red-600" aria-label="Eliminar tutoría"><TrashIcon className="w-4 h-4" /></div>
@@ -1195,7 +1223,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                 </Modal>
             )}
             {isCreateModalOpen && <Modal title="Solicitar Tutoría" onClose={closeModal}><TutorialForm user={user} tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} initialData={prefilledData} /></Modal>}
-            {editingTutorial && <Modal title="Editar Tutoría" onClose={closeModal}><TutorialForm user={user} tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} tutorialToEdit={editingTutorial} /></Modal>}
+            {editingTutorial && <Modal title={user.role === Role.Student && editingTutorial.type === 'tutorial' ? "Detalles de Tutoría" : "Editar Tutoría"} onClose={closeModal}><TutorialForm user={user} tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} tutorialToEdit={editingTutorial} readOnly={user.role === Role.Student && editingTutorial.type === 'tutorial'} /></Modal>}
             {tutorialToDelete && (
                 <Modal title="Confirmar Eliminación" onClose={closeModal}>
                     <div className="text-center">
