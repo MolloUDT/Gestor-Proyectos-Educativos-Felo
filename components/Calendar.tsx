@@ -69,6 +69,16 @@ const TutorialForm: React.FC<{
         return '';
     }, [user, groups, tutorialToEdit, initialData]);
 
+    const filteredTutors = useMemo(() => {
+        if (!tutorialToEdit && user.role === Role.Student) {
+            const groupIds = user.groupIds || [];
+            const studentGroups = groups.filter(g => groupIds.includes(g.id));
+            const tutorIds = new Set(studentGroups.map(g => g.tutorId));
+            return tutors.filter(t => tutorIds.has(t.id));
+        }
+        return tutors;
+    }, [user, tutors, groups, tutorialToEdit]);
+
     const [tutorId, setTutorId] = useState(defaultTutorId);
     const [groupId, setGroupId] = useState(defaultGroupId);
     const [summary, setSummary] = useState(tutorialToEdit?.summary || '');
@@ -264,7 +274,7 @@ const TutorialForm: React.FC<{
                         disabled={readOnly || isRegistration}
                     >
                         <option value="">Seleccionar tutor</option>
-                        {tutors.map(t => <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>)}
+                        {filteredTutors.map(t => <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>)}
                     </select>
                 </div>
             </div>
