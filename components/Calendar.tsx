@@ -1233,7 +1233,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                 </Modal>
             )}
             {isCreateModalOpen && <Modal title="Solicitar Tutoría" onClose={closeModal}><TutorialForm user={user} tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} initialData={prefilledData} /></Modal>}
-            {editingTutorial && <Modal title={user.role === Role.Student && editingTutorial.type === 'tutorial' ? "Detalles de Tutoría" : "Editar Tutoría"} onClose={closeModal}><TutorialForm user={user} tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} tutorialToEdit={editingTutorial} readOnly={user.role === Role.Student && editingTutorial.type === 'tutorial'} /></Modal>}
+            {editingTutorial && <Modal title={editingTutorial.type === 'tutorial' ? (user.role === Role.Student ? "Detalles de Tutoría" : "Editar Tutoría") : "Editar reunión de grupo"} onClose={closeModal}><TutorialForm user={user} tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} tutorialToEdit={editingTutorial} readOnly={user.role === Role.Student && editingTutorial.type === 'tutorial'} /></Modal>}
             {tutorialToDelete && (
                 <Modal title="Confirmar Eliminación" onClose={closeModal}>
                     <div className="text-center">
