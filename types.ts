@@ -96,6 +96,7 @@ export interface Tutorial {
     location?: string;
     attendeeIds?: string[];
     status?: 'scheduled' | 'held';
+    type?: 'tutorial' | 'group_meeting';
 }
 
 export interface StoredFile {

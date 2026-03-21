@@ -189,11 +189,15 @@ const AdminTutorGroupCard: React.FC<{
         return course ? course.name : 'Sin curso asignado';
     }, [group.courseId, courses]);
 
-    const { pastTutorialsCount, nextTutorialDate } = useMemo(() => {
+    const { pastTutorialsCount, nextTutorialDate, groupMeetingsCount, nextGroupMeetingDate } = useMemo(() => {
         const todayStr = new Date().toISOString().split('T')[0];
         const groupTutorials = tutorials.filter(t => t.groupId === group.id);
-        const pastTutorials = groupTutorials.filter(t => t.status === 'held');
-        const futureTutorials = groupTutorials
+        
+        const tutorialsOnly = groupTutorials.filter(t => t.type !== 'group_meeting');
+        const groupMeetingsOnly = groupTutorials.filter(t => t.type === 'group_meeting');
+
+        const pastTutorials = tutorialsOnly.filter(t => t.status === 'held');
+        const futureTutorials = tutorialsOnly
             .filter(t => t.status === 'scheduled' && t.date >= todayStr)
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
@@ -201,11 +205,22 @@ const AdminTutorGroupCard: React.FC<{
             ? `${new Date(futureTutorials[0].date + 'T00:00:00').toLocaleDateString('es-ES')}`
             : 'No agendada';
 
-        return { pastTutorialsCount: pastTutorials.length, nextTutorialDate: nextDateInfo };
-    }, [tutorials, group.id]);
+        const pastGroupMeetings = groupMeetingsOnly.filter(t => t.status === 'held');
+        const futureGroupMeetings = groupMeetingsOnly
+            .filter(t => t.status === 'scheduled' && t.date >= todayStr)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        
+        const nextGroupMeetingDateInfo = futureGroupMeetings.length > 0
+            ? `${new Date(futureGroupMeetings[0].date + 'T00:00:00').toLocaleDateString('es-ES')}`
+            : 'No agendada';
 
-    const groupMeetingsCount = pastTutorialsCount;
-    const nextGroupMeetingDate = nextTutorialDate;
+        return { 
+            pastTutorialsCount: pastTutorials.length, 
+            nextTutorialDate: nextDateInfo,
+            groupMeetingsCount: pastGroupMeetings.length,
+            nextGroupMeetingDate: nextGroupMeetingDateInfo
+        };
+    }, [tutorials, group.id]);
 
     const calculateTaskStats = (tasks: Task[]) => {
         const stats = {
@@ -604,11 +619,15 @@ const StudentProjectDetailCard: React.FC<{
             .filter((member): member is User => !!member);
     }, [group.members, allUsers]);
 
-    const { pastTutorialsCount, nextTutorialDate } = useMemo(() => {
+    const { pastTutorialsCount, nextTutorialDate, groupMeetingsCount, nextGroupMeetingDate } = useMemo(() => {
         const todayStr = new Date().toISOString().split('T')[0];
         const groupTutorials = tutorials.filter(t => t.groupId === group.id);
-        const pastTutorials = groupTutorials.filter(t => t.status === 'held');
-        const futureTutorials = groupTutorials
+        
+        const tutorialsOnly = groupTutorials.filter(t => t.type !== 'group_meeting');
+        const groupMeetingsOnly = groupTutorials.filter(t => t.type === 'group_meeting');
+
+        const pastTutorials = tutorialsOnly.filter(t => t.status === 'held');
+        const futureTutorials = tutorialsOnly
             .filter(t => t.status === 'scheduled' && t.date >= todayStr)
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
@@ -616,11 +635,22 @@ const StudentProjectDetailCard: React.FC<{
             ? `${new Date(futureTutorials[0].date + 'T00:00:00').toLocaleDateString('es-ES')}`
             : 'No agendada';
 
-        return { pastTutorialsCount: pastTutorials.length, nextTutorialDate: nextDateInfo };
-    }, [tutorials, group.id]);
+        const pastGroupMeetings = groupMeetingsOnly.filter(t => t.status === 'held');
+        const futureGroupMeetings = groupMeetingsOnly
+            .filter(t => t.status === 'scheduled' && t.date >= todayStr)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        
+        const nextGroupMeetingDateInfo = futureGroupMeetings.length > 0
+            ? `${new Date(futureGroupMeetings[0].date + 'T00:00:00').toLocaleDateString('es-ES')}`
+            : 'No agendada';
 
-    const groupMeetingsCount = pastTutorialsCount;
-    const nextGroupMeetingDate = nextTutorialDate;
+        return { 
+            pastTutorialsCount: pastTutorials.length, 
+            nextTutorialDate: nextDateInfo,
+            groupMeetingsCount: pastGroupMeetings.length,
+            nextGroupMeetingDate: nextGroupMeetingDateInfo
+        };
+    }, [tutorials, group.id]);
 
     const calculateTaskStats = (tasks: Task[]) => {
         const stats = {

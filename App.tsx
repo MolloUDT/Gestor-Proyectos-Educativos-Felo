@@ -443,6 +443,7 @@ const App: React.FC = () => {
             location: tutorialData.location,
             status: tutorialData.status,
             attendee_ids: tutorialData.attendeeIds,
+            type: tutorialData.type,
             next_date: tutorialData.date // Fallback for old schema constraint
         };
 
@@ -461,6 +462,8 @@ const App: React.FC = () => {
                 delete payload.time;
             } else if (msg.includes('next_date')) {
                 delete payload.next_date;
+            } else if (msg.includes('type')) {
+                delete payload.type;
             } else {
                 break;
             }
@@ -491,6 +494,7 @@ const App: React.FC = () => {
         if (tutorialData.location !== undefined) updateData.location = tutorialData.location;
         if (tutorialData.status !== undefined) updateData.status = tutorialData.status;
         if (tutorialData.attendeeIds !== undefined) updateData.attendee_ids = tutorialData.attendeeIds;
+        if (tutorialData.type !== undefined) updateData.type = tutorialData.type;
         
         let { error } = await supabase.from('tutorials').update(updateData).eq('id', tutorialId);
         let retries = 0;
@@ -507,6 +511,8 @@ const App: React.FC = () => {
                 delete updateData.time;
             } else if (msg.includes('next_date')) {
                 delete updateData.next_date;
+            } else if (msg.includes('type')) {
+                delete updateData.type;
             } else {
                 break;
             }

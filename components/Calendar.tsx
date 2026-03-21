@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { User, Tutorial, Role, Group, Project, Course, Task } from '../types';
 import Modal from './Modal';
 import { ChevronDownIcon, EditIcon, TrashIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
@@ -73,6 +73,11 @@ const TutorialForm: React.FC<{
     const [summary, setSummary] = useState(tutorialToEdit?.summary || '');
     const [location, setLocation] = useState(tutorialToEdit?.location || initialData?.location || '');
     const [status, setStatus] = useState<'scheduled' | 'held'>(tutorialToEdit?.status || 'scheduled');
+    const statusRef = useRef<'scheduled' | 'held'>(status);
+    useEffect(() => {
+        statusRef.current = status;
+    }, [status]);
+    const [type, setType] = useState<'tutorial' | 'group_meeting'>(tutorialToEdit?.type || 'tutorial');
     const [attendeeIds, setAttendeeIds] = useState<string[]>(tutorialToEdit?.attendeeIds || []);
     const [nextDate, setNextDate] = useState('');
     const [nextLocation, setNextLocation] = useState(tutorialToEdit?.location || initialData?.location || '');
@@ -117,6 +122,15 @@ const TutorialForm: React.FC<{
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        const finalStatus = statusRef.current;
+
+        if (finalStatus === 'held' && !summary.trim()) {
+            setError("El contenido de la reunión es obligatorio para registrarla como realizada.");
+            setStatus('held'); // Ensure UI shows it's required now
+            return;
+        }
+
         setIsSubmitting(true);
         setError(null);
 
@@ -130,7 +144,8 @@ const TutorialForm: React.FC<{
                     groupId, 
                     summary, 
                     location, 
-                    status,
+                    status: finalStatus,
+                    type,
                     attendeeIds 
                 } 
             });
@@ -151,7 +166,8 @@ const TutorialForm: React.FC<{
                         groupId,
                         summary: '',
                         attendeeIds: [],
-                        status: 'scheduled'
+                        status: 'scheduled',
+                        type
                     }
                 });
                 if (nextErr) {
@@ -168,9 +184,39 @@ const TutorialForm: React.FC<{
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
+            {user.role === Role.Student && !tutorialToEdit && (
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Tipo de Reunión</label>
+                    <div className="mt-2 space-x-4">
+                        <label className="inline-flex items-center">
+                            <input 
+                                type="radio" 
+                                value="tutorial" 
+                                checked={type === 'tutorial'} 
+                                onChange={() => setType('tutorial')}
+                                className="text-blue-600 border-gray-300 focus:ring-blue-500"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">Reunión de Tutoría (con tutor)</span>
+                        </label>
+                        <label className="inline-flex items-center">
+                            <input 
+                                type="radio" 
+                                value="group_meeting" 
+                                checked={type === 'group_meeting'} 
+                                onChange={() => setType('group_meeting')}
+                                className="text-blue-600 border-gray-300 focus:ring-blue-500"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">Reunión de Grupo (solo alumnos)</span>
+                        </label>
+                    </div>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Fecha de la tutoría</label>
+                    <label className="block text-sm font-medium text-gray-700">
+                        {type === 'group_meeting' ? 'Fecha de la reunión' : 'Fecha de la tutoría'}
+                    </label>
                     <input 
                         type="date" 
                         value={date} 
@@ -181,7 +227,9 @@ const TutorialForm: React.FC<{
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Hora de la tutoría</label>
+                    <label className="block text-sm font-medium text-gray-700">
+                        {type === 'group_meeting' ? 'Hora de la reunión' : 'Hora de la tutoría'}
+                    </label>
                     <input 
                         type="time" 
                         value={time} 
@@ -315,11 +363,22 @@ const TutorialForm: React.FC<{
                 <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200" disabled={isSubmitting}>Cancelar</button>
                 <button 
                     type="submit" 
+                    onClick={() => { statusRef.current = status; }}
                     disabled={isSubmitting}
                     className={`px-4 py-2 text-white rounded-md transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''} ${status === 'held' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
                 >
                     {isSubmitting ? 'Guardando...' : (tutorialToEdit ? 'Guardar cambios' : (status === 'held' ? 'Registrar reunión' : (user.role === Role.Student ? 'Solicitar Tutoría' : 'Agendar Tutoría')))}
                 </button>
+                {tutorialToEdit && status === 'scheduled' && (
+                    <button 
+                        type="submit" 
+                        onClick={() => { statusRef.current = 'held'; }}
+                        disabled={isSubmitting}
+                        className={`px-4 py-2 text-white rounded-md transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''} bg-green-600 hover:bg-green-700`}
+                    >
+                        {type === 'group_meeting' ? 'Reunión realizada' : 'Tutoría realizada'}
+                    </button>
+                )}
             </div>
         </form>
     );
@@ -347,9 +406,9 @@ type EnrichedTutorial = Tutorial & {
     courseGroup: string;
 };
 
-type RegisteredEvent = EnrichedTutorial & { type: 'registered' };
+type RegisteredEvent = EnrichedTutorial & { eventType: 'registered' };
 type ScheduledEvent = {
-    type: 'scheduled';
+    eventType: 'scheduled';
     id: string;
     date: string; // This will be the nextDate
     groupName: string;
@@ -366,6 +425,7 @@ interface TooltipData {
     summary: string;
     location?: string;
     time?: string;
+    meetingType?: 'tutorial' | 'group_meeting';
 }
 
 const CalendarView: React.FC<{
@@ -408,13 +468,13 @@ const CalendarView: React.FC<{
             };
 
             if (tut.status === 'held') {
-                const registeredEvent: RegisteredEvent = { ...tut, ...enrichedBase, type: 'registered' };
+                const registeredEvent: RegisteredEvent = { ...tut, ...enrichedBase, eventType: 'registered' };
                 if (!eventMap[tut.date]) eventMap[tut.date] = [];
                 eventMap[tut.date].push(registeredEvent);
             } else {
                 // status is 'scheduled' or undefined (default to scheduled)
                 const scheduledEvent: ScheduledEvent = {
-                    type: 'scheduled',
+                    eventType: 'scheduled',
                     id: tut.id,
                     date: tut.date,
                     ...enrichedBase,
@@ -454,10 +514,10 @@ const CalendarView: React.FC<{
     const handleDayClick = (day: Date, eventsOnDay: CalendarEvent[]) => {
         if (eventsOnDay.length === 1) {
             const event = eventsOnDay[0];
-            if (event.type === 'registered') {
-                onEdit(event);
+            if (event.eventType === 'registered') {
+                onEdit(event as RegisteredEvent);
             } else {
-                onEdit(event.originalTutorial);
+                onEdit((event as ScheduledEvent).originalTutorial);
             }
         } else if (eventsOnDay.length === 0) {
             onScheduleNew({ date: formatDate(day) });
@@ -489,6 +549,10 @@ const CalendarView: React.FC<{
                     <p className="font-bold">{tooltip.data.groupName}</p>
                     <p className="text-sm italic text-gray-300">{tooltip.data.projectName}</p>
                     
+                    <p className="mt-1 text-xs font-semibold text-blue-300">
+                        {tooltip.data.meetingType === 'group_meeting' ? 'Reunión de Grupo' : 'Tutoría'}
+                    </p>
+
                     {(tooltip.data.location || tooltip.data.time) && <hr className="my-1 border-gray-500" />}
                     
                     {tooltip.data.location && (
@@ -541,8 +605,8 @@ const CalendarView: React.FC<{
                 {days.map(d => {
                     const dateStr = formatDate(d);
                     const eventsOnDay = (eventsByDate[dateStr] || []).sort((a, b) => {
-                        if (a.type === 'registered' && b.type === 'scheduled') return -1;
-                        if (a.type === 'scheduled' && b.type === 'registered') return 1;
+                        if (a.eventType === 'registered' && b.eventType === 'scheduled') return -1;
+                        if (a.eventType === 'scheduled' && b.eventType === 'registered') return 1;
                         return 0;
                     });
                     const isCurrentMonth = d.getMonth() === currentDate.getMonth();
@@ -564,7 +628,7 @@ const CalendarView: React.FC<{
                             <div className="absolute bottom-1 right-1 flex flex-wrap-reverse justify-end gap-1">
                                 {eventsOnDay.map(event => {
                                     const colors = getCourseColor(event.courseGroup);
-                                    const isRegistered = event.type === 'registered';
+                                    const isRegistered = event.eventType === 'registered';
                                     return (
                                         <div 
                                             key={event.id} 
@@ -583,7 +647,8 @@ const CalendarView: React.FC<{
                                                     projectName: event.projectName,
                                                     summary: isRegistered ? tut.summary : "Próxima reunión agendada.",
                                                     location: tut.location || 'Lugar por definir',
-                                                    time: tut.time || 'Hora por definir'
+                                                    time: tut.time || 'Hora por definir',
+                                                    meetingType: tut.type
                                                 };
                                                 setTooltip({ data, x: e.clientX, y: e.clientY });
                                             }}
@@ -612,7 +677,7 @@ const CalendarView: React.FC<{
                 >
                     <div className="space-y-2">
                         {dailyTutorialsPopover.events.map(event => {
-                            const isRegistered = event.type === 'registered';
+                            const isRegistered = event.eventType === 'registered';
                             return (
                                 <div 
                                     key={event.id} 
@@ -627,10 +692,15 @@ const CalendarView: React.FC<{
                                     }}
                                 >
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-green-800">
-                                            {isRegistered ? '' : 'Próxima Reunión: '}
-                                            {event.groupName}
-                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-semibold text-green-800">
+                                                {isRegistered ? '' : 'Próxima Reunión: '}
+                                                {event.groupName}
+                                            </p>
+                                            <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800">
+                                                {(isRegistered ? (event as RegisteredEvent).type : (event as ScheduledEvent).originalTutorial.type) === 'group_meeting' ? 'Grupo' : 'Tutoría'}
+                                            </span>
+                                        </div>
                                         <p className="mt-1 text-sm italic text-gray-600 truncate">{event.projectName}</p>
                                         <div className="flex gap-2 mt-1">
                                             <span className="text-xs text-gray-500">🕒 {isRegistered ? event.time : event.originalTutorial.time || 'Por definir'}</span>
@@ -1062,8 +1132,15 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                                                                     className="flex items-center justify-between w-full p-3 text-left text-gray-700 transition-colors bg-white border rounded-md shadow-sm gap-4 hover:bg-green-50 hover:border-green-300"
                                                                 >
                                                                     <div className="flex-1 min-w-0">
-                                                                        <p className="font-semibold text-gray-700">{new Date(tutorial.date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                                                        <p className="mt-1 text-sm text-gray-600 truncate">{tutorial.summary}</p>
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            {tutorial.status === 'held' ? (
+                                                                                <span className="px-2 py-0.5 text-xs font-medium text-green-800 bg-green-100 rounded-full">Realizada</span>
+                                                                            ) : (
+                                                                                <span className="px-2 py-0.5 text-xs font-medium text-red-800 bg-red-100 rounded-full">Pendiente</span>
+                                                                            )}
+                                                                            <p className="font-semibold text-gray-700">{new Date(tutorial.date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                                        </div>
+                                                                        <p className="text-sm text-gray-600 truncate">{tutorial.summary}</p>
                                                                     </div>
                                                                     {(user.role === Role.Admin || user.id === tutorial.tutorId) && (
                                                                         <div className="flex flex-shrink-0 ml-4 space-x-1">

@@ -61,10 +61,6 @@ export const mapRA = (row: any): RA => ({
 });
 
 export const mapTutorial = (row: any): Tutorial => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tutorialDate = row.date ? new Date(row.date + 'T00:00:00') : null;
-    
     // Improved status inference for old data or missing columns
     let inferredStatus: 'scheduled' | 'held' = 'scheduled';
     
@@ -85,11 +81,6 @@ export const mapTutorial = (row: any): Tutorial => {
         }
     }
 
-    // Safety check: future tutorials should always be 'scheduled'
-    if (tutorialDate && tutorialDate > today) {
-        inferredStatus = 'scheduled';
-    }
-
     return {
         id: row.id,
         date: row.date ? row.date.split('T')[0] : '',
@@ -100,6 +91,7 @@ export const mapTutorial = (row: any): Tutorial => {
         location: row.location || undefined,
         status: inferredStatus,
         attendeeIds: row.attendee_ids || [],
+        type: row.type || 'tutorial',
     };
 };
 
