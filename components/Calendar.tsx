@@ -1171,6 +1171,9 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                                                                 >
                                                                     <div className="flex-1 min-w-0">
                                                                         <div className="flex items-center gap-2 mb-1">
+                                                                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${tutorial.type === 'group_meeting' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
+                                                                                {tutorial.type === 'group_meeting' ? 'Reunión de Grupo' : 'Tutoría'}
+                                                                            </span>
                                                                             {tutorial.status === 'held' ? (
                                                                                 <span className="px-2 py-0.5 text-xs font-medium text-green-800 bg-green-100 rounded-full">Realizada</span>
                                                                             ) : (

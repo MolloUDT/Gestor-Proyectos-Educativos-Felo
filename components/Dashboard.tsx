@@ -196,7 +196,7 @@ const AdminTutorGroupCard: React.FC<{
         const tutorialsOnly = groupTutorials.filter(t => t.type !== 'group_meeting');
         const groupMeetingsOnly = groupTutorials.filter(t => t.type === 'group_meeting');
 
-        const pastTutorials = tutorialsOnly.filter(t => t.status === 'held');
+        const pastTutorials = tutorialsOnly.filter(t => t.status === 'held' && t.date >= project.startDate && t.date <= project.endDate);
         const futureTutorials = tutorialsOnly
             .filter(t => t.status === 'scheduled' && t.date >= todayStr)
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -205,7 +205,7 @@ const AdminTutorGroupCard: React.FC<{
             ? `${new Date(futureTutorials[0].date + 'T00:00:00').toLocaleDateString('es-ES')}`
             : 'No agendada';
 
-        const pastGroupMeetings = groupMeetingsOnly.filter(t => t.status === 'held');
+        const pastGroupMeetings = groupMeetingsOnly.filter(t => t.status === 'held' && t.date >= project.startDate && t.date <= project.endDate);
         const futureGroupMeetings = groupMeetingsOnly
             .filter(t => t.status === 'scheduled' && t.date >= todayStr)
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -220,7 +220,7 @@ const AdminTutorGroupCard: React.FC<{
             groupMeetingsCount: pastGroupMeetings.length,
             nextGroupMeetingDate: nextGroupMeetingDateInfo
         };
-    }, [tutorials, group.id]);
+    }, [tutorials, group.id, project.startDate, project.endDate]);
 
     const calculateTaskStats = (tasks: Task[]) => {
         const stats = {
@@ -627,7 +627,7 @@ const StudentProjectDetailCard: React.FC<{
         const tutorialsOnly = groupTutorials.filter(t => t.type !== 'group_meeting');
         const groupMeetingsOnly = groupTutorials.filter(t => t.type === 'group_meeting');
 
-        const pastTutorials = tutorialsOnly.filter(t => t.status === 'held');
+        const pastTutorials = tutorialsOnly.filter(t => t.status === 'held' && t.date >= project.startDate && t.date <= project.endDate);
         const futureTutorials = tutorialsOnly
             .filter(t => t.status === 'scheduled' && t.date >= todayStr)
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -636,7 +636,7 @@ const StudentProjectDetailCard: React.FC<{
             ? `${new Date(futureTutorials[0].date + 'T00:00:00').toLocaleDateString('es-ES')}`
             : 'No agendada';
 
-        const pastGroupMeetings = groupMeetingsOnly.filter(t => t.status === 'held');
+        const pastGroupMeetings = groupMeetingsOnly.filter(t => t.status === 'held' && t.date >= project.startDate && t.date <= project.endDate);
         const futureGroupMeetings = groupMeetingsOnly
             .filter(t => t.status === 'scheduled' && t.date >= todayStr)
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -651,7 +651,7 @@ const StudentProjectDetailCard: React.FC<{
             groupMeetingsCount: pastGroupMeetings.length,
             nextGroupMeetingDate: nextGroupMeetingDateInfo
         };
-    }, [tutorials, group.id]);
+    }, [tutorials, group.id, project.startDate, project.endDate]);
 
     const calculateTaskStats = (tasks: Task[]) => {
         const stats = {
