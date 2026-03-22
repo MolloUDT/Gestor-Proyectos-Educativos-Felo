@@ -457,8 +457,9 @@ const AdminTutorGroupCard: React.FC<{
                             <div key={stat.id} className="flex items-center p-2 bg-gray-50 rounded-lg border border-gray-200">
                                 <div className="flex items-center w-5/12">
                                     <div className="flex items-center flex-shrink-0 gap-2">
-                                        <div title={`Productividad: ${stat.productivity}%`}>
-                                            <ProgressCircle progress={stat.productivity} size={40} />
+                                        <div className="flex flex-col items-center" title={`Productividad: ${stat.productivity}%`}>
+                                            <ProgressCircle progress={stat.productivity} size={36} showText={true} />
+                                            <p className="mt-1 text-[9px] font-semibold text-gray-600 uppercase tracking-tight">TOTAL</p>
                                         </div>
                                         <SmallValueDisplay value={stat.assignedPoints} label="Asumidos" colorClass="bg-gray-500" />
                                         <SmallValueDisplay value={stat.achievedPoints} label="Logrados" colorClass="bg-green-500" />
@@ -497,7 +498,7 @@ const StatusColumn: React.FC<{
 }> = ({ title, mainCircleClass, stats, difficultyConfig }) => {
     return (
         <div className="flex flex-col items-center flex-1 min-w-0" title={title}>
-            <span className={`flex items-center justify-center w-8 h-8 text-sm font-bold ${mainCircleClass} rounded-full`}>
+            <span className={`flex items-center justify-center w-10 h-10 text-base font-bold ${mainCircleClass} rounded-full`}>
                 {stats.count}
             </span>
             <div className="flex mt-2 space-x-1">
@@ -871,8 +872,9 @@ const StudentProjectDetailCard: React.FC<{
                             <div key={stat.id} className="flex items-center p-2 bg-gray-50 rounded-lg border border-gray-200">
                                 <div className="flex items-center w-5/12">
                                      <div className="flex items-center flex-shrink-0 gap-2">
-                                        <div title={`Productividad: ${stat.productivity}%`}>
-                                            <ProgressCircle progress={stat.productivity} size={40} />
+                                        <div className="flex flex-col items-center" title={`Productividad: ${stat.productivity}%`}>
+                                            <ProgressCircle progress={stat.productivity} size={36} showText={true} />
+                                            <p className="mt-1 text-[9px] font-semibold text-gray-600 uppercase tracking-tight">TOTAL</p>
                                         </div>
                                         <SmallValueDisplay value={stat.assignedPoints} label="Asumidos" colorClass="bg-gray-500" />
                                         <SmallValueDisplay value={stat.achievedPoints} label="Logrados" colorClass="bg-green-500" />

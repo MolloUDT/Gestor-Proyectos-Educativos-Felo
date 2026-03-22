@@ -25,7 +25,7 @@ export const ProgressCircle: React.FC<{ progress: number; size?: number; showTex
                         cy={size / 2}
                     />
                 </svg>
-                {showText && <span className={`absolute font-bold text-white ${size < 50 ? 'text-xs' : 'text-base'}`}>{progress}%</span>}
+                {showText && <span className={`absolute font-bold text-white ${size < 50 ? 'text-xs' : 'text-lg'}`}>{progress}%</span>}
             </div>
         );
     }
@@ -42,7 +42,7 @@ export const ProgressCircle: React.FC<{ progress: number; size?: number; showTex
                         cy={size / 2}
                     />
                 </svg>
-                {showText && <span className={`absolute font-bold text-white ${size < 50 ? 'text-xs' : 'text-base'}`}>{progress}%</span>}
+                {showText && <span className={`absolute font-bold text-white ${size < 50 ? 'text-xs' : 'text-lg'}`}>{progress}%</span>}
             </div>
         );
     }
@@ -66,7 +66,7 @@ export const ProgressCircle: React.FC<{ progress: number; size?: number; showTex
                     transform={`rotate(-90 ${size/2} ${size/2})`}
                 />
             </svg>
-            {showText && <span className={`text-xs font-bold ${progressColorClass}`}>{progress}%</span>}
+            {showText && <span className={`text-[10px] font-bold ${progressColorClass}`}>{progress}%</span>}
         </div>
     );
 };
