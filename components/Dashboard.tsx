@@ -3,8 +3,10 @@ import { User, Task, Role, KanbanStatus, Group, Project, Message, Tutorial, Prio
 import { ChevronDownIcon, TrashIcon } from './Icons';
 import { ProgressCircle } from './ProgressCircle';
 import PendingMessagesModal from './PendingMessagesModal';
+import PendingTutorialsMeetingsModal from './PendingTutorialsMeetingsModal';
 import Modal from './Modal';
 import TaskForm from './TaskForm';
+import { TutorialForm } from './TutorialForm';
 import { sortBySurname } from '../lib/utils';
 
 interface DashboardProps {
@@ -25,6 +27,7 @@ interface DashboardProps {
     onMarkMessagesAsRead: (messageIds: string[]) => void;
     onUpdateTask: (id: string, data: Partial<Task>) => void;
     onDeleteTask: (id: string) => void;
+    onUpdateTutorial: (id: string, data: Partial<Tutorial>) => Promise<any>;
 }
 
 // --- Componentes para la vista de Administrador y Tutor ---
@@ -1097,8 +1100,11 @@ const AdminTutorDashboard: React.FC<{
     );
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, allUsers, messages, tutorials, ras, courses, courseDates, selectedGroupId, onNavigateToKanban, onNavigateToCalendar, onSendMessage, onMarkMessagesAsRead, onUpdateTask, onDeleteTask }) => {
+const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, allUsers, messages, tutorials, ras, courses, courseDates, selectedGroupId, onNavigateToKanban, onNavigateToCalendar, onSendMessage, onMarkMessagesAsRead, onUpdateTask, onDeleteTask, onUpdateTutorial }) => {
     const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
+    const [isPendingTutorialsModalOpen, setIsPendingTutorialsModalOpen] = useState(false);
+    const [isPendingMeetingsModalOpen, setIsPendingMeetingsModalOpen] = useState(false);
+    const [editingTutorial, setEditingTutorial] = useState<Tutorial | null>(null);
     const [selectedProjectForPendingTasks, setSelectedProjectForPendingTasks] = useState<string | null>(null);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
 
@@ -1106,8 +1112,47 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
         msg.recipientIds.includes(user.id) && !msg.readBy.includes(user.id)
     ), [messages, user.id]);
 
+    const pendingTutorials = useMemo(() => {
+        const allPending = tutorials.filter(t => t.status === 'scheduled' && t.type === 'tutorial');
+        if (user.role === Role.Admin) return allPending;
+        if (user.role === Role.Tutor) return allPending.filter(t => t.tutorId === user.id);
+        return allPending.filter(t => user.groupIds.includes(t.groupId));
+    }, [tutorials, user]);
+
+    const pendingMeetings = useMemo(() => {
+        const allPending = tutorials.filter(t => t.status === 'scheduled' && t.type === 'group_meeting');
+        if (user.role === Role.Admin) return allPending;
+        if (user.role === Role.Tutor) return allPending.filter(t => t.tutorId === user.id);
+        return allPending.filter(t => user.groupIds.includes(t.groupId));
+    }, [tutorials, user]);
+
     const handleClosePendingModal = () => {
         setIsPendingModalOpen(false);
+    };
+
+    const handleClosePendingTutorialsModal = () => {
+        setIsPendingTutorialsModalOpen(false);
+    };
+
+    const handleClosePendingMeetingsModal = () => {
+        setIsPendingMeetingsModalOpen(false);
+    };
+
+    const handleEditTutorial = (tut: Tutorial) => {
+        setEditingTutorial(tut);
+        setIsPendingTutorialsModalOpen(false);
+        setIsPendingMeetingsModalOpen(false);
+    };
+
+    const handleSaveTutorial = async (data: { id?: string, payload: Omit<Tutorial, 'id'>}) => {
+        if (data.id) {
+            const err = await onUpdateTutorial(data.id, data.payload);
+            if (!err) {
+                setEditingTutorial(null);
+            }
+            return err;
+        }
+        return null;
     };
 
     const handleShowPendingTasks = (projectId: string) => {
@@ -1169,6 +1214,26 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
                 >
                     {unreadMessages.length > 0 ? `Mensajes Pendientes (${unreadMessages.length})` : 'Sin Mensajes Pendientes'}
                 </button>
+                <button
+                    onClick={() => pendingTutorials.length > 0 && setIsPendingTutorialsModalOpen(true)}
+                    className={`px-4 py-2 font-bold rounded-md transition-all ${
+                        pendingTutorials.length > 0
+                            ? 'bg-red-500 text-white shadow-lg hover:bg-red-600'
+                            : 'bg-green-500 text-white cursor-default'
+                    }`}
+                >
+                    {pendingTutorials.length > 0 ? `Tutorías Pendientes (${pendingTutorials.length})` : 'Sin Tutorías Pendientes'}
+                </button>
+                <button
+                    onClick={() => pendingMeetings.length > 0 && setIsPendingMeetingsModalOpen(true)}
+                    className={`px-4 py-2 font-bold rounded-md transition-all ${
+                        pendingMeetings.length > 0
+                            ? 'bg-red-500 text-white shadow-lg hover:bg-red-600'
+                            : 'bg-green-500 text-white cursor-default'
+                    }`}
+                >
+                    {pendingMeetings.length > 0 ? `Reuniones Pendientes (${pendingMeetings.length})` : 'Sin Reuniones Pendientes'}
+                </button>
             </div>
             
             {(user.role === Role.Admin || user.role === Role.Tutor)
@@ -1205,6 +1270,52 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
                     onSendMessage={onSendMessage}
                     onMarkMessagesAsRead={onMarkMessagesAsRead}
                 />
+            )}
+
+            {isPendingTutorialsModalOpen && (
+                <PendingTutorialsMeetingsModal
+                    title={`Tienes ${pendingTutorials.length} tutoría(s) pendiente(s)`}
+                    tutorials={pendingTutorials}
+                    groups={groups}
+                    allUsers={allUsers}
+                    projects={projects}
+                    courses={courses}
+                    onClose={handleClosePendingTutorialsModal}
+                    onEdit={handleEditTutorial}
+                />
+            )}
+
+            {isPendingMeetingsModalOpen && (
+                <PendingTutorialsMeetingsModal
+                    title={`Tienes ${pendingMeetings.length} reunión(es) pendiente(s)`}
+                    tutorials={pendingMeetings}
+                    groups={groups}
+                    allUsers={allUsers}
+                    projects={projects}
+                    courses={courses}
+                    onClose={handleClosePendingMeetingsModal}
+                    onEdit={handleEditTutorial}
+                />
+            )}
+
+            {editingTutorial && (
+                <Modal
+                    title="Editar Tutoría/Reunión"
+                    onClose={() => setEditingTutorial(null)}
+                    size="2xl"
+                >
+                    <TutorialForm
+                        user={user}
+                        tutors={allUsers.filter(u => u.role === Role.Tutor)}
+                        groups={groups}
+                        allUsers={allUsers}
+                        projects={projects}
+                        courses={courses}
+                        onSave={handleSaveTutorial}
+                        onCancel={() => setEditingTutorial(null)}
+                        tutorialToEdit={editingTutorial}
+                    />
+                </Modal>
             )}
 
             {projectForPendingTasks && (

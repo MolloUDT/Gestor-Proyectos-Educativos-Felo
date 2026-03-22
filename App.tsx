@@ -763,10 +763,12 @@ const App: React.FC = () => {
                             ras={ras}
                             courseDates={courseDates}
                             onNavigateToKanban={handleNavigateToKanban}
+                            onNavigateToCalendar={handleNavigateToCalendar}
                             onSendMessage={handleSendMessage}
                             onMarkMessagesAsRead={handleMarkMessagesAsRead}
                             onUpdateTask={handleUpdateTask}
                             onDeleteTask={handleDeleteTask}
+                            onUpdateTutorial={handleUpdateTutorial}
                         />;
         }
     }, [page, currentUser, users, groups, projects, tasks, ras, modules, tutorials, files, courseDates, selectedKanbanProject, messages]);
