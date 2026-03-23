@@ -285,6 +285,16 @@ const AdminTutorGroupCard: React.FC<{
             const inProgressTasks = statData.tasks.filter(t => t.status === KanbanStatus.Doing);
             const pendingTasks = statData.tasks.filter(t => t.status === KanbanStatus.Backlog);
 
+            const groupTutorials = tutorials.filter(t => t.groupId === group.id && t.status === 'held');
+            const tutorialsOnly = groupTutorials.filter(t => t.type === 'tutorial');
+            const meetingsOnly = groupTutorials.filter(t => t.type === 'group_meeting');
+
+            const tutorialAttendanceCount = tutorialsOnly.filter(t => t.attendeeIds?.includes(id)).length;
+            const meetingAttendanceCount = meetingsOnly.filter(t => t.attendeeIds?.includes(id)).length;
+
+            const tutorialAttendancePct = tutorialsOnly.length > 0 ? Math.round((tutorialAttendanceCount / tutorialsOnly.length) * 100) : 0;
+            const meetingAttendancePct = meetingsOnly.length > 0 ? Math.round((meetingAttendanceCount / meetingsOnly.length) * 100) : 0;
+
             return {
                 id,
                 firstName: statData.firstName,
@@ -296,6 +306,8 @@ const AdminTutorGroupCard: React.FC<{
                 productivity: Math.round(productivity),
                 assignedPoints: pa,
                 achievedPoints: pl,
+                tutorialAttendance: tutorialAttendancePct,
+                meetingAttendance: meetingAttendancePct,
             };
         });
         
@@ -470,6 +482,14 @@ const AdminTutorGroupCard: React.FC<{
                                     <div className="ml-3 flex-1 min-w-0" title={`${stat.firstName} ${stat.lastName}`}>
                                         <p className="font-medium text-gray-800 truncate">{stat.firstName}</p>
                                         {stat.lastName && <p className="text-sm text-gray-600 truncate">{stat.lastName}</p>}
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <span className="text-[10px] text-gray-500 flex items-center gap-0.5" title="Asistencia a Tutorías">
+                                                <span className="grayscale">🎓</span> {stat.tutorialAttendance}%
+                                            </span>
+                                            <span className="text-[10px] text-gray-500 flex items-center gap-0.5" title="Asistencia a Reuniones">
+                                                <span className="grayscale">👥</span> {stat.meetingAttendance}%
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex justify-around w-7/12">
@@ -716,6 +736,16 @@ const StudentProjectDetailCard: React.FC<{
             const inProgressTasks = statData.tasks.filter(t => t.status === KanbanStatus.Doing);
             const pendingTasks = statData.tasks.filter(t => t.status === KanbanStatus.Backlog);
 
+            const groupTutorials = tutorials.filter(t => t.groupId === group.id && t.status === 'held');
+            const tutorialsOnly = groupTutorials.filter(t => t.type === 'tutorial');
+            const meetingsOnly = groupTutorials.filter(t => t.type === 'group_meeting');
+
+            const tutorialAttendanceCount = tutorialsOnly.filter(t => t.attendeeIds?.includes(id)).length;
+            const meetingAttendanceCount = meetingsOnly.filter(t => t.attendeeIds?.includes(id)).length;
+
+            const tutorialAttendancePct = tutorialsOnly.length > 0 ? Math.round((tutorialAttendanceCount / tutorialsOnly.length) * 100) : 0;
+            const meetingAttendancePct = meetingsOnly.length > 0 ? Math.round((meetingAttendanceCount / meetingsOnly.length) * 100) : 0;
+
             return {
                 id,
                 firstName: statData.firstName,
@@ -727,6 +757,8 @@ const StudentProjectDetailCard: React.FC<{
                 productivity: Math.round(productivity),
                 assignedPoints: pa,
                 achievedPoints: pl,
+                tutorialAttendance: tutorialAttendancePct,
+                meetingAttendance: meetingAttendancePct,
             };
         });
         
@@ -885,6 +917,14 @@ const StudentProjectDetailCard: React.FC<{
                                     <div className="ml-3 flex-1 min-w-0" title={`${stat.firstName} ${stat.lastName}`}>
                                         <p className="font-medium text-gray-800 truncate">{stat.firstName}</p>
                                         {stat.lastName && <p className="text-sm text-gray-600 truncate">{stat.lastName}</p>}
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <span className="text-[10px] text-gray-500 flex items-center gap-0.5" title="Asistencia a Tutorías">
+                                                <span className="grayscale">🎓</span> {stat.tutorialAttendance}%
+                                            </span>
+                                            <span className="text-[10px] text-gray-500 flex items-center gap-0.5" title="Asistencia a Reuniones">
+                                                <span className="grayscale">👥</span> {stat.meetingAttendance}%
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex justify-around w-7/12">
