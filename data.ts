@@ -4,7 +4,7 @@ import { User, Group, Project, Task, Role, Priority, KanbanStatus, RA, Tutorial,
 // USERS
 export const MOCK_USERS: User[] = [
     // Admin
-    { id: 'user-1', firstName: 'Admin', lastName: 'General', username: 'Admin', password: 'esperanza2026', role: Role.Admin, groupIds: [] },
+    { id: 'user-1', firstName: 'Administrador', lastName: 'General', username: 'Admin', password: 'esperanza2026', role: Role.Admin, groupIds: [] },
     
     // Tutors
     { id: 'user-2', firstName: 'Laura', lastName: 'Martinez (Tutora)', username: 'Tutor', password: 'felo2627', role: Role.Tutor, groupIds: ['group-1'] },
