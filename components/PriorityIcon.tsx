@@ -56,16 +56,16 @@ export const KanbanLegend: React.FC = () => {
                 <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Dificultad:</span>
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1">
-                        <DifficultyIcon difficulty={Difficulty.Level1} className="w-4 h-4" />
-                        <span className="text-xs text-gray-600">Baja</span>
+                        <DifficultyIcon difficulty={Difficulty.Level3} className="w-4 h-4" />
+                        <span className="text-xs text-gray-600">Alta</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <DifficultyIcon difficulty={Difficulty.Level2} className="w-4 h-4" />
                         <span className="text-xs text-gray-600">Media</span>
                     </div>
                     <div className="flex items-center gap-1">
-                        <DifficultyIcon difficulty={Difficulty.Level3} className="w-4 h-4" />
-                        <span className="text-xs text-gray-600">Alta</span>
+                        <DifficultyIcon difficulty={Difficulty.Level1} className="w-4 h-4" />
+                        <span className="text-xs text-gray-600">Baja</span>
                     </div>
                 </div>
             </div>

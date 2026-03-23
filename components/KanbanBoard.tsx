@@ -313,28 +313,45 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
         );
     }
 
+    const selectedProject = projects.find(p => p.id === selectedProjectId);
+    const projectGroup = groups.find(g => g.id === selectedProject?.groupId);
+    const course = courses.find(c => c.id === projectGroup?.courseId);
+
+    const handleBackToSelection = () => {
+        setSelectedProjectId(null);
+        if (onProjectSelected) {
+            onProjectSelected(null);
+        }
+    };
+
     return (
         <div className="flex flex-col h-full">
-            <div className="flex flex-wrap items-center justify-between gap-4 p-4 mb-4 bg-white rounded-lg shadow-md">
-                <div className="flex flex-wrap items-center gap-4">
-                    <select value={selectedProjectId || ''} onChange={handleProjectChange} className="p-2 border border-gray-300 rounded-md md:w-80 focus:ring-green-500 focus:border-green-500">
-                        <option value="">-- Volver a la selección de proyectos --</option>
-                        {projects.filter(p => relevantProjectIds.includes(p.id)).map(project => (
-                            <option key={project.id} value={project.id}>{project.name}</option>
-                        ))}
-                    </select>
-                    <div className="flex items-center p-1 space-x-1 bg-gray-200 rounded-lg">
-                        <button onClick={() => setViewMode('status')} className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${viewMode === 'status' ? 'bg-green-600 text-white shadow' : 'text-gray-600 hover:bg-white'}`}>Por Estado</button>
-                        <button onClick={() => setViewMode('priority')} className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${viewMode === 'priority' ? 'bg-green-600 text-white shadow' : 'text-gray-600 hover:bg-white'}`}>Por Prioridad</button>
-                        <button onClick={() => setViewMode('difficulty')} className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${viewMode === 'difficulty' ? 'bg-green-600 text-white shadow' : 'text-gray-600 hover:bg-white'}`}>Por Dificultad</button>
+            <div className="flex flex-col gap-4 p-4 mb-4 bg-white rounded-lg shadow-md">
+                <div className="flex items-start justify-between pb-4 border-b shrink-0">
+                    <div>
+                        <div className="mb-1 text-sm text-gray-600">
+                            <span className="font-semibold">Curso:</span> {course?.name} <span className="ml-4 font-semibold">Grupo:</span> {projectGroup?.name}
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-800">
+                            Proyecto: <span className="text-green-700">{selectedProject?.name}</span>
+                        </h2>
                     </div>
+                    <button onClick={handleBackToSelection} className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">← Volver a la selección</button>
                 </div>
-                {(user.role === Role.Admin || user.role === Role.Tutor || user.role === Role.Student) && (
-                    <button onClick={handleCreateClick} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">
-                        <PlusCircleIcon className="w-5 h-5"/>
-                        Añadir Tarea
-                    </button>
-                )}
+                
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setViewMode('status')} className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${viewMode === 'status' ? 'bg-black text-white shadow' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}>Por Estado</button>
+                        <button onClick={() => setViewMode('priority')} className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${viewMode === 'priority' ? 'bg-black text-white shadow' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}>Por Prioridad</button>
+                        <button onClick={() => setViewMode('difficulty')} className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${viewMode === 'difficulty' ? 'bg-black text-white shadow' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}>Por Dificultad</button>
+                    </div>
+                    {(user.role === Role.Admin || user.role === Role.Tutor || user.role === Role.Student) && (
+                        <button onClick={handleCreateClick} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                            <PlusCircleIcon className="w-5 h-5"/>
+                            Añadir Tarea
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="px-4 mb-4">

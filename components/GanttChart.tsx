@@ -158,12 +158,6 @@ const STATUS_BACKGROUND_COLORS: { [key in KanbanStatus]: string } = {
     [KanbanStatus.Done]: 'bg-green-100 text-green-800',
 };
 
-const PRIORITY_BACKGROUND_COLORS: { [key in Priority]: string } = {
-    [Priority.High]: 'bg-red-100 text-red-800',
-    [Priority.Medium]: 'bg-yellow-100 text-yellow-800',
-    [Priority.Low]: 'bg-green-100 text-green-800',
-};
-
 const GANTT_BAR_COLORS: { [key in KanbanStatus]: string } = {
     [KanbanStatus.Backlog]: 'bg-red-300 text-red-800',
     [KanbanStatus.Doing]: 'bg-yellow-300 text-yellow-800',
@@ -321,7 +315,7 @@ const GanttChartDisplay: React.FC<GanttChartDisplayProps> = ({ tasks, courseDate
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
-    const [sortOption, setSortOption] = useState<'priority' | 'status' | 'date'>('date');
+    const [sortOption, setSortOption] = useState<'priority' | 'status' | 'date' | 'difficulty'>('date');
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const dayInitials = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
@@ -329,10 +323,25 @@ const GanttChartDisplay: React.FC<GanttChartDisplayProps> = ({ tasks, courseDate
         const tasksCopy = [...tasks];
         if (sortOption === 'priority') {
             const priorityOrder = { [Priority.High]: 1, [Priority.Medium]: 2, [Priority.Low]: 3 };
-            tasksCopy.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+            tasksCopy.sort((a, b) => {
+                const diff = priorityOrder[a.priority] - priorityOrder[b.priority];
+                if (diff !== 0) return diff;
+                return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+            });
         } else if (sortOption === 'status') {
             const statusOrder = { [KanbanStatus.Backlog]: 1, [KanbanStatus.Doing]: 2, [KanbanStatus.Done]: 3 };
-            tasksCopy.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+            tasksCopy.sort((a, b) => {
+                const diff = statusOrder[a.status] - statusOrder[b.status];
+                if (diff !== 0) return diff;
+                return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+            });
+        } else if (sortOption === 'difficulty') {
+            const difficultyOrder = { [Difficulty.Level3]: 1, [Difficulty.Level2]: 2, [Difficulty.Level1]: 3 };
+            tasksCopy.sort((a, b) => {
+                const diff = difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty];
+                if (diff !== 0) return diff;
+                return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+            });
         } else if (sortOption === 'date') {
             tasksCopy.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
         }
@@ -395,9 +404,6 @@ const GanttChartDisplay: React.FC<GanttChartDisplayProps> = ({ tasks, courseDate
     };
     
     const getRowBgColor = (task: Task) => {
-        if (sortOption === 'priority') {
-            return PRIORITY_BACKGROUND_COLORS[task.priority];
-        }
         return STATUS_BACKGROUND_COLORS[task.status];
     };
 
@@ -411,12 +417,13 @@ const GanttChartDisplay: React.FC<GanttChartDisplayProps> = ({ tasks, courseDate
                         <select
                             id="gantt-sort"
                             value={sortOption}
-                            onChange={(e) => setSortOption(e.target.value as 'priority' | 'status' | 'date')}
+                            onChange={(e) => setSortOption(e.target.value as 'priority' | 'status' | 'date' | 'difficulty')}
                             className="p-1 text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
                         >
+                            <option value="date">Por Fecha</option>
                             <option value="status">Por Estado</option>
                             <option value="priority">Por Prioridad</option>
-                            <option value="date">Por Fecha</option>
+                            <option value="difficulty">Por Dificultad</option>
                         </select>
                     </div>
                     <div className="flex items-center gap-2">
@@ -593,10 +600,19 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
     if (selectedProject) {
         const projectGroup = groups.find(g => g.id === selectedProject.groupId);
         const assignees = projectGroup?.members || [];
+        const course = courses.find(c => c.id === projectGroup?.courseId);
+
         return (
             <div className="flex flex-col h-full p-4 bg-white rounded-lg shadow-md">
-                <div className="flex items-center justify-between pb-4 border-b shrink-0">
-                    <h2 className="text-xl font-bold text-gray-800">Gantt: <span className="text-green-700">{selectedProject.name}</span></h2>
+                <div className="flex items-start justify-between pb-4 border-b shrink-0">
+                    <div>
+                        <div className="mb-1 text-sm text-gray-600">
+                            <span className="font-semibold">Curso:</span> {course?.name} <span className="ml-4 font-semibold">Grupo:</span> {projectGroup?.name}
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-800">
+                            Proyecto: <span className="text-green-700">{selectedProject.name}</span>
+                        </h2>
+                    </div>
                     <button onClick={() => setSelectedProjectId(null)} className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">← Volver a la selección</button>
                 </div>
                 <GanttChartDisplay tasks={visibleTasks} courseDates={courseDates} ras={ras} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} user={user} availableAssignees={assignees} projectId={selectedProject.id} />
