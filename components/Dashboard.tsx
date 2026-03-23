@@ -1245,11 +1245,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
 
     return (
         <div>
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+            <div className="flex flex-col gap-8 mb-8">
                 <h2 className="text-2xl font-bold text-gray-800">
-                    {user.role === Role.Student ? 'Mis Proyectos' : 'Proyectos por Curso'}
+                    {user.role === Role.Student ? 'Mis Proyectos' : 'Proyectos por curso'}
                 </h2>
-                <div className="flex flex-row items-center justify-center gap-1 sm:gap-2 flex-1 overflow-x-auto no-scrollbar">
+                <div className="flex flex-row items-center justify-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
                     <button
                         onClick={() => unreadMessages.length > 0 && setIsPendingModalOpen(true)}
                         className={`px-1 sm:px-2 py-1.5 text-[9px] sm:text-[10px] md:text-xs font-bold rounded-md transition-all whitespace-nowrap flex-1 max-w-[300px] ${
