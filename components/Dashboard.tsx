@@ -1245,40 +1245,42 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
 
     return (
         <div>
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">
                     {user.role === Role.Student ? 'Mis Proyectos' : 'Proyectos por Curso'}
                 </h2>
-                <button
-                    onClick={() => unreadMessages.length > 0 && setIsPendingModalOpen(true)}
-                    className={`px-4 py-2 font-bold rounded-md transition-all ${
-                        unreadMessages.length > 0
-                            ? 'bg-red-500 text-white blinking-button shadow-lg hover:bg-red-600'
-                            : 'bg-green-500 text-white cursor-default'
-                    }`}
-                >
-                    {unreadMessages.length > 0 ? `Mensajes Pendientes (${unreadMessages.length})` : 'Sin Mensajes Pendientes'}
-                </button>
-                <button
-                    onClick={() => pendingTutorials.length > 0 && setIsPendingTutorialsModalOpen(true)}
-                    className={`px-4 py-2 font-bold rounded-md transition-all ${
-                        pendingTutorials.length > 0
-                            ? 'bg-red-500 text-white shadow-lg hover:bg-red-600'
-                            : 'bg-green-500 text-white cursor-default'
-                    }`}
-                >
-                    {pendingTutorials.length > 0 ? `Tutorías Pendientes (${pendingTutorials.length})` : 'Sin Tutorías Pendientes'}
-                </button>
-                <button
-                    onClick={() => pendingMeetings.length > 0 && setIsPendingMeetingsModalOpen(true)}
-                    className={`px-4 py-2 font-bold rounded-md transition-all ${
-                        pendingMeetings.length > 0
-                            ? 'bg-red-500 text-white shadow-lg hover:bg-red-600'
-                            : 'bg-green-500 text-white cursor-default'
-                    }`}
-                >
-                    {pendingMeetings.length > 0 ? `Reuniones Pendientes (${pendingMeetings.length})` : 'Sin Reuniones Pendientes'}
-                </button>
+                <div className="flex flex-row items-center justify-center gap-1 sm:gap-2 flex-1 overflow-x-auto no-scrollbar">
+                    <button
+                        onClick={() => unreadMessages.length > 0 && setIsPendingModalOpen(true)}
+                        className={`px-1 sm:px-2 py-1.5 text-[9px] sm:text-[10px] md:text-xs font-bold rounded-md transition-all whitespace-nowrap flex-1 max-w-[300px] ${
+                            unreadMessages.length > 0
+                                ? 'bg-red-500 text-white blinking-button shadow-lg hover:bg-red-600'
+                                : 'bg-green-500 text-white cursor-default'
+                        }`}
+                    >
+                        {unreadMessages.length > 0 ? `Mensajes pendientes (${unreadMessages.length})` : 'Sin mensajes pendientes'}
+                    </button>
+                    <button
+                        onClick={() => pendingTutorials.length > 0 && setIsPendingTutorialsModalOpen(true)}
+                        className={`px-1 sm:px-2 py-1.5 text-[9px] sm:text-[10px] md:text-xs font-bold rounded-md transition-all whitespace-nowrap flex-1 max-w-[300px] ${
+                            pendingTutorials.length > 0
+                                ? 'bg-red-500 text-white shadow-lg hover:bg-red-600'
+                                : 'bg-green-500 text-white cursor-default'
+                        }`}
+                    >
+                        {pendingTutorials.length > 0 ? `Tutorías pendientes (${pendingTutorials.length})` : 'Sin tutorías pendientes'}
+                    </button>
+                    <button
+                        onClick={() => pendingMeetings.length > 0 && setIsPendingMeetingsModalOpen(true)}
+                        className={`px-1 sm:px-2 py-1.5 text-[9px] sm:text-[10px] md:text-xs font-bold rounded-md transition-all whitespace-nowrap flex-1 max-w-[300px] ${
+                            pendingMeetings.length > 0
+                                ? 'bg-red-500 text-white shadow-lg hover:bg-red-600'
+                                : 'bg-green-500 text-white cursor-default'
+                        }`}
+                    >
+                        {pendingMeetings.length > 0 ? `Reuniones de grupo pendientes (${pendingMeetings.length})` : 'Sin reuniones de grupo pendientes'}
+                    </button>
+                </div>
             </div>
             
             {(user.role === Role.Admin || user.role === Role.Tutor)
