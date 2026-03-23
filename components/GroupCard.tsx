@@ -144,17 +144,17 @@ export const GroupCard: React.FC<{
             className="flex flex-col w-full p-5 text-left text-gray-700 transition-all bg-white border rounded-xl shadow-sm hover:shadow-md hover:border-green-300 cursor-pointer relative group overflow-hidden h-full"
         >
             {/* Header with Progress */}
-            <div className="flex items-start justify-between mb-4">
-                <div className="flex-grow min-w-0 pr-2">
+            <div className="flex items-start mb-4">
+                <div className="flex-shrink-0 mr-4">
+                    <ProgressCircle progress={progress} size={56} showText={true} />
+                </div>
+                <div className="flex-grow min-w-0">
                     <h4 className="text-base font-bold text-green-800 leading-tight">
                         Proyecto: <span className="font-semibold text-green-600">{project ? project.name : group.name}</span>
                     </h4>
                     <p className="text-sm font-medium text-gray-500 truncate">
                         <span className="font-bold text-black">Grupo:</span> {project ? group.name : 'Sin proyecto'}
                     </p>
-                </div>
-                <div className="flex-shrink-0">
-                    <ProgressCircle progress={progress} size={56} showText={true} />
                 </div>
             </div>
 
@@ -232,14 +232,14 @@ export const GroupCard: React.FC<{
                         className="p-1.5 text-gray-400 bg-white rounded-full shadow-sm hover:text-blue-500 hover:bg-blue-50 border border-gray-200 transition-colors"
                         title="Editar"
                     >
-                        <EditIcon className="w-4 h-4"/>
+                        <EditIcon className="w-4 h-4 text-blue-500"/>
                     </button>
                     <button 
                         onClick={handleDeleteClick} 
                         className="p-1.5 text-gray-400 bg-white rounded-full shadow-sm hover:text-red-500 hover:bg-red-50 border border-gray-200 transition-colors"
                         title="Eliminar"
                     >
-                        <TrashIcon className="w-4 h-4"/>
+                        <TrashIcon className="w-4 h-4 text-red-500"/>
                     </button>
                 </div>
             )}

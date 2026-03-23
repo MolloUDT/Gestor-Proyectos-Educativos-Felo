@@ -404,10 +404,10 @@ const Students: React.FC<StudentsProps> = ({ users, courses, groups, projects, o
                                     <ChevronDownIcon className={`w-5 h-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : 'rotate-0'}`} />
                                 </button>
                                 <button onClick={() => { setEditingCourse(course); setIsEditCourseModalOpen(true); }} className="ml-2 text-gray-500 hover:text-gray-700">
-                                    <EditIcon className="w-5 h-5" />
+                                    <EditIcon className="w-5 h-5 text-blue-500" />
                                 </button>
                                 <button onClick={() => { setCourseToDelete(course.id); setIsDeleteCourseModalOpen(true); }} className="ml-2 text-red-500 hover:text-red-700">
-                                    <TrashIcon className="w-5 h-5" />
+                                    <TrashIcon className="w-5 h-5 text-red-500" />
                                 </button>
                             </div>
                             {isExpanded && (
@@ -455,8 +455,8 @@ const Students: React.FC<StudentsProps> = ({ users, courses, groups, projects, o
                                                             </td>
                                                             <td className="px-4 py-2">
                                                                 <div className="flex space-x-4">
-                                                                    <button onClick={() => handleEdit(student)} className="text-blue-500 hover:text-blue-700"><EditIcon className="w-5 h-5"/></button>
-                                                                    <button onClick={() => handleDeleteClick(student)} className="text-red-500 hover:text-red-700"><TrashIcon className="w-5 h-5"/></button>
+                                                                    <button onClick={() => handleEdit(student)} className="text-blue-500 hover:text-blue-700"><EditIcon className="w-5 h-5 text-blue-500"/></button>
+                                                                    <button onClick={() => handleDeleteClick(student)} className="text-red-500 hover:text-red-700"><TrashIcon className="w-5 h-5 text-red-500"/></button>
                                                                 </div>
                                                             </td>
                                                         </tr>

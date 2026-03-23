@@ -193,10 +193,10 @@ const Tutors: React.FC<TutorsProps> = ({ users, groups, onCreate, onUpdate, onDe
                                 <td className="px-4 py-3">
                                     <div className="flex space-x-4">
                                         <button onClick={() => handleEdit(tutor)} className="text-blue-500 hover:text-blue-700">
-                                            <EditIcon className="w-5 h-5"/>
+                                            <EditIcon className="w-5 h-5 text-blue-500"/>
                                         </button>
                                         <button onClick={() => handleDeleteClick(tutor)} className="text-red-500 hover:text-red-700">
-                                            <TrashIcon className="w-5 h-5"/>
+                                            <TrashIcon className="w-5 h-5 text-red-500"/>
                                         </button>
                                     </div>
                                 </td>

@@ -374,7 +374,7 @@ const CalendarView: React.FC<{
                                     </div>
                                     <div className="flex-shrink-0 ml-4">
                                         <button className="p-2 text-gray-400 rounded-full hover:bg-blue-100 hover:text-blue-600">
-                                            <EditIcon className="w-4 h-4" />
+                                            <EditIcon className="w-4 h-4 text-blue-500" />
                                         </button>
                                     </div>
                                 </div>
@@ -811,8 +811,8 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                                                                     </div>
                                                                     {(user.role === Role.Admin || user.id === tutorial.tutorId || (user.role === Role.Student && tutorial.type === 'group_meeting' && (user.groupIds || []).includes(tutorial.groupId))) && (
                                                                         <div className="flex flex-shrink-0 ml-4 space-x-1">
-                                                                            <div onClick={(e) => { e.stopPropagation(); setEditingTutorial(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-blue-100 hover:text-blue-600" aria-label="Editar tutoría"><EditIcon className="w-4 h-4" /></div>
-                                                                            <div onClick={(e) => { e.stopPropagation(); setTutorialToDelete(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-red-100 hover:text-red-600" aria-label="Eliminar tutoría"><TrashIcon className="w-4 h-4" /></div>
+                                                                            <div onClick={(e) => { e.stopPropagation(); setEditingTutorial(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-blue-100 hover:text-blue-600" aria-label="Editar tutoría"><EditIcon className="w-4 h-4 text-blue-500" /></div>
+                                                                            <div onClick={(e) => { e.stopPropagation(); setTutorialToDelete(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-red-100 hover:text-red-600" aria-label="Eliminar tutoría"><TrashIcon className="w-4 h-4 text-red-500" /></div>
                                                                         </div>
                                                                     )}
                                                                 </button>

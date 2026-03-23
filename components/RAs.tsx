@@ -284,10 +284,10 @@ const RAs: React.FC<RAsProps> = ({ ras, modules, onCreateRA, onUpdateRA, onDelet
                                     </div>
                                     <div className="flex items-center pl-4 space-x-2">
                                         <button onClick={() => handleEditModule(moduleName)} className="text-blue-500 hover:text-blue-700">
-                                            <EditIcon className="w-5 h-5" />
+                                            <EditIcon className="w-5 h-5 text-blue-500" />
                                         </button>
                                         <button onClick={() => handleDeleteModuleClick(moduleName)} className="text-red-500 hover:text-red-700">
-                                            <TrashIcon className="w-5 h-5" />
+                                            <TrashIcon className="w-5 h-5 text-red-500" />
                                         </button>
                                     </div>
                                 </div>
@@ -315,8 +315,8 @@ const RAs: React.FC<RAsProps> = ({ ras, modules, onCreateRA, onUpdateRA, onDelet
                                                             <td className="px-4 py-2 text-gray-600">{ra.description}</td>
                                                             <td className="px-4 py-2">
                                                                 <div className="flex space-x-4">
-                                                                    <button onClick={() => handleEditRA(ra)} className="text-blue-500 hover:text-blue-700"><EditIcon className="w-5 h-5"/></button>
-                                                                    <button onClick={() => handleDeleteRAClick(ra)} className="text-red-500 hover:text-red-700"><TrashIcon className="w-5 h-5"/></button>
+                                                                    <button onClick={() => handleEditRA(ra)} className="text-blue-500 hover:text-blue-700"><EditIcon className="w-5 h-5 text-blue-500"/></button>
+                                                                    <button onClick={() => handleDeleteRAClick(ra)} className="text-red-500 hover:text-red-700"><TrashIcon className="w-5 h-5 text-red-500"/></button>
                                                                 </div>
                                                             </td>
                                                         </tr>

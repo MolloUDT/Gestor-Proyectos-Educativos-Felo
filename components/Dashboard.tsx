@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { User, Task, Role, KanbanStatus, Group, Project, Message, Tutorial, Priority, Difficulty, RA, Course } from '../types';
-import { ChevronDownIcon, TrashIcon } from './Icons';
+import { ChevronDownIcon, TrashIcon, GraduationCapIcon, UsersIcon } from './Icons';
 import { ProgressCircle } from './ProgressCircle';
 import PendingMessagesModal from './PendingMessagesModal';
 import PendingTutorialsMeetingsModal from './PendingTutorialsMeetingsModal';
@@ -50,6 +50,11 @@ const SmallValueDisplay: React.FC<{ value: number; label: string; colorClass: st
     </div>
 );
 
+const getAttendanceColor = (percentage: number) => {
+    if (percentage >= 90) return 'text-green-600';
+    if (percentage >= 60) return 'text-orange-600';
+    return 'text-red-600';
+};
 
 const CountdownDisplay: React.FC<{ endDate: string }> = ({ endDate }) => {
     if (!endDate || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
@@ -483,11 +488,11 @@ const AdminTutorGroupCard: React.FC<{
                                         <p className="font-medium text-gray-800 truncate">{stat.firstName}</p>
                                         {stat.lastName && <p className="text-sm text-gray-600 truncate">{stat.lastName}</p>}
                                         <div className="flex items-center gap-2 mt-0.5">
-                                            <span className="text-[10px] text-gray-500 flex items-center gap-0.5" title="Asistencia a Tutorías">
-                                                <span className="grayscale">🎓</span> {stat.tutorialAttendance}%
+                                            <span className={`text-[10px] ${getAttendanceColor(stat.tutorialAttendance)} flex items-center gap-0.5 font-bold`} title="Asistencia a Tutorías">
+                                                <GraduationCapIcon className="w-3 h-3" /> {stat.tutorialAttendance}%
                                             </span>
-                                            <span className="text-[10px] text-gray-500 flex items-center gap-0.5" title="Asistencia a Reuniones">
-                                                <span className="grayscale">👥</span> {stat.meetingAttendance}%
+                                            <span className={`text-[10px] ${getAttendanceColor(stat.meetingAttendance)} flex items-center gap-0.5 font-bold`} title="Asistencia a Reuniones">
+                                                <UsersIcon className="w-3 h-3" /> {stat.meetingAttendance}%
                                             </span>
                                         </div>
                                     </div>
@@ -918,11 +923,11 @@ const StudentProjectDetailCard: React.FC<{
                                         <p className="font-medium text-gray-800 truncate">{stat.firstName}</p>
                                         {stat.lastName && <p className="text-sm text-gray-600 truncate">{stat.lastName}</p>}
                                         <div className="flex items-center gap-2 mt-0.5">
-                                            <span className="text-[10px] text-gray-500 flex items-center gap-0.5" title="Asistencia a Tutorías">
-                                                <span className="grayscale">🎓</span> {stat.tutorialAttendance}%
+                                            <span className={`text-[10px] ${getAttendanceColor(stat.tutorialAttendance)} flex items-center gap-0.5 font-bold`} title="Asistencia a Tutorías">
+                                                <GraduationCapIcon className="w-3 h-3" /> {stat.tutorialAttendance}%
                                             </span>
-                                            <span className="text-[10px] text-gray-500 flex items-center gap-0.5" title="Asistencia a Reuniones">
-                                                <span className="grayscale">👥</span> {stat.meetingAttendance}%
+                                            <span className={`text-[10px] ${getAttendanceColor(stat.meetingAttendance)} flex items-center gap-0.5 font-bold`} title="Asistencia a Reuniones">
+                                                <UsersIcon className="w-3 h-3" /> {stat.meetingAttendance}%
                                             </span>
                                         </div>
                                     </div>

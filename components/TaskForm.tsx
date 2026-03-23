@@ -209,7 +209,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, co
                 <div>
                     {!isNewTask && (userRole === Role.Admin || userRole === Role.Tutor || userRole === Role.Student) && (
                         <button type="button" onClick={() => onDelete?.(task as Task)} className="flex items-center gap-2 px-4 py-2 text-sm text-red-700 bg-red-100 rounded-md hover:bg-red-200">
-                           <TrashIcon className="w-4 h-4" /> Eliminar
+                           <TrashIcon className="w-4 h-4 text-red-500" /> Eliminar
                         </button>
                     )}
                 </div>

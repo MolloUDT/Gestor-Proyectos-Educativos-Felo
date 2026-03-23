@@ -77,7 +77,7 @@ const MessagingHistoryModal: React.FC<Omit<MessagingHistoryModalProps, 'onSendMe
                                             <p className="text-xs text-gray-400">{new Date(original.timestamp).toLocaleString('es-ES')}</p>
                                             {user.role === Role.Admin && (
                                                 <button onClick={() => setMessageToDelete(original)} className="text-gray-400 hover:text-red-500">
-                                                    <TrashIcon className="w-4 h-4" />
+                                                    <TrashIcon className="w-4 h-4 text-red-500" />
                                                 </button>
                                             )}
                                         </div>
@@ -98,7 +98,7 @@ const MessagingHistoryModal: React.FC<Omit<MessagingHistoryModalProps, 'onSendMe
                                                 <p className="text-xs text-gray-400">{new Date(reply.timestamp).toLocaleString('es-ES')}</p>
                                                 {user.role === Role.Admin && (
                                                     <button onClick={() => setMessageToDelete(reply)} className="text-gray-400 hover:text-red-500">
-                                                        <TrashIcon className="w-4 h-4" />
+                                                        <TrashIcon className="w-4 h-4 text-red-500" />
                                                     </button>
                                                 )}
                                             </div>
