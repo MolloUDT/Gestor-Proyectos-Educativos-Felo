@@ -27,16 +27,27 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onSave }) =>
             <form onSubmit={handleSubmit} className="space-y-4">
                 {error && <div className="p-3 text-sm text-red-700 bg-red-100 rounded-md">{error}</div>}
                 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Nombre y Apellidos</label>
-                    <input
-                        type="text"
-                        value={`${user.firstName} ${user.lastName}`}
-                        className="w-full p-2 mt-1 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed"
-                        disabled
-                    />
-                    <p className="mt-1 text-xs text-gray-500">No puedes modificar tu nombre real.</p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700">Nombre</label>
+                        <input
+                            type="text"
+                            value={user.firstName}
+                            className="w-full p-2 mt-1 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed"
+                            disabled
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700">Apellidos</label>
+                        <input
+                            type="text"
+                            value={user.lastName}
+                            className="w-full p-2 mt-1 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed"
+                            disabled
+                        />
+                    </div>
                 </div>
+                <p className="mt-1 text-xs text-gray-500">No puedes modificar tu nombre real.</p>
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Rol</label>

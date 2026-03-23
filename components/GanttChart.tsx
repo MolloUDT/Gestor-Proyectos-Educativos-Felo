@@ -534,6 +534,8 @@ const GanttChartDisplay: React.FC<GanttChartDisplayProps> = ({ tasks, courseDate
     );
 };
 
+import ProjectCard from './ProjectCard';
+
 interface GanttChartProps {
     user: User;
     groups: Group[];
@@ -616,30 +618,14 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
                         const tutor = allUsers.find(u => u.id === group.tutorId);
 
                         return (
-                            <button 
-                                key={project.id} 
-                                onClick={() => setSelectedProjectId(project.id)} 
-                                className="flex items-center w-full p-3 text-left text-gray-700 transition-colors bg-white border rounded-md shadow-sm gap-4 hover:bg-green-50 hover:border-green-300"
-                            >
-                                <div>
-                                    <ProgressCircle progress={progress} size={48} showText={true} />
-                                </div>
-                                <div className="flex-grow min-w-0">
-                                    <p className="font-semibold text-green-800 truncate">{project.name}</p>
-                                    <p className="text-sm text-gray-500">{group.name}</p>
-                                    <p className="mt-1 text-xs text-gray-500">Tutor: {tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Sin tutor'}</p>
-                                </div>
-                                <div className="flex flex-col items-end flex-shrink-0">
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-800">{new Date(project.startDate).toLocaleDateString('es-ES')}</p>
-                                        <p className="text-xs text-right text-gray-500">Inicio</p>
-                                    </div>
-                                    <div className="mt-1">
-                                        <p className="text-sm font-medium text-gray-800">{new Date(project.endDate).toLocaleDateString('es-ES')}</p>
-                                        <p className="text-xs text-right text-gray-500">Fin</p>
-                                    </div>
-                                </div>
-                            </button>
+                            <ProjectCard
+                                key={project.id}
+                                project={project}
+                                group={group}
+                                tutor={tutor}
+                                tasks={tasks}
+                                onClick={() => setSelectedProjectId(project.id)}
+                            />
                         );
                     }) : <p className="text-center text-gray-500">No estás asignado a ningún proyecto.</p>}
                 </div>
@@ -668,30 +654,14 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
                                                 const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
                                                 return (
-                                                <button 
-                                                        key={project.id} 
-                                                        onClick={() => setSelectedProjectId(project.id)} 
-                                                        className="flex items-center w-full p-3 text-left text-gray-700 transition-colors bg-white border rounded-md shadow-sm gap-4 hover:bg-green-50 hover:border-green-300"
-                                                    >
-                                                        <div>
-                                                            <ProgressCircle progress={progress} size={48} showText={true} />
-                                                        </div>
-                                                        <div className="flex-grow min-w-0">
-                                                            <p className="font-semibold text-green-800 truncate">Proyecto: {project.name}</p>
-                                                            <p className="text-sm text-gray-500">Grupo: {group?.name}</p>
-                                                            <p className="mt-1 text-xs text-blue-600">Tutor: {tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Sin tutor'}</p>
-                                                        </div>
-                                                        <div className="flex flex-col items-end flex-shrink-0">
-                                                            <div>
-                                                                <p className="text-xs text-right text-gray-500">Inicio</p>
-                                                                <p className="text-sm font-medium text-green-600">{new Date(project.startDate).toLocaleDateString('es-ES')}</p>
-                                                            </div>
-                                                            <div className="mt-1">
-                                                                <p className="text-xs text-right text-gray-500">Fin</p>
-                                                                <p className="text-sm font-medium text-red-600">{new Date(project.endDate).toLocaleDateString('es-ES')}</p>
-                                                            </div>
-                                                        </div>
-                                                    </button>
+                                                    <ProjectCard
+                                                        key={project.id}
+                                                        project={project}
+                                                        group={group}
+                                                        tutor={tutor}
+                                                        tasks={tasks}
+                                                        onClick={() => setSelectedProjectId(project.id)}
+                                                    />
                                                 );
                                             })}
                                         </div>

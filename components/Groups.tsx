@@ -3,7 +3,7 @@ import { User, Group, Role, Project, Task, Course } from '../types';
 import Modal from './Modal';
 import { PlusCircleIcon, ChevronDownIcon } from './Icons';
 import { sortBySurname } from '../lib/utils';
-import { GroupCard } from './GroupCard';
+import ProjectCard from './ProjectCard';
 
 interface GroupsProps {
     user: User;
@@ -302,20 +302,23 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
                             {isExpanded && (
                                 <div className="p-4 border-t border-gray-200">
                                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2">
-                                        {courseGroups.map(group => (
-                                            <GroupCard 
-                                                key={group.id} 
-                                                group={group}
-                                                projects={projects}
-                                                allUsers={allUsers}
-                                                tasks={tasks}
-                                                user={user}
-                                                courses={courses}
-                                                onEdit={() => handleEdit(group)} 
-                                                onDelete={() => handleDeleteClick(group)}
-                                                onCardClick={() => handleCardClick(group)} 
-                                            />
-                                        ))}
+                                        {courseGroups.map(group => {
+                                            const project = projects.find(p => p.groupId === group.id);
+                                            const tutor = allUsers.find(u => u.id === group.tutorId);
+                                            const canManage = (user.role === Role.Admin || user.id === group.tutorId);
+                                            return (
+                                                <ProjectCard 
+                                                    key={group.id} 
+                                                    group={group}
+                                                    project={project}
+                                                    tutor={tutor}
+                                                    tasks={tasks}
+                                                    onClick={() => handleCardClick(group)} 
+                                                    onEdit={canManage ? (e) => { e.stopPropagation(); handleEdit(group); } : undefined}
+                                                    onDelete={canManage ? (e) => { e.stopPropagation(); handleDeleteClick(group); } : undefined}
+                                                />
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}

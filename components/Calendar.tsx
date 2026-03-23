@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { User, Tutorial, Role, Group, Project, Course, Task } from '../types';
 import Modal from './Modal';
 import { ChevronDownIcon, EditIcon, TrashIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
-import { GroupCard, GroupSummaryCard } from './GroupCard';
+import ProjectCard from './ProjectCard';
 
 interface CalendarProps {
     user: User;
@@ -67,6 +67,7 @@ type CalendarEvent = RegisteredEvent | ScheduledEvent;
 interface TooltipData {
     groupName: string;
     projectName: string;
+    courseName: string;
     summary: string;
     location?: string;
     time?: string;
@@ -189,16 +190,16 @@ const CalendarView: React.FC<{
             {tooltip && (
                 <div
                     className="fixed z-50 p-3 text-sm text-white bg-black bg-opacity-80 rounded-lg shadow-xl max-w-xs pointer-events-none"
-                    style={{ top: tooltip.y + 15, left: tooltip.x + 15 }}
+                    style={{ top: tooltip.y - 15, left: tooltip.x + 15, transform: 'translateY(-100%)' }}
                 >
-                    <p className="font-bold">{tooltip.data.groupName}</p>
-                    <p className="text-sm italic text-gray-300">{tooltip.data.projectName}</p>
-                    
-                    <p className="mt-1 text-xs font-semibold text-blue-300">
+                    <p className="font-bold text-blue-300 mb-1">
                         {tooltip.data.meetingType === 'group_meeting' ? 'Reunión de Grupo' : 'Tutoría'}
                     </p>
+                    <p className="text-sm mb-1"><span className="font-semibold text-gray-400">Curso:</span> {tooltip.data.courseName === 'default' ? 'Sin curso' : tooltip.data.courseName}</p>
+                    <p className="text-sm mb-1"><span className="font-semibold text-gray-400">Grupo:</span> {tooltip.data.groupName}</p>
+                    <p className="text-sm mb-2"><span className="font-semibold text-gray-400">Proyecto:</span> {tooltip.data.projectName}</p>
 
-                    {(tooltip.data.location || tooltip.data.time) && <hr className="my-1 border-gray-500" />}
+                    {(tooltip.data.location || tooltip.data.time) && <hr className="my-2 border-gray-600" />}
                     
                     {tooltip.data.location && (
                         <p className="text-xs"><span className="font-semibold">Lugar:</span> {tooltip.data.location}</p>
@@ -209,7 +210,7 @@ const CalendarView: React.FC<{
 
                     {tooltip.data.summary && (
                         <>
-                            <hr className="my-1 border-gray-500" />
+                            <hr className="my-2 border-gray-600" />
                             <p className="text-xs">{tooltip.data.summary}</p>
                         </>
                     )}
@@ -309,6 +310,7 @@ const CalendarView: React.FC<{
                                                 const data: TooltipData = {
                                                     groupName: event.groupName,
                                                     projectName: event.projectName,
+                                                    courseName: event.courseGroup,
                                                     summary: isRegistered ? tut.summary : "Próxima reunión agendada.",
                                                     location: tut.location || 'Lugar por definir',
                                                     time: tut.time || 'Hora por definir',
@@ -729,104 +731,157 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                     </button>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
-                    <div className="flex-1">
-                        <label htmlFor="course-filter" className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Curso</label>
-                        <select
-                            id="course-filter"
-                            value={selectedCourseId}
-                            onChange={(e) => setSelectedCourseId(e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
-                        >
-                            <option value="">Todos los cursos</option>
-                            {courses.map(course => (
-                                <option key={course.id} value={course.id}>{course.name}</option>
-                            ))}
-                        </select>
+                {user.role !== Role.Student && (
+                    <div className="flex flex-col sm:flex-row gap-4 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+                        <div className="flex-1">
+                            <label htmlFor="course-filter" className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Curso</label>
+                            <select
+                                id="course-filter"
+                                value={selectedCourseId}
+                                onChange={(e) => setSelectedCourseId(e.target.value)}
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                            >
+                                <option value="">Todos los cursos</option>
+                                {courses.map(course => (
+                                    <option key={course.id} value={course.id}>{course.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex-1">
+                            <label htmlFor="group-filter" className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Grupo</label>
+                            <select
+                                id="group-filter"
+                                value={selectedGroupId}
+                                onChange={(e) => setSelectedGroupId(e.target.value)}
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                                disabled={availableGroupsForFilter.length === 0}
+                            >
+                                <option value="">Todos los grupos</option>
+                                {availableGroupsForFilter.map(group => (
+                                    <option key={group.id} value={group.id}>{group.name}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
-                    <div className="flex-1">
-                        <label htmlFor="group-filter" className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Grupo</label>
-                        <select
-                            id="group-filter"
-                            value={selectedGroupId}
-                            onChange={(e) => setSelectedGroupId(e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
-                            disabled={availableGroupsForFilter.length === 0}
-                        >
-                            <option value="">Todos los grupos</option>
-                            {availableGroupsForFilter.map(group => (
-                                <option key={group.id} value={group.id}>{group.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
+                )}
             </div>
             
             {view === 'list' ? (
                 <div className="space-y-2">
-                    {Object.keys(tutorialsByCourseAndGroup).sort().map(courseName => (
-                        <div key={courseName} className="bg-white rounded-lg shadow-md">
-                            <button onClick={() => toggleExpand(`course_${courseName}`)} className="flex items-center justify-between w-full p-4 text-left focus:outline-none">
-                                <div className="flex items-center">
-                                    <h3 className="text-lg font-semibold text-gray-800">{courseName}</h3>
-                                    <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">{tutorialsByCourseAndGroup[courseName].length} {tutorialsByCourseAndGroup[courseName].length === 1 ? 'grupo' : 'grupos'}</span>
-                                </div>
-                                <ChevronDownIcon className={`w-6 h-6 text-gray-500 transition-transform ${expandedKeys[`course_${courseName}`] ? 'rotate-180' : ''}`} />
-                            </button>
-                            {expandedKeys[`course_${courseName}`] && (
-                                <div className="p-4 border-t border-gray-200">
-                                    <div className="grid grid-cols-1 gap-6">
-                                        {tutorialsByCourseAndGroup[courseName].map(({ group, tutorials: groupTutorials }) => {
-                                            const isGroupExpanded = expandedKeys[`group_${group.id}`];
-                                            return (
-                                                <div key={group.id} className="mb-4">
-                                                    <GroupSummaryCard 
-                                                        group={group}
-                                                        projects={projects}
-                                                        allUsers={allUsers}
-                                                        tasks={tasks}
-                                                        onCardClick={() => toggleExpand(`group_${group.id}`)}
-                                                    />
-                                                    {isGroupExpanded && (
-                                                        <div className="pl-6 pr-2 pb-2 mt-1 space-y-2 border-l-2 border-green-200 ml-4">
-                                                            {groupTutorials.map(tutorial => (
-                                                                <button 
-                                                                    key={tutorial.id} 
-                                                                    onClick={() => setEditingTutorial(tutorial)}
-                                                                    className="flex items-center justify-between w-full p-3 text-left text-gray-700 transition-colors bg-white border rounded-md shadow-sm gap-4 hover:bg-green-50 hover:border-green-300"
-                                                                >
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <div className="flex items-center gap-2 mb-1">
-                                                                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${tutorial.type === 'group_meeting' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
-                                                                                {tutorial.type === 'group_meeting' ? 'Reunión de Grupo' : 'Tutoría'}
-                                                                            </span>
-                                                                            {tutorial.status === 'held' ? (
-                                                                                <span className="px-2 py-0.5 text-xs font-medium text-green-800 bg-green-100 rounded-full">Realizada</span>
-                                                                            ) : (
-                                                                                <span className="px-2 py-0.5 text-xs font-medium text-red-800 bg-red-100 rounded-full">Pendiente</span>
-                                                                            )}
-                                                                            <p className="font-semibold text-gray-700">{new Date(tutorial.date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                                                        </div>
-                                                                        <p className="text-sm text-gray-600 truncate">{tutorial.summary}</p>
-                                                                    </div>
-                                                                    {(user.role === Role.Admin || user.id === tutorial.tutorId || (user.role === Role.Student && tutorial.type === 'group_meeting' && (user.groupIds || []).includes(tutorial.groupId))) && (
-                                                                        <div className="flex flex-shrink-0 ml-4 space-x-1">
-                                                                            <div onClick={(e) => { e.stopPropagation(); setEditingTutorial(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-blue-100 hover:text-blue-600" aria-label="Editar tutoría"><EditIcon className="w-4 h-4 text-blue-500" /></div>
-                                                                            <div onClick={(e) => { e.stopPropagation(); setTutorialToDelete(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-red-100 hover:text-red-600" aria-label="Eliminar tutoría"><TrashIcon className="w-4 h-4 text-red-500" /></div>
-                                                                        </div>
-                                                                    )}
-                                                                </button>
-                                                            ))}
+                    {user.role === Role.Student ? (
+                        // Student View: Flat list of groups
+                        Object.values(tutorialsByCourseAndGroup).flatMap(courseGroups => courseGroups).map(({ group, tutorials: groupTutorials }) => {
+                            const isGroupExpanded = expandedKeys[`group_${group.id}`];
+                            return (
+                                <div key={group.id} className="mb-4">
+                                    <ProjectCard 
+                                        group={group}
+                                        project={projects.find(p => p.groupId === group.id)}
+                                        tutor={allUsers.find(u => u.id === group.tutorId)}
+                                        tasks={tasks}
+                                        onClick={() => toggleExpand(`group_${group.id}`)}
+                                    />
+                                    {isGroupExpanded && (
+                                        <div className="pl-6 pr-2 pb-2 mt-1 space-y-2 border-l-2 border-green-200 ml-4">
+                                            {groupTutorials.map(tutorial => (
+                                                <button 
+                                                    key={tutorial.id} 
+                                                    onClick={() => setEditingTutorial(tutorial)}
+                                                    className="flex items-center justify-between w-full p-3 text-left text-gray-700 transition-colors bg-white border rounded-md shadow-sm gap-4 hover:bg-green-50 hover:border-green-300"
+                                                >
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${tutorial.type === 'group_meeting' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
+                                                                {tutorial.type === 'group_meeting' ? 'Reunión de Grupo' : 'Tutoría'}
+                                                            </span>
+                                                            {tutorial.status === 'held' ? (
+                                                                <span className="px-2 py-0.5 text-xs font-medium text-green-800 bg-green-100 rounded-full">Realizada</span>
+                                                            ) : (
+                                                                <span className="px-2 py-0.5 text-xs font-medium text-red-800 bg-red-100 rounded-full">Pendiente</span>
+                                                            )}
+                                                            <p className="font-semibold text-gray-700">{new Date(tutorial.date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                        </div>
+                                                        <p className="text-sm text-gray-600 truncate">{tutorial.summary}</p>
+                                                    </div>
+                                                    {(user.role === Role.Admin || user.id === tutorial.tutorId || (user.role === Role.Student && tutorial.type === 'group_meeting' && (user.groupIds || []).includes(tutorial.groupId))) && (
+                                                        <div className="flex flex-shrink-0 ml-4 space-x-1">
+                                                            <div onClick={(e) => { e.stopPropagation(); setEditingTutorial(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-blue-100 hover:text-blue-600" aria-label="Editar tutoría"><EditIcon className="w-4 h-4 text-blue-500" /></div>
+                                                            <div onClick={(e) => { e.stopPropagation(); setTutorialToDelete(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-red-100 hover:text-red-600" aria-label="Eliminar tutoría"><TrashIcon className="w-4 h-4 text-red-500" /></div>
                                                         </div>
                                                     )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    ))}
+                            );
+                        })
+                    ) : (
+                        // Admin/Tutor View: Grouped by course
+                        Object.keys(tutorialsByCourseAndGroup).sort().map(courseName => (
+                            <div key={courseName} className="bg-white rounded-lg shadow-md">
+                                <button onClick={() => toggleExpand(`course_${courseName}`)} className="flex items-center justify-between w-full p-4 text-left focus:outline-none">
+                                    <div className="flex items-center">
+                                        <h3 className="text-lg font-semibold text-gray-800">{courseName}</h3>
+                                        <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">{tutorialsByCourseAndGroup[courseName].length} {tutorialsByCourseAndGroup[courseName].length === 1 ? 'grupo' : 'grupos'}</span>
+                                    </div>
+                                    <ChevronDownIcon className={`w-6 h-6 text-gray-500 transition-transform ${expandedKeys[`course_${courseName}`] ? 'rotate-180' : ''}`} />
+                                </button>
+                                {expandedKeys[`course_${courseName}`] && (
+                                    <div className="p-4 border-t border-gray-200">
+                                        <div className="grid grid-cols-1 gap-6">
+                                            {tutorialsByCourseAndGroup[courseName].map(({ group, tutorials: groupTutorials }) => {
+                                                const isGroupExpanded = expandedKeys[`group_${group.id}`];
+                                                return (
+                                                    <div key={group.id} className="mb-4">
+                                                        <ProjectCard 
+                                                            group={group}
+                                                            project={projects.find(p => p.groupId === group.id)}
+                                                            tutor={allUsers.find(u => u.id === group.tutorId)}
+                                                            tasks={tasks}
+                                                            onClick={() => toggleExpand(`group_${group.id}`)}
+                                                        />
+                                                        {isGroupExpanded && (
+                                                            <div className="pl-6 pr-2 pb-2 mt-1 space-y-2 border-l-2 border-green-200 ml-4">
+                                                                {groupTutorials.map(tutorial => (
+                                                                    <button 
+                                                                        key={tutorial.id} 
+                                                                        onClick={() => setEditingTutorial(tutorial)}
+                                                                        className="flex items-center justify-between w-full p-3 text-left text-gray-700 transition-colors bg-white border rounded-md shadow-sm gap-4 hover:bg-green-50 hover:border-green-300"
+                                                                    >
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="flex items-center gap-2 mb-1">
+                                                                                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${tutorial.type === 'group_meeting' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
+                                                                                    {tutorial.type === 'group_meeting' ? 'Reunión de Grupo' : 'Tutoría'}
+                                                                                </span>
+                                                                                {tutorial.status === 'held' ? (
+                                                                                    <span className="px-2 py-0.5 text-xs font-medium text-green-800 bg-green-100 rounded-full">Realizada</span>
+                                                                                ) : (
+                                                                                    <span className="px-2 py-0.5 text-xs font-medium text-red-800 bg-red-100 rounded-full">Pendiente</span>
+                                                                                )}
+                                                                                <p className="font-semibold text-gray-700">{new Date(tutorial.date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                                            </div>
+                                                                            <p className="text-sm text-gray-600 truncate">{tutorial.summary}</p>
+                                                                        </div>
+                                                                        {(user.role === Role.Admin || user.id === tutorial.tutorId || (user.role === Role.Student && tutorial.type === 'group_meeting' && (user.groupIds || []).includes(tutorial.groupId))) && (
+                                                                            <div className="flex flex-shrink-0 ml-4 space-x-1">
+                                                                                <div onClick={(e) => { e.stopPropagation(); setEditingTutorial(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-blue-100 hover:text-blue-600" aria-label="Editar tutoría"><EditIcon className="w-4 h-4 text-blue-500" /></div>
+                                                                                <div onClick={(e) => { e.stopPropagation(); setTutorialToDelete(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-red-100 hover:text-red-600" aria-label="Eliminar tutoría"><TrashIcon className="w-4 h-4 text-red-500" /></div>
+                                                                            </div>
+                                                                        )}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
                 </div>
             ) : (
                 <CalendarView

@@ -10,6 +10,8 @@ import { PlusCircleIcon, ChevronDownIcon } from './Icons';
 import TaskForm from './TaskForm';
 import { ProgressCircle } from './ProgressCircle';
 
+import ProjectCard from './ProjectCard';
+
 interface KanbanBoardProps {
     user: User;
     groups: Group[];
@@ -242,60 +244,71 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
         return (
             <div className="space-y-4">
                 <h2 className="mb-6 text-2xl font-bold text-gray-800">Selecciona un Proyecto</h2>
-                {Object.keys(projectsByCourse).sort().map(courseName => {
-                    const courseProjects = projectsByCourse[courseName];
-                    const isExpanded = !!expandedCourseGroups[courseName];
-                    return (
-                        <div key={courseName} className="border border-gray-200 rounded-lg bg-white shadow-sm">
-                            <button onClick={() => toggleCourseGroup(courseName)} className="flex items-center justify-between w-full p-4 text-left bg-gray-50 hover:bg-gray-100 focus:outline-none rounded-lg">
-                                <div className="flex items-center">
-                                    <h3 className="text-lg font-semibold text-gray-800">{courseName}</h3>
-                                    <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">
-                                        {courseProjects.length} {courseProjects.length === 1 ? 'proyecto' : 'proyectos'}
-                                    </span>
+                
+                {user.role === Role.Student ? (
+                    <div className="space-y-2">
+                        {projects.filter(p => relevantProjectIds.includes(p.id)).length > 0 ? (
+                            projects.filter(p => relevantProjectIds.includes(p.id)).map(project => {
+                                const group = groups.find(g => g.id === project.groupId);
+                                const tutor = users.find(u => u.id === group?.tutorId);
+                                
+                                return (
+                                    <ProjectCard
+                                        key={project.id}
+                                        project={project}
+                                        group={group}
+                                        tutor={tutor}
+                                        tasks={tasks}
+                                        onClick={() => handleProjectCardClick(project.id)}
+                                    />
+                                );
+                            })
+                        ) : (
+                            <p className="text-gray-500">No estás asignado a ningún proyecto.</p>
+                        )}
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                        {Object.keys(projectsByCourse).sort().map(courseName => {
+                            const courseProjects = projectsByCourse[courseName];
+                            const isExpanded = !!expandedCourseGroups[courseName];
+                            return (
+                                <div key={courseName} className="border border-gray-200 rounded-lg bg-white shadow-sm">
+                                    <button onClick={() => toggleCourseGroup(courseName)} className="flex items-center justify-between w-full p-4 text-left bg-gray-50 hover:bg-gray-100 focus:outline-none rounded-lg">
+                                        <div className="flex items-center">
+                                            <h3 className="text-lg font-semibold text-gray-800">{courseName}</h3>
+                                            <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">
+                                                {courseProjects.length} {courseProjects.length === 1 ? 'proyecto' : 'proyectos'}
+                                            </span>
+                                        </div>
+                                        <ChevronDownIcon className={`w-6 h-6 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                    </button>
+                                    {isExpanded && (
+                                        <div className="p-4 border-t border-gray-200">
+                                            <div className="space-y-2">
+                                                {courseProjects.map(project => {
+                                                    const group = groups.find(g => g.id === project.groupId);
+                                                    const tutor = users.find(u => u.id === group?.tutorId);
+                                                    
+                                                    return (
+                                                        <ProjectCard
+                                                            key={project.id}
+                                                            project={project}
+                                                            group={group}
+                                                            tutor={tutor}
+                                                            tasks={tasks}
+                                                            onClick={() => handleProjectCardClick(project.id)}
+                                                        />
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                                <ChevronDownIcon className={`w-6 h-6 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                            </button>
-                            {isExpanded && (
-                                <div className="p-4 border-t border-gray-200">
-                                    <div className="space-y-2">
-                                        {courseProjects.map(project => {
-                                            const group = groups.find(g => g.id === project.groupId);
-                                            const tutor = users.find(u => u.id === group?.tutorId);
-                                            
-                                            return (
-                                                <button 
-                                                    key={project.id} 
-                                                    onClick={() => handleProjectCardClick(project.id)} 
-                                                    className="flex items-center w-full p-3 text-left text-gray-700 transition-colors bg-white border rounded-md shadow-sm gap-4 hover:bg-green-50 hover:border-green-300"
-                                                >
-                                                    <div>
-                                                        <ProgressCircle progress={Math.round((tasks.filter(t => t.projectId === project.id && t.status === KanbanStatus.Done).length / (tasks.filter(t => t.projectId === project.id).length || 1)) * 100)} size={48} showText={true} />
-                                                    </div>
-                                                    <div className="flex-grow min-w-0">
-                                                        <p className="font-semibold text-green-800 truncate">Proyecto: {project.name}</p>
-                                                        <p className="text-sm text-gray-500">Grupo: {group?.name}</p>
-                                                        <p className="mt-1 text-xs text-blue-600">Tutor: {tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Sin tutor'}</p>
-                                                    </div>
-                                                    <div className="flex flex-col items-end flex-shrink-0">
-                                                        <div>
-                                                            <p className="text-xs text-right text-gray-500">Inicio</p>
-                                                            <p className="text-sm font-medium text-green-600">{new Date(project.startDate).toLocaleDateString('es-ES')}</p>
-                                                        </div>
-                                                        <div className="mt-1">
-                                                            <p className="text-xs text-right text-gray-500">Fin</p>
-                                                            <p className="text-sm font-medium text-red-600">{new Date(project.endDate).toLocaleDateString('es-ES')}</p>
-                                                        </div>
-                                                    </div>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         );
     }

@@ -8,6 +8,7 @@ import Modal from './Modal';
 import TaskForm from './TaskForm';
 import { TutorialForm } from './TutorialForm';
 import { sortBySurname } from '../lib/utils';
+import ProjectCard from './ProjectCard';
 
 interface DashboardProps {
     user: User;
@@ -1076,34 +1077,15 @@ const AdminTutorDashboard: React.FC<{
                                             const progress = calculateProjectProgress(projectTasks);
                                             
                                             return (
-                                                <button
+                                                <ProjectCard
                                                     key={project.id}
+                                                    project={project}
+                                                    group={group}
+                                                    tutor={tutor}
+                                                    tasks={tasks}
+                                                    isSelected={selectedProjectForCourse[courseGroup] === project.id}
                                                     onClick={() => setSelectedProjectForCourse(prev => ({ ...prev, [courseGroup]: project.id }))}
-                                                    className={`flex items-center w-full p-3 text-left transition-colors border rounded-md shadow-sm gap-4 ${
-                                                        selectedProjectForCourse[courseGroup] === project.id
-                                                            ? 'bg-blue-50 border-blue-300'
-                                                            : 'bg-white border-gray-200 hover:bg-green-50 hover:border-green-300'
-                                                    }`}
-                                                >
-                                                    <div>
-                                                        <ProgressCircle progress={progress} size={48} showText={true} />
-                                                    </div>
-                                                    <div className="flex-grow min-w-0">
-                                                        <p className="font-semibold text-green-800 truncate">Proyecto: {project.name}</p>
-                                                        <p className="text-sm text-gray-500">Grupo: {group.name}</p>
-                                                        <p className="mt-1 text-xs text-blue-600">Tutor: {tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Sin tutor'}</p>
-                                                    </div>
-                                                    <div className="flex flex-col items-end flex-shrink-0">
-                                                        <div>
-                                                            <p className="text-xs text-right text-gray-500">Inicio</p>
-                                                            <p className="text-sm font-medium text-green-600">{new Date(project.startDate + 'T00:00:00').toLocaleDateString('es-ES')}</p>
-                                                        </div>
-                                                        <div className="mt-1">
-                                                            <p className="text-xs text-right text-gray-500">Fin</p>
-                                                            <p className="text-sm font-medium text-red-600">{new Date(project.endDate + 'T00:00:00').toLocaleDateString('es-ES')}</p>
-                                                        </div>
-                                                    </div>
-                                                </button>
+                                                />
                                             );
                                         })}
                                     </div>
