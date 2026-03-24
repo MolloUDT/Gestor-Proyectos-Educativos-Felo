@@ -65,29 +65,36 @@ export const TutorialForm: React.FC<{
     
     const studentCourses = useMemo(() => {
         const courseIds = new Set<string>();
-        if (user.courseId) courseIds.add(user.courseId);
         
-        // Add courses from groups the student belongs to
-        const studentGroups = groups.filter(g => (user.groupIds || []).includes(g.id));
-        studentGroups.forEach(g => {
+        let relevantGroups = groups;
+        if (user.role === Role.Student) {
+            relevantGroups = groups.filter(g => (user.groupIds || []).includes(g.id));
+        } else if (user.role === Role.Tutor) {
+            relevantGroups = groups.filter(g => g.tutorId === user.id);
+        }
+        
+        // If a tutor is selected, filter groups by that tutor to show relevant courses
+        if (tutorId) {
+            relevantGroups = relevantGroups.filter(g => g.tutorId === tutorId);
+        }
+
+        relevantGroups.forEach(g => {
             if (g.courseId) courseIds.add(g.courseId);
         });
 
-        // If it's a tutor, they might see all courses or just courses of their groups
-        if (user.role === Role.Tutor) {
-            const tutorGroups = groups.filter(g => g.tutorId === user.id);
-            tutorGroups.forEach(g => {
-                if (g.courseId) courseIds.add(g.courseId);
-            });
+        // If no relevant groups found for the current selection, but we have a list of courses, 
+        // we might want to show all or a subset. For students, we strictly show their courses.
+        if (courseIds.size === 0) {
+            if (user.role === Role.Student && !tutorId) {
+                const allStudentGroups = groups.filter(g => (user.groupIds || []).includes(g.id));
+                allStudentGroups.forEach(g => { if (g.courseId) courseIds.add(g.courseId); });
+                return courses.filter(c => courseIds.has(c.id));
+            }
+            return tutorId ? [] : courses;
         }
 
-        // If it's an admin or if we want to show all courses to tutors, we can adjust here.
-        // For now, let's stick to courses related to the user's groups/primary course.
-        // If the set is empty (e.g. admin), show all courses.
-        if (courseIds.size === 0) return courses;
-
         return courses.filter(c => courseIds.has(c.id));
-    }, [user, groups, courses]);
+    }, [user, groups, courses, tutorId]);
 
     const [selectedCourseId, setSelectedCourseId] = useState(() => {
         if (tutorialToEdit?.groupId) {
@@ -115,14 +122,19 @@ export const TutorialForm: React.FC<{
             isInitialMount.current = false;
             return;
         }
-        if (!tutorialToEdit && tutorId) {
-             // Only clear if the current groupId doesn't belong to the new tutor
-             const currentGroup = groups.find(g => g.id === groupId);
-             if (!currentGroup || currentGroup.tutorId !== tutorId) {
+        if (tutorId) {
+            // Hierarchical reset: if tutor changes, check if course is still valid
+            const tutorHasCourse = groups.some(g => 
+                g.tutorId === tutorId && 
+                g.courseId === selectedCourseId && 
+                (user.role !== Role.Student || (user.groupIds || []).includes(g.id))
+            );
+            if (!tutorHasCourse) {
+                setSelectedCourseId('');
                 setGroupId('');
-             }
+            }
         }
-    }, [tutorId, tutorialToEdit, groups, groupId]);
+    }, [tutorId, groups, user, selectedCourseId]);
 
     const courseName = useMemo(() => {
         const group = groups.find(g => g.id === groupId);
@@ -283,64 +295,65 @@ export const TutorialForm: React.FC<{
                 </div>
             )}
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Tutor</label>
-                    <select 
-                        value={tutorId} 
-                        onChange={e => setTutorId(e.target.value)} 
-                        className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
-                        required
-                        disabled={readOnly || isRegistration || disableTutorSelect}
-                    >
-                        <option value="">Seleccionar tutor</option>
-                        {filteredTutors.map(t => <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>)}
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Curso</label>
-                    <select 
-                        value={selectedCourseId} 
-                        onChange={e => setSelectedCourseId(e.target.value)} 
-                        className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
-                        required
-                        disabled={readOnly || isRegistration}
-                    >
-                        <option value="">Seleccionar curso</option>
-                        {studentCourses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Grupo</label>
-                    <select 
-                        value={groupId} 
-                        onChange={e => setGroupId(e.target.value)} 
-                        className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
-                        required 
-                        disabled={readOnly || !tutorId || isRegistration || disableGroupSelect}
-                    >
-                        <option value="">{tutorId ? 'Seleccionar grupo' : 'Seleccione un tutor primero'}</option>
-                        {Object.keys(availableGroupsByCourse).sort().map(courseName => (
-                            <optgroup label={courseName} key={courseName}>
-                                {availableGroupsByCourse[courseName].map(group => {
-                                    return (
-                                        <option key={group.id} value={group.id}>{group.name}</option>
-                                    );
-                                })}
-                            </optgroup>
-                        ))}
-                    </select>
-                </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Tutor</label>
+                <select 
+                    value={tutorId} 
+                    onChange={e => setTutorId(e.target.value)} 
+                    className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
+                    required
+                    disabled={readOnly || isRegistration}
+                >
+                    <option value="">Seleccionar tutor</option>
+                    {filteredTutors.map(t => <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>)}
+                </select>
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Curso</label>
+                <select 
+                    value={selectedCourseId} 
+                    onChange={e => setSelectedCourseId(e.target.value)} 
+                    className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
+                    required
+                    disabled={readOnly || isRegistration}
+                >
+                    <option value="">Seleccionar curso</option>
+                    {studentCourses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Grupo</label>
+                <select 
+                    value={groupId} 
+                    onChange={e => setGroupId(e.target.value)} 
+                    className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
+                    required 
+                    disabled={readOnly || !tutorId || !selectedCourseId || isRegistration}
+                >
+                    <option value="">{!tutorId ? 'Seleccione un tutor primero' : (!selectedCourseId ? 'Seleccione un curso primero' : 'Seleccionar grupo')}</option>
+                    {Object.keys(availableGroupsByCourse).sort().map(courseName => (
+                        <optgroup label={courseName} key={courseName}>
+                            {availableGroupsByCourse[courseName].map(group => {
+                                return (
+                                    <option key={group.id} value={group.id}>{group.name}</option>
+                                );
+                            })}
+                        </optgroup>
+                    ))}
+                </select>
             </div>
 
             <div>
                 <label className="block text-sm font-medium text-gray-700">Proyecto</label>
                 <select 
-                    className="w-full p-2 mt-1 border border-gray-300 rounded-md bg-gray-100" 
-                    disabled={true}
+                    className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
+                    disabled={readOnly || isRegistration || !groupId}
                     value={projects.find(p => p.groupId === groupId)?.id || ''}
+                    onChange={() => {}} // Derived from group, but enabled as requested
                 >
-                    <option value="">{groupId ? (projects.find(p => p.groupId === groupId)?.name || 'Sin proyecto') : 'Seleccione un grupo primero'}</option>
+                    <option value="">{groupId ? 'Seleccionar proyecto' : 'Seleccione un grupo primero'}</option>
                     {projects.filter(p => p.groupId === groupId).map(p => (
                         <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
