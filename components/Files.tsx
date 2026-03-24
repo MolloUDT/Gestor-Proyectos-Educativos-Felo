@@ -58,9 +58,7 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
 
     return (
         <div>
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Archivos de Proyectos</h2>
-            </div>
+            <p className="text-gray-600 mb-8">Seleccione el grupo para acceder a sus archivos de proyecto</p>
             
             {user.role === Role.Student ? (
                 <div className="space-y-4">
