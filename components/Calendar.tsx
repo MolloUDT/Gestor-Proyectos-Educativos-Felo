@@ -719,15 +719,17 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
     return (
         <div>
             <div className="mb-6 space-y-4">
-                <div className="flex gap-2">
-                     <button onClick={() => setIsPendingModalOpen(true)} className="flex-1 px-2 py-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors truncate">
-                        Pendientes
-                    </button>
-                    <button onClick={() => setView(v => v === 'list' ? 'calendar' : 'list')} className="flex-1 px-2 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors truncate">
-                        {view === 'list' ? 'Calendario' : 'Lista'}
-                    </button>
-                    <button onClick={handleCreate} className="flex-1 px-2 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors truncate">
-                        {user.role === Role.Student ? 'Nueva Reunión / Tutoría' : 'Agendar Tutoría'}
+                <div className="flex items-center justify-between gap-2">
+                    <div className="flex gap-2">
+                        <button onClick={() => setIsPendingModalOpen(true)} className="w-40 px-3 py-2 text-xs font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors whitespace-nowrap">
+                            Reuniones pendientes
+                        </button>
+                        <button onClick={() => setView(v => v === 'list' ? 'calendar' : 'list')} className="w-40 px-3 py-2 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap">
+                            {view === 'list' ? 'Ver calendario' : 'Ver lista'}
+                        </button>
+                    </div>
+                    <button onClick={handleCreate} className="px-3 py-2 text-xs font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors whitespace-nowrap">
+                        {user.role === Role.Student ? 'Nueva reunión de grupo / Solicitar Tutoría' : 'Agendar Tutoría'}
                     </button>
                 </div>
 

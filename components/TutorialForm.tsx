@@ -75,11 +75,20 @@ export const TutorialForm: React.FC<{
     const [nextLocation, setNextLocation] = useState(tutorialToEdit?.location || initialData?.location || '');
     const [nextTime, setNextTime] = useState(tutorialToEdit?.time || initialData?.time || '');
 
+    const isInitialMount = useRef(true);
     useEffect(() => {
-        if (!tutorialToEdit && tutorId) {
-             setGroupId('');
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
         }
-    }, [tutorId, tutorialToEdit]);
+        if (!tutorialToEdit && tutorId) {
+             // Only clear if the current groupId doesn't belong to the new tutor
+             const currentGroup = groups.find(g => g.id === groupId);
+             if (!currentGroup || currentGroup.tutorId !== tutorId) {
+                setGroupId('');
+             }
+        }
+    }, [tutorId, tutorialToEdit, groups, groupId]);
 
     const groupMembers = useMemo(() => {
         const group = groups.find(g => g.id === groupId);
@@ -173,31 +182,39 @@ export const TutorialForm: React.FC<{
 
     const isRegistration = !!tutorialToEdit || (user.role !== Role.Student && status === 'held');
 
+    // Determine if fields should be disabled for students (if they only have one option)
+    const disableTutorSelect = user.role === Role.Student && filteredTutors.length <= 1 && !tutorialToEdit;
+    const disableGroupSelect = user.role === Role.Student && Object.values(availableGroupsByCourse).flat().length <= 1 && !tutorialToEdit;
+
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             {user.role === Role.Student && !tutorialToEdit && (
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Tipo de Reunión</label>
-                    <div className="mt-2 space-x-4">
-                        <label className="inline-flex items-center">
-                            <input 
-                                type="radio" 
-                                value="tutorial" 
-                                checked={type === 'tutorial'} 
-                                onChange={() => setType('tutorial')}
-                                className="text-blue-600 border-gray-300 focus:ring-blue-500"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">Reunión de Tutoría (con tutor)</span>
+                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <label className="block mb-4 text-sm font-bold text-gray-700 uppercase tracking-wide">Tipo de Reunión</label>
+                    <div className="flex flex-col space-y-6">
+                        <label className="flex items-center cursor-pointer group">
+                            <div className="relative flex items-center justify-center">
+                                <input 
+                                    type="radio" 
+                                    value="tutorial" 
+                                    checked={type === 'tutorial'} 
+                                    onChange={() => setType('tutorial')}
+                                    className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                />
+                            </div>
+                            <span className="ml-3 text-base font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Reunión de Tutoría (con tutor)</span>
                         </label>
-                        <label className="inline-flex items-center">
-                            <input 
-                                type="radio" 
-                                value="group_meeting" 
-                                checked={type === 'group_meeting'} 
-                                onChange={() => setType('group_meeting')}
-                                className="text-blue-600 border-gray-300 focus:ring-blue-500"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">Reunión de Grupo (solo alumnos)</span>
+                        <label className="flex items-center cursor-pointer group">
+                            <div className="relative flex items-center justify-center">
+                                <input 
+                                    type="radio" 
+                                    value="group_meeting" 
+                                    checked={type === 'group_meeting'} 
+                                    onChange={() => setType('group_meeting')}
+                                    className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                />
+                            </div>
+                            <span className="ml-3 text-base font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Reunión de Grupo (solo alumnos)</span>
                         </label>
                     </div>
                 </div>
@@ -234,6 +251,56 @@ export const TutorialForm: React.FC<{
             
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
+                    <label className="block text-sm font-medium text-gray-700">Tutor</label>
+                    <select 
+                        value={tutorId} 
+                        onChange={e => setTutorId(e.target.value)} 
+                        className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
+                        required
+                        disabled={readOnly || isRegistration || disableTutorSelect}
+                    >
+                        <option value="">Seleccionar tutor</option>
+                        {filteredTutors.map(t => <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Grupo</label>
+                    <select 
+                        value={groupId} 
+                        onChange={e => setGroupId(e.target.value)} 
+                        className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
+                        required 
+                        disabled={readOnly || !tutorId || isRegistration || disableGroupSelect}
+                    >
+                        <option value="">{tutorId ? 'Seleccionar grupo' : 'Seleccione un tutor primero'}</option>
+                        {Object.keys(availableGroupsByCourse).sort().map(courseName => (
+                            <optgroup label={courseName} key={courseName}>
+                                {availableGroupsByCourse[courseName].map(group => {
+                                    return (
+                                        <option key={group.id} value={group.id}>{group.name}</option>
+                                    );
+                                })}
+                            </optgroup>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Proyecto</label>
+                    <select 
+                        className="w-full p-2 mt-1 border border-gray-300 rounded-md bg-gray-100" 
+                        disabled={true}
+                        value={projects.find(p => p.groupId === groupId)?.id || ''}
+                    >
+                        <option value="">{groupId ? (projects.find(p => p.groupId === groupId)?.name || 'Sin proyecto') : 'Seleccione un grupo primero'}</option>
+                        {projects.filter(p => p.groupId === groupId).map(p => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div>
                     <label className="block text-sm font-medium text-gray-700">Lugar de reunión</label>
                     <input 
                         type="text" 
@@ -244,43 +311,6 @@ export const TutorialForm: React.FC<{
                         disabled={readOnly || (isRegistration && status === 'held')}
                     />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Tutor</label>
-                    <select 
-                        value={tutorId} 
-                        onChange={e => setTutorId(e.target.value)} 
-                        className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
-                        required
-                        disabled={readOnly || isRegistration}
-                    >
-                        <option value="">Seleccionar tutor</option>
-                        {filteredTutors.map(t => <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>)}
-                    </select>
-                </div>
-            </div>
-
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Grupo</label>
-                <select 
-                    value={groupId} 
-                    onChange={e => setGroupId(e.target.value)} 
-                    className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
-                    required 
-                    disabled={readOnly || !tutorId || isRegistration}
-                >
-                    <option value="">{tutorId ? 'Seleccionar grupo' : 'Seleccione un tutor primero'}</option>
-                    {Object.keys(availableGroupsByCourse).sort().map(courseName => (
-                        <optgroup label={courseName} key={courseName}>
-                            {availableGroupsByCourse[courseName].map(group => {
-                                const project = projects.find(p => p.groupId === group.id);
-                                const displayText = `${group.name}${project ? ` - ${project.name}` : ' (Sin proyecto)'}`;
-                                return (
-                                    <option key={group.id} value={group.id}>{displayText}</option>
-                                );
-                            })}
-                        </optgroup>
-                    ))}
-                </select>
             </div>
 
             {isRegistration && (
