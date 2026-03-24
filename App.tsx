@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { User, Group, Task, Project, Role, RA, Tutorial, StoredFile, Message, Course } from './types';
+import { User, Group, Task, Project, Role, RA, Tutorial, StoredFile, Message, Course, Module } from './types';
 import { supabase } from './lib/supabase';
 import { mapUser, mapGroup, mapProject, mapTask, mapRA, mapTutorial, mapStoredFile, mapMessage } from './lib/mappers';
 import LoginPage from './components/LoginPage';
@@ -45,7 +45,7 @@ const App: React.FC = () => {
     const [courses, setCourses] = useState<Course[]>([]);
     const [courseDates, setCourseDates] = useState({ startDate: '2025-09-15', endDate: '2026-06-19' });
     
-    const [modules, setModules] = useState<string[]>([]);
+    const [modules, setModules] = useState<Module[]>([]);
 
     const fetchAllData = useCallback(async () => {
         try {
@@ -71,14 +71,14 @@ const App: React.FC = () => {
             const { data: tasksData } = await supabase.from('tasks').select('*');
             setTasks(tasksData ? tasksData.map(mapTask) : []);
 
+            // Fetch Modules
+            const { data: modulesData } = await supabase.from('modules').select('*');
+            setModules(modulesData ? modulesData.map(m => ({ id: m.id, name: m.name, courseId: m.course_id })) : []);
+
             // Fetch RAs
             const { data: rasData } = await supabase.from('ras').select('*');
             const fetchedRas = rasData ? rasData.map(mapRA) : [];
             setRas(fetchedRas);
-            
-            // Update modules based on fetched RAs
-            const uniqueModules = Array.from(new Set(fetchedRas.map(r => r.module)));
-            setModules(prev => Array.from(new Set([...prev, ...uniqueModules])).sort());
 
             // Fetch Tutorials
             const { data: tutorialsData } = await supabase.from('tutorials').select('*');
@@ -119,20 +119,25 @@ const App: React.FC = () => {
     // Fetch data initially and set up a simple interval or just rely on manual refetches after mutations
     useEffect(() => {
         const checkSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                const { data: usersData } = await supabase
-                    .from('users')
-                    .select('*, group_members(group_id)')
-                    .eq('id', session.user.id)
-                    .single();
-                
-                if (usersData) {
-                    setCurrentUser(mapUser(usersData));
-                    setPage('dashboard');
-                    await fetchAllData();
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    const { data: usersData } = await supabase
+                        .from('users')
+                        .select('*, group_members(group_id)')
+                        .eq('id', session.user.id)
+                        .single();
+                    
+                    if (usersData) {
+                        setCurrentUser(mapUser(usersData));
+                        setPage('dashboard');
+                        await fetchAllData();
+                    }
+                } else {
+                    fetchAllData();
                 }
-            } else {
+            } catch (error) {
+                console.error("Error checking session:", error);
                 fetchAllData();
             }
         };
@@ -140,30 +145,35 @@ const App: React.FC = () => {
     }, [fetchAllData]);
 
     const handleLogin = useCallback(async (username: string, password: string): Promise<void> => {
-        console.log("Attempting login for:", username);
-        // Buscar directamente en la tabla users
-        const { data: usersData, error: userError } = await supabase
-            .from('users')
-            .select('*, group_members(group_id)')
-            .eq('username', username)
-            .eq('password', password)
-            .single();
+        try {
+            console.log("Attempting login for:", username);
+            // Buscar directamente en la tabla users
+            const { data: usersData, error: userError } = await supabase
+                .from('users')
+                .select('*, group_members(group_id)')
+                .eq('username', username)
+                .eq('password', password)
+                .single();
 
-        if (userError) {
-            console.error("Login error from Supabase:", userError);
-        }
-        
-        if (userError || !usersData) {
-            setAuthError('Usuario o contraseña incorrectos.');
-            return;
-        }
+            if (userError) {
+                console.error("Login error from Supabase:", userError);
+            }
+            
+            if (userError || !usersData) {
+                setAuthError('Usuario o contraseña incorrectos.');
+                return;
+            }
 
-        console.log("Login successful for:", usersData);
-        const user = mapUser(usersData);
-        setCurrentUser(user);
-        setAuthError('');
-        setPage('dashboard');
-        await fetchAllData();
+            console.log("Login successful for:", usersData);
+            const user = mapUser(usersData);
+            setCurrentUser(user);
+            setAuthError('');
+            setPage('dashboard');
+            await fetchAllData();
+        } catch (error) {
+            console.error("Unexpected error during login:", error);
+            setAuthError('Error inesperado al iniciar sesión.');
+        }
     }, [fetchAllData]);
 
     const handleLogout = useCallback(async (): Promise<void> => {
@@ -380,6 +390,7 @@ const App: React.FC = () => {
         if (taskData.startDate !== undefined) updateData.start_date = taskData.startDate;
         if (taskData.endDate !== undefined) updateData.end_date = taskData.endDate;
         if (taskData.raId !== undefined) updateData.ra_id = taskData.raId || null;
+        if (taskData.projectId !== undefined) updateData.project_id = taskData.projectId;
         if (taskData.isVerified !== undefined) updateData.is_verified = taskData.isVerified;
         
         await supabase.from('tasks').update(updateData).eq('id', taskId);
@@ -391,18 +402,20 @@ const App: React.FC = () => {
         await fetchAllData();
     };
     
-    const handleCreateRA = async (raData: { module: string; code: string; description: string }) => {
-        await supabase.from('ras').insert({
-            module: raData.module,
-            code: raData.code,
-            description: raData.description
-        });
+    const handleCreateRA = async (raData: { moduleIds: string[]; code: string; description: string; }) => {
+        for (const moduleId of raData.moduleIds) {
+            await supabase.from('ras').insert({
+                module: moduleId,
+                code: raData.code,
+                description: raData.description
+            });
+        }
         await fetchAllData();
     };
     
-    const handleUpdateRA = async (raId: string, raData: { module: string; code: string; description: string }) => {
+    const handleUpdateRA = async (raId: string, raData: { moduleId: string; code: string; description: string }) => {
         await supabase.from('ras').update({
-            module: raData.module,
+            module: raData.moduleId,
             code: raData.code,
             description: raData.description
         }).eq('id', raId);
@@ -414,22 +427,26 @@ const App: React.FC = () => {
         await fetchAllData();
     };
 
-    const handleCreateModule = (moduleName: string) => {
-        const trimmedName = moduleName.trim();
-        if (trimmedName && !modules.some(m => m.trim().toLowerCase() === trimmedName.toLowerCase())) {
-            setModules(prev => [...prev, trimmedName].sort());
+    const handleCreateModule = async (moduleData: { name: string; courseIds: string[] }) => {
+        for (const courseId of moduleData.courseIds) {
+            await supabase.from('modules').insert({
+                name: moduleData.name,
+                course_id: courseId
+            });
         }
-    };
-
-    const handleUpdateModule = async (oldName: string, newName: string) => {
-        await supabase.from('ras').update({ module: newName }).eq('module', oldName);
-        setModules(prev => prev.map(m => (m === oldName ? newName : m)).sort());
         await fetchAllData();
     };
 
-    const handleDeleteModule = async (moduleName: string) => {
-        await supabase.from('ras').delete().eq('module', moduleName);
-        setModules(prev => prev.filter(m => m !== moduleName));
+    const handleUpdateModule = async (moduleId: string, name: string) => {
+        const moduleToUpdate = modules.find(m => m.id === moduleId);
+        if (moduleToUpdate) {
+            await supabase.from('modules').update({ name }).eq('name', moduleToUpdate.name);
+            await fetchAllData();
+        }
+    };
+
+    const handleDeleteModule = async (moduleId: string) => {
+        await supabase.from('modules').delete().eq('id', moduleId);
         await fetchAllData();
     };
 
@@ -641,6 +658,7 @@ const App: React.FC = () => {
                 return <RAs
                             ras={ras}
                             modules={modules}
+                            courses={courses}
                             onCreateRA={handleCreateRA}
                             onUpdateRA={handleUpdateRA}
                             onDeleteRA={handleDeleteRA}
@@ -664,6 +682,7 @@ const App: React.FC = () => {
                             tasks={tasks}
                             users={users}
                             ras={ras}
+                            modules={modules}
                             courses={courses}
                             courseDates={courseDates}
                             onCreateTask={handleCreateTask}
@@ -681,6 +700,7 @@ const App: React.FC = () => {
                             courseDates={courseDates} 
                             allUsers={users} 
                             ras={ras}
+                            modules={modules}
                             courses={courses}
                             onUpdateTask={handleUpdateTask}
                             onDeleteTask={handleDeleteTask}

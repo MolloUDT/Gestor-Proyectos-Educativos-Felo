@@ -1134,6 +1134,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
     const [editingTutorial, setEditingTutorial] = useState<Tutorial | null>(null);
     const [selectedProjectForPendingTasks, setSelectedProjectForPendingTasks] = useState<string | null>(null);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
+    const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
     const unreadMessages = useMemo(() => messages.filter(msg => 
         msg.recipientIds.includes(user.id) && !msg.readBy.includes(user.id)
@@ -1198,8 +1199,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
     };
 
     const handleDeleteTask = (task: Task) => {
-        onDeleteTask(task.id);
+        setTaskToDelete(task);
         setEditingTask(null);
+    };
+
+    const handleConfirmDeleteTask = () => {
+        if (taskToDelete) {
+            onDeleteTask(taskToDelete.id);
+            setTaskToDelete(null);
+        }
     };
 
     const projectForPendingTasks = useMemo(() => 
@@ -1370,6 +1378,23 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
                         onDelete={handleDeleteTask}
                         userRole={user.role}
                     />
+                </Modal>
+            )}
+
+            {taskToDelete && (
+                <Modal title="Confirmar Eliminación" onClose={() => setTaskToDelete(null)}>
+                    <div className="text-center">
+                        <p className="text-lg text-gray-700">¿Estás seguro de que quieres eliminar la tarea?</p>
+                        <p className="my-2 text-xl font-bold text-red-600">"{taskToDelete.title}"</p>
+                        <div className="flex justify-center mt-6 space-x-4">
+                            <button onClick={() => setTaskToDelete(null)} className="px-6 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                                Cancelar
+                            </button>
+                            <button onClick={handleConfirmDeleteTask} className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">
+                                Sí, Eliminar
+                            </button>
+                        </div>
+                    </div>
                 </Modal>
             )}
         </div>

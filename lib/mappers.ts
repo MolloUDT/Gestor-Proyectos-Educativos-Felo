@@ -35,7 +35,7 @@ export const mapTask = (row: any): Task => {
     const rawStatus = String(row.status || '').toLowerCase();
     if (rawStatus === 'backlog' || rawStatus === 'todo' || rawStatus === 'pendiente') status = KanbanStatus.Backlog;
     else if (rawStatus === 'doing' || rawStatus === 'in-progress' || rawStatus === 'en progreso') status = KanbanStatus.Doing;
-    else if (rawStatus === 'done' || rawStatus === 'completed' || rawStatus === 'realizadas') status = KanbanStatus.Done;
+    else if (rawStatus === 'done' || rawStatus === 'completed' || rawStatus === 'realizadas' || rawStatus === 'realizada') status = KanbanStatus.Done;
 
     return {
         id: row.id,
@@ -55,7 +55,7 @@ export const mapTask = (row: any): Task => {
 
 export const mapRA = (row: any): RA => ({
     id: row.id,
-    module: row.module,
+    moduleId: row.module,
     code: row.code,
     description: row.description,
 });

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef } from 'react';
-import { User, Task, Role, Group, Project, KanbanStatus, Priority, RA, Difficulty, Course } from '../types';
+import { User, Task, Role, Group, Project, KanbanStatus, Priority, RA, Difficulty, Course, Module } from '../types';
 import { ChevronDownIcon, TrashIcon, EditIcon } from './Icons';
 import PriorityIcon, { KanbanLegend } from './PriorityIcon';
 import DifficultyIcon from './DifficultyIcon';
@@ -21,13 +21,16 @@ const GanttTaskForm: React.FC<{
     assignees: User[];
     projectId: string;
     ras: RA[];
+    modules: Module[];
     courseDates: { startDate: string; endDate: string; };
     onSave: (data: any) => void;
     onCancel: () => void;
     onDelete?: (task: Task) => void;
     userRole: Role;
-}> = ({ task, assignees, projectId, ras, courseDates, onSave, onCancel, onDelete, userRole }) => {
+}> = ({ task, assignees, projectId, ras, modules, courseDates, onSave, onCancel, onDelete, userRole }) => {
     const isNewTask = !task?.id;
+    const initialModuleId = task?.raId ? ras.find(r => r.id === task.raId)?.moduleId : '';
+    const [selectedModuleId, setSelectedModuleId] = useState(initialModuleId || '');
     const [formData, setFormData] = useState({
         title: task?.title || '',
         description: task?.description || '',
@@ -44,6 +47,11 @@ const GanttTaskForm: React.FC<{
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+
+        if (name === 'moduleId') {
+            setSelectedModuleId(value);
+            setFormData(prev => ({ ...prev, raId: '' })); // Reset RA when module changes
+        }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -93,45 +101,86 @@ const GanttTaskForm: React.FC<{
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Asignado a</label>
-                    <select name="assigneeId" value={formData.assigneeId} onChange={handleChange} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required>
+                    <select name="assigneeId" value={formData.assigneeId} onChange={handleChange} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md" required>
                         <option value="">Seleccionar miembro</option>
                         {assignees.map(a => <option key={a.id} value={a.id}>{a.lastName}, {a.firstName}</option>)}
                     </select>
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Estado</label>
-                    <select name="status" value={formData.status} onChange={handleChange} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required>
-                        {KANBAN_COLUMNS_ORDER.map(s => <option key={s} value={s}>{s}</option>)}
+                    <select name="status" value={formData.status} onChange={handleChange} className={`w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md ${
+                        formData.status === KanbanStatus.Backlog ? 'text-red-400' :
+                        formData.status === KanbanStatus.Doing ? 'text-yellow-600' :
+                        'text-green-600'
+                    }`} required>
+                        {KANBAN_COLUMNS_ORDER.map(s => (
+                            <option key={s} value={s} className={
+                                s === KanbanStatus.Backlog ? 'text-red-400' :
+                                s === KanbanStatus.Doing ? 'text-yellow-600' :
+                                'text-green-600'
+                            }>{s}</option>
+                        ))}
                     </select>
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Prioridad</label>
-                    <select name="priority" value={formData.priority} onChange={handleChange} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required>
-                        {Object.values(Priority).map(p => <option key={p} value={p}>{p}</option>)}
+                    <select name="priority" value={formData.priority} onChange={handleChange} className={`w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md ${
+                        formData.priority === Priority.High ? 'text-red-600' :
+                        formData.priority === Priority.Medium ? 'text-orange-500' :
+                        'text-green-600'
+                    }`} required>
+                        {Object.values(Priority).map(p => (
+                            <option key={p} value={p} className={
+                                p === Priority.High ? 'text-red-600' :
+                                p === Priority.Medium ? 'text-orange-500' :
+                                'text-green-600'
+                            }>{p}</option>
+                        ))}
                     </select>
                 </div>
                  <div>
                     <label className="block text-sm font-medium text-gray-700">Nivel de Dificultad</label>
-                    <select name="difficulty" value={formData.difficulty} onChange={handleChange} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required>
-                        {Object.values(Difficulty).map(d => <option key={d} value={d}>{d}</option>)}
+                    <select name="difficulty" value={formData.difficulty} onChange={handleChange} className={`w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md ${
+                        formData.difficulty === Difficulty.Level3 ? 'text-red-600' :
+                        formData.difficulty === Difficulty.Level2 ? 'text-orange-500' :
+                        'text-green-600'
+                    }`} required>
+                        {Object.values(Difficulty).map(d => (
+                            <option key={d} value={d} className={
+                                d === Difficulty.Level3 ? 'text-red-600' :
+                                d === Difficulty.Level2 ? 'text-orange-500' :
+                                'text-green-600'
+                            }>{d === Difficulty.Level1 ? 'Baja' : d === Difficulty.Level2 ? 'Media' : 'Alta'}</option>
+                        ))}
                     </select>
                 </div>
                 {(userRole === Role.Admin || userRole === Role.Tutor) && (
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">RA Asociado</label>
-                        <select name="raId" value={formData.raId} onChange={handleChange} className="w-full p-2 mt-1 border border-gray-300 rounded-md">
-                            <option value="">Seleccionar RA</option>
-                            {ras.map(ra => <option key={ra.id} value={ra.id}>{ra.module} / {ra.code}: {ra.description}</option>)}
-                        </select>
-                    </div>
+                    <>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Módulo asociado</label>
+                            <select name="moduleId" value={selectedModuleId} onChange={handleChange} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md">
+                                <option value="">Seleccionar Módulo</option>
+                                {modules.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">RA asociado</label>
+                            <select name="raId" value={formData.raId} onChange={handleChange} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md" disabled={!selectedModuleId}>
+                                <option value="">Seleccionar RA</option>
+                                {ras.filter(ra => ra.moduleId === selectedModuleId).map(ra => (
+                                    <option key={ra.id} value={ra.id}>{ra.code}: {ra.description}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </>
                 )}
                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Fecha de Inicio</label>
-                    <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} min={courseDates.startDate} max={courseDates.endDate} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required />
+                    <label className="block text-sm font-medium text-gray-700">Fecha de inicio</label>
+                    <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} min={courseDates.startDate} max={courseDates.endDate} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md text-red-600 font-medium" required />
                 </div>
                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Fecha de Fin</label>
-                    <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} min={formData.startDate || courseDates.startDate} max={courseDates.endDate} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required />
+                    <label className="block text-sm font-medium text-gray-700">Fecha de finalización</label>
+                    <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} min={formData.startDate || courseDates.startDate} max={courseDates.endDate} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md text-green-600 font-medium" required />
                 </div>
             </div>
             <div className="flex items-center justify-between pt-4">
@@ -303,6 +352,7 @@ interface GanttChartDisplayProps {
     tasks: Task[];
     courseDates: { startDate: string; endDate: string; };
     ras: RA[];
+    modules: Module[];
     onUpdateTask: (id: string, data: Partial<Task>) => void;
     onDeleteTask: (id: string) => void;
     user: User;
@@ -310,7 +360,7 @@ interface GanttChartDisplayProps {
     projectId: string;
 }
 
-const GanttChartDisplay: React.FC<GanttChartDisplayProps> = ({ tasks, courseDates, ras, onUpdateTask, onDeleteTask, user, availableAssignees, projectId }) => {
+const GanttChartDisplay: React.FC<GanttChartDisplayProps> = ({ tasks, courseDates, ras, modules, onUpdateTask, onDeleteTask, user, availableAssignees, projectId }) => {
     const [dayWidth, setDayWidth] = useState(27);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -522,7 +572,18 @@ const GanttChartDisplay: React.FC<GanttChartDisplayProps> = ({ tasks, courseDate
 
             {isModalOpen && editingTask && (
                 <Modal title="Editar Tarea" onClose={() => setIsModalOpen(false)}>
-                    <GanttTaskForm task={editingTask} assignees={availableAssignees} projectId={projectId} ras={ras} courseDates={courseDates} onSave={handleSaveTask} onCancel={() => setIsModalOpen(false)} onDelete={handleDeleteRequest} userRole={user.role} />
+                    <GanttTaskForm 
+                        task={editingTask} 
+                        assignees={availableAssignees} 
+                        projectId={projectId} 
+                        ras={ras} 
+                        modules={modules}
+                        courseDates={courseDates} 
+                        onSave={handleSaveTask} 
+                        onCancel={() => setIsModalOpen(false)} 
+                        onDelete={handleDeleteRequest} 
+                        userRole={user.role} 
+                    />
                 </Modal>
             )}
             {taskToDelete && (
@@ -551,14 +612,24 @@ interface GanttChartProps {
     allUsers: User[];
     courseDates: { startDate: string; endDate: string; };
     ras: RA[];
+    modules: Module[];
     courses: Course[];
     onUpdateTask: (id: string, data: Partial<Task>) => void;
     onDeleteTask: (id: string) => void;
 }
 
-const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, courseDates, allUsers, ras, courses, onUpdateTask, onDeleteTask }) => {
+const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, courseDates, allUsers, ras, modules, courses, onUpdateTask, onDeleteTask }) => {
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
     const [expandedCourseGroups, setExpandedCourseGroups] = useState<Record<string, boolean>>({});
+
+    const selectedProject = projects.find(p => p.id === selectedProjectId);
+    const projectGroup = groups.find(g => g.id === selectedProject?.groupId);
+    const course = courses.find(c => c.id === projectGroup?.courseId);
+
+    const filteredModules = useMemo(() => {
+        if (!projectGroup) return [];
+        return modules.filter(m => m.courseId === projectGroup.courseId);
+    }, [modules, projectGroup]);
 
     const studentProjects = useMemo(() => {
         if (user.role !== Role.Student) return [];
@@ -594,13 +665,10 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
 
     const toggleCourseGroup = (courseGroupName: string) => setExpandedCourseGroups(prev => ({ ...prev, [courseGroupName]: !prev[courseGroupName] }));
 
-    const selectedProject = projects.find(p => p.id === selectedProjectId);
     const visibleTasks = tasks.filter(t => t.projectId === selectedProjectId);
 
     if (selectedProject) {
-        const projectGroup = groups.find(g => g.id === selectedProject.groupId);
         const assignees = projectGroup?.members || [];
-        const course = courses.find(c => c.id === projectGroup?.courseId);
 
         return (
             <div className="flex flex-col h-full p-4 bg-white rounded-lg shadow-md">
@@ -615,7 +683,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
                     </div>
                     <button onClick={() => setSelectedProjectId(null)} className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">← Volver a la selección</button>
                 </div>
-                <GanttChartDisplay tasks={visibleTasks} courseDates={courseDates} ras={ras} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} user={user} availableAssignees={assignees} projectId={selectedProject.id} />
+                <GanttChartDisplay tasks={visibleTasks} courseDates={courseDates} ras={ras} modules={filteredModules} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} user={user} availableAssignees={assignees} projectId={selectedProject.id} />
             </div>
         );
     }

@@ -327,7 +327,7 @@ const Students: React.FC<StudentsProps> = ({ users, courses, groups, projects, o
 
     const handleEditCourse = () => {
         if (editingCourse && editingCourse.name) {
-            // This needs to be implemented in App.tsx and passed down
+            onUpdateCourse(editingCourse.id, editingCourse.name);
             setEditingCourse(null);
             setIsEditCourseModalOpen(false);
         }

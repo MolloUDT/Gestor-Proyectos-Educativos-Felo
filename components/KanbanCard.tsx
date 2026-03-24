@@ -1,5 +1,5 @@
 import React from 'react';
-import { Task, RA, KanbanStatus, User } from '../types';
+import { Task, RA, KanbanStatus, User, Module } from '../types';
 import PriorityIcon from './PriorityIcon';
 import DifficultyIcon from './DifficultyIcon';
 import StatusIcon from './StatusIcon';
@@ -7,6 +7,7 @@ import StatusIcon from './StatusIcon';
 interface KanbanCardProps {
     task: Task;
     ras: RA[];
+    modules: Module[];
     users: User[];
     onClick: () => void;
     viewMode: 'status' | 'priority' | 'difficulty';
@@ -19,9 +20,10 @@ const formatDate = (dateStr: string): string => {
     return `${day}/${month}/${shortYear}`;
 };
 
-const KanbanCard: React.FC<KanbanCardProps> = ({ task, ras, users, onClick, viewMode }) => {
+const KanbanCard: React.FC<KanbanCardProps> = ({ task, ras, modules, users, onClick, viewMode }) => {
     const assignee = users.find(user => user.id === task.assigneeId);
     const ra = ras.find(r => r.id === task.raId);
+    const module = modules.find(m => m.id === ra?.moduleId);
     const isVerified = task.isVerified ?? true; // Default to true for existing tasks if not specified
 
     const getDateColor = (): string => {
@@ -67,7 +69,12 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, ras, users, onClick, view
             
             {ra && (
                 <div className="p-1.5 mb-3 text-xs text-gray-700 bg-gray-100 border border-gray-200 rounded-md">
-                    <span className="font-semibold">{ra.module} / {ra.code}:</span> {ra.description}
+                    {module && (
+                        <div className="mb-1 text-[10px] font-bold text-blue-600 uppercase tracking-tight">
+                            {module.name}
+                        </div>
+                    )}
+                    <span className="font-semibold">{ra.code}:</span> {ra.description}
                 </div>
             )}
 
@@ -80,8 +87,10 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, ras, users, onClick, view
                          </span>
                     </div>
                 ) : <div/>}
-                <div className={`text-xs ${dateColorClass}`}>
-                    {`${formatDate(task.startDate)} - ${formatDate(task.endDate)}`}
+                <div className="text-xs flex items-center gap-1">
+                    <span className="text-red-600 font-medium">{formatDate(task.startDate)}</span>
+                    <span className="text-gray-400">-</span>
+                    <span className={`${dateColorClass} font-medium`}>{formatDate(task.endDate)}</span>
                 </div>
             </div>
         </div>

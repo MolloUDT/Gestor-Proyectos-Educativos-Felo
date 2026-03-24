@@ -20,12 +20,18 @@ export enum Difficulty {
 export enum KanbanStatus {
     Backlog = 'Pendiente',
     Doing = 'En Progreso',
-    Done = 'Realizadas',
+    Done = 'Realizada',
 }
 
 export interface Course {
     id: string;
     name: string;
+}
+
+export interface Module {
+    id: string;
+    name: string;
+    courseId: string;
 }
 
 export interface User {
@@ -41,7 +47,7 @@ export interface User {
 
 export interface RA {
     id: string;
-    module: string;
+    moduleId: string;
     code: string;
     description: string;
 }

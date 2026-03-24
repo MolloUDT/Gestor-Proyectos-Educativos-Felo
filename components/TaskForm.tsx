@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Task, KanbanStatus, Role, RA, Priority, Difficulty, User } from '../types';
+import { Task, KanbanStatus, Role, RA, Priority, Difficulty, User, Module } from '../types';
 import { KANBAN_COLUMNS_ORDER } from '../constants';
 import { TrashIcon } from './Icons';
 import StatusIcon from './StatusIcon';
@@ -11,6 +11,7 @@ interface TaskFormProps {
     assignees: User[];
     projectId: string;
     ras: RA[];
+    modules: Module[];
     courseDates: { startDate: string; endDate: string; };
     onSave: (data: any) => void;
     onCancel: () => void;
@@ -25,8 +26,10 @@ const formatDate = (date: Date) => {
     return `${year}-${month}-${day}`;
 };
 
-const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, courseDates, onSave, onCancel, onDelete, userRole }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, modules, courseDates, onSave, onCancel, onDelete, userRole }) => {
     const isNewTask = !task?.id;
+    const initialModuleId = task?.raId ? ras.find(r => r.id === task.raId)?.moduleId : '';
+    const [selectedModuleId, setSelectedModuleId] = useState(initialModuleId || '');
     const [formData, setFormData] = useState({
         title: task?.title || '',
         description: task?.description || '',
@@ -47,6 +50,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, co
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        
+        if (name === 'moduleId') {
+            setSelectedModuleId(value);
+            setFormData(prev => ({ ...prev, raId: '' })); // Reset RA when module changes
+        }
     };
 
     const handleSelect = (name: string, value: string) => {
@@ -103,7 +111,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, co
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Asignado a</label>
-                    <select name="assigneeId" value={formData.assigneeId} onChange={handleChange} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required>
+                    <select name="assigneeId" value={formData.assigneeId} onChange={handleChange} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md" required>
                         <option value="">Seleccionar miembro</option>
                         {assignees.filter(a => a.role !== Role.Tutor).map(a => <option key={a.id} value={a.id}>{a.lastName}, {a.firstName}</option>)}
                     </select>
@@ -115,8 +123,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, co
                         <StatusIcon status={KanbanStatus.Doing} />
                         <StatusIcon status={KanbanStatus.Done} />
                     </label>
-                    <div className="w-full p-2 mt-1 border border-gray-300 rounded-md cursor-pointer flex items-center justify-between bg-white" onClick={() => setIsStatusOpen(!isStatusOpen)}>
-                        <div className="flex items-center gap-2">
+                    <div className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md cursor-pointer flex items-center justify-between bg-white" onClick={() => setIsStatusOpen(!isStatusOpen)}>
+                        <div className={`flex items-center gap-2 ${
+                            formData.status === KanbanStatus.Backlog ? 'text-red-400' :
+                            formData.status === KanbanStatus.Doing ? 'text-yellow-600' :
+                            'text-green-600'
+                        }`}>
                             <StatusIcon status={formData.status} />
                             {formData.status}
                         </div>
@@ -125,7 +137,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, co
                     {isStatusOpen && (
                         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
                             {KANBAN_COLUMNS_ORDER.map(s => (
-                                <div key={s} onClick={() => handleSelect('status', s)} className="p-2 hover:bg-gray-100 flex items-center gap-2 cursor-pointer">
+                                <div key={s} onClick={() => handleSelect('status', s)} className={`p-2 hover:bg-gray-100 flex items-center gap-2 cursor-pointer ${
+                                    s === KanbanStatus.Backlog ? 'text-red-400' :
+                                    s === KanbanStatus.Doing ? 'text-yellow-600' :
+                                    'text-green-600'
+                                }`}>
                                     <StatusIcon status={s} />
                                     {s}
                                 </div>
@@ -140,8 +156,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, co
                         <PriorityIcon priority={Priority.Medium} />
                         <PriorityIcon priority={Priority.Low} />
                     </label>
-                    <div className="w-full p-2 mt-1 border border-gray-300 rounded-md cursor-pointer flex items-center justify-between bg-white" onClick={() => setIsPriorityOpen(!isPriorityOpen)}>
-                        <div className="flex items-center gap-2">
+                    <div className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md cursor-pointer flex items-center justify-between bg-white" onClick={() => setIsPriorityOpen(!isPriorityOpen)}>
+                        <div className={`flex items-center gap-2 ${
+                            formData.priority === Priority.High ? 'text-red-600' :
+                            formData.priority === Priority.Medium ? 'text-orange-500' :
+                            'text-green-600'
+                        }`}>
                             <PriorityIcon priority={formData.priority} />
                             {formData.priority}
                         </div>
@@ -150,7 +170,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, co
                     {isPriorityOpen && (
                         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
                             {Object.values(Priority).map(p => (
-                                <div key={p} onClick={() => handleSelect('priority', p)} className="p-2 hover:bg-gray-100 flex items-center gap-2 cursor-pointer">
+                                <div key={p} onClick={() => handleSelect('priority', p)} className={`p-2 hover:bg-gray-100 flex items-center gap-2 cursor-pointer ${
+                                    p === Priority.High ? 'text-red-600' :
+                                    p === Priority.Medium ? 'text-orange-500' :
+                                    'text-green-600'
+                                }`}>
                                     <PriorityIcon priority={p} />
                                     {p}
                                 </div>
@@ -165,8 +189,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, co
                         <DifficultyIcon difficulty={Difficulty.Level2} />
                         <DifficultyIcon difficulty={Difficulty.Level3} />
                     </label>
-                    <div className="w-full p-2 mt-1 border border-gray-300 rounded-md cursor-pointer flex items-center justify-between bg-white" onClick={() => setIsDifficultyOpen(!isDifficultyOpen)}>
-                        <div className="flex items-center gap-2">
+                    <div className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md cursor-pointer flex items-center justify-between bg-white" onClick={() => setIsDifficultyOpen(!isDifficultyOpen)}>
+                        <div className={`flex items-center gap-2 ${
+                            formData.difficulty === Difficulty.Level3 ? 'text-red-600' :
+                            formData.difficulty === Difficulty.Level2 ? 'text-orange-500' :
+                            'text-green-600'
+                        }`}>
                             <DifficultyIcon difficulty={formData.difficulty} />
                             {formData.difficulty === Difficulty.Level1 ? 'Baja' : formData.difficulty === Difficulty.Level2 ? 'Media' : 'Alta'}
                         </div>
@@ -175,11 +203,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, co
                     {isDifficultyOpen && (
                         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
                             {[
-                                { value: Difficulty.Level1, label: 'Baja' },
-                                { value: Difficulty.Level2, label: 'Media' },
-                                { value: Difficulty.Level3, label: 'Alta' },
+                                { value: Difficulty.Level1, label: 'Baja', colorClass: 'text-green-600' },
+                                { value: Difficulty.Level2, label: 'Media', colorClass: 'text-orange-500' },
+                                { value: Difficulty.Level3, label: 'Alta', colorClass: 'text-red-600' },
                             ].map(d => (
-                                <div key={d.value} onClick={() => handleSelect('difficulty', d.value)} className="p-2 hover:bg-gray-100 flex items-center gap-2 cursor-pointer">
+                                <div key={d.value} onClick={() => handleSelect('difficulty', d.value)} className={`p-2 hover:bg-gray-100 flex items-center gap-2 cursor-pointer ${d.colorClass}`}>
                                     <DifficultyIcon difficulty={d.value} />
                                     {d.label}
                                 </div>
@@ -188,21 +216,32 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, co
                     )}
                 </div>
                 {(userRole === Role.Admin || userRole === Role.Tutor) && (
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">RA Asociado</label>
-                        <select name="raId" value={formData.raId} onChange={handleChange} className="w-full p-2 mt-1 border border-gray-300 rounded-md">
-                            <option value="">Seleccionar RA</option>
-                            {ras.map(ra => <option key={ra.id} value={ra.id}>{ra.module} / {ra.code}: {ra.description}</option>)}
-                        </select>
-                    </div>
+                    <>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Módulo asociado</label>
+                            <select name="moduleId" value={selectedModuleId} onChange={handleChange} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md">
+                                <option value="">Seleccionar Módulo</option>
+                                {modules.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">RA asociado</label>
+                            <select name="raId" value={formData.raId} onChange={handleChange} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md" disabled={!selectedModuleId}>
+                                <option value="">Seleccionar RA</option>
+                                {ras.filter(ra => ra.moduleId === selectedModuleId).map(ra => (
+                                    <option key={ra.id} value={ra.id}>{ra.code}: {ra.description}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </>
                 )}
                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Fecha de Inicio</label>
-                    <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} min={courseDates.startDate} max={courseDates.endDate} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required />
+                    <label className="block text-sm font-medium text-gray-700">Fecha de inicio</label>
+                    <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} min={courseDates.startDate} max={courseDates.endDate} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md text-red-600 font-medium" required />
                 </div>
                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Fecha de Fin</label>
-                    <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} min={formData.startDate || courseDates.startDate} max={courseDates.endDate} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required />
+                    <label className="block text-sm font-medium text-gray-700">Fecha de finalización</label>
+                    <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} min={formData.startDate || courseDates.startDate} max={courseDates.endDate} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md text-green-600 font-medium" required />
                 </div>
             </div>
             <div className="flex items-center justify-between pt-4">

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { User, Task, KanbanStatus, Role, Group, Project, Priority, RA, Difficulty, Course } from '../types';
+import { User, Task, KanbanStatus, Role, Group, Project, Priority, RA, Difficulty, Course, Module } from '../types';
 import { KANBAN_COLUMNS_ORDER, STATUS_COLORS } from '../constants';
 import KanbanCard from './KanbanCard';
 import PriorityIcon, { KanbanLegend } from './PriorityIcon';
@@ -19,6 +19,7 @@ interface KanbanBoardProps {
     tasks: Task[];
     users: User[];
     ras: RA[];
+    modules: Module[];
     courses: Course[];
     courseDates: { startDate: string; endDate: string; };
     onCreateTask: (data: Omit<Task, 'id'>) => void;
@@ -47,11 +48,12 @@ const KanbanColumn: React.FC<{
     headerColor: string;
     tasks: Task[]; 
     ras: RA[];
+    modules: Module[];
     users: User[];
     onCardClick: (task: Task) => void; 
     userRole: Role;
     viewMode: ViewMode;
-}> = ({ title, headerColor, tasks, ras, users, onCardClick, userRole, viewMode }) => {
+}> = ({ title, headerColor, tasks, ras, modules, users, onCardClick, userRole, viewMode }) => {
     
     const renderIcon = () => {
         if (viewMode === 'status') {
@@ -101,7 +103,7 @@ const KanbanColumn: React.FC<{
             </div>
             <div className="flex-1 p-2 space-y-4 overflow-y-auto bg-gray-100 rounded-lg min-h-[200px]">
                 {tasks.map(task => (
-                    <KanbanCard key={task.id} task={task} ras={ras} users={users} onClick={() => onCardClick(task)} viewMode={viewMode} />
+                    <KanbanCard key={task.id} task={task} ras={ras} modules={modules} users={users} onClick={() => onCardClick(task)} viewMode={viewMode} />
                 ))}
             </div>
         </div>
@@ -109,7 +111,7 @@ const KanbanColumn: React.FC<{
 };
 
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks, users, ras, courses, courseDates, onCreateTask, onUpdateTask, onDeleteTask, initialProjectId, onProjectSelected }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks, users, ras, modules, courses, courseDates, onCreateTask, onUpdateTask, onDeleteTask, initialProjectId, onProjectSelected }) => {
     const relevantProjectIds = useMemo(() => {
         if (user.role === Role.Admin) return projects.map(p => p.id);
         if (user.role === Role.Tutor) {
@@ -129,6 +131,15 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
     const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
     const [viewMode, setViewMode] = useState<ViewMode>('status');
     const [expandedCourseGroups, setExpandedCourseGroups] = useState<Record<string, boolean>>({});
+
+    const selectedProject = projects.find(p => p.id === selectedProjectId);
+    const projectGroup = groups.find(g => g.id === selectedProject?.groupId);
+    const course = courses.find(c => c.id === projectGroup?.courseId);
+
+    const filteredModules = useMemo(() => {
+        if (!projectGroup) return [];
+        return modules.filter(m => m.courseId === projectGroup.courseId);
+    }, [modules, projectGroup]);
 
     useEffect(() => {
         if (initialProjectId && relevantProjectIds.includes(initialProjectId)) {
@@ -313,10 +324,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
         );
     }
 
-    const selectedProject = projects.find(p => p.id === selectedProjectId);
-    const projectGroup = groups.find(g => g.id === selectedProject?.groupId);
-    const course = courses.find(c => c.id === projectGroup?.courseId);
-
     const handleBackToSelection = () => {
         setSelectedProjectId(null);
         if (onProjectSelected) {
@@ -371,6 +378,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
                             }
                             tasks={columns[columnKey as keyof typeof columns]}
                             ras={ras}
+                            modules={modules}
                             users={users}
                             onCardClick={handleCardClick}
                             userRole={user.role}
@@ -385,8 +393,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
                     <TaskForm
                         task={editingTask}
                         assignees={availableAssignees}
-                        projectId={selectedProjectId}
+                        projectId={selectedProjectId || ''}
                         ras={ras}
+                        modules={filteredModules}
                         courseDates={courseDates}
                         onSave={handleSaveTask}
                         onCancel={() => setIsModalOpen(false)}

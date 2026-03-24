@@ -1,5 +1,5 @@
 
-import { User, Group, Project, Task, Role, Priority, KanbanStatus, RA, Tutorial, StoredFile, Message, Difficulty } from './types';
+import { User, Group, Project, Task, Role, Priority, KanbanStatus, RA, Tutorial, StoredFile, Message, Difficulty, Module } from './types';
 
 // USERS
 export const MOCK_USERS: User[] = [
@@ -36,14 +36,20 @@ export const MOCK_USERS: User[] = [
     { id: 'user-11', firstName: 'Daniel', lastName: 'Martin', username: 'daniel', password: 'password', role: Role.Student, groupIds: [], courseId: 'course-4' },
 ];
 
+// Modules
+export const MOCK_MODULES: Module[] = [
+    { id: 'mod-1', name: 'Desarrollo de Aplicaciones Web', courseId: 'course-1' },
+    { id: 'mod-2', name: 'Gestión de Eventos Deportivos', courseId: 'course-2' },
+];
+
 // RAs (Resultados de Aprendizaje)
 export const MOCK_RAS: RA[] = [
-    { id: 'ra-1', module: 'Desarrollo de Aplicaciones Web', code: 'RA1', description: 'Diseño de Interfaces' },
-    { id: 'ra-2', module: 'Desarrollo de Aplicaciones Web', code: 'RA2', description: 'Programación Frontend' },
-    { id: 'ra-3', module: 'Desarrollo de Aplicaciones Web', code: 'RA3', description: 'Gestión de Servidores' },
-    { id: 'ra-4', module: 'Desarrollo de Aplicaciones Web', code: 'RA5', description: 'Elaboración de Documentación Técnica' },
-    { id: 'ra-5', module: 'Gestión de Eventos Deportivos', code: 'RA1', description: 'Marketing y Comunicación Deportiva' },
-    { id: 'ra-6', module: 'Gestión de Eventos Deportivos', code: 'RA2', description: 'Organización de Eventos Deportivos' },
+    { id: 'ra-1', moduleId: 'mod-1', code: 'RA1', description: 'Diseño de Interfaces' },
+    { id: 'ra-2', moduleId: 'mod-1', code: 'RA2', description: 'Programación Frontend' },
+    { id: 'ra-3', moduleId: 'mod-1', code: 'RA3', description: 'Gestión de Servidores' },
+    { id: 'ra-4', moduleId: 'mod-1', code: 'RA5', description: 'Elaboración de Documentación Técnica' },
+    { id: 'ra-5', moduleId: 'mod-2', code: 'RA1', description: 'Marketing y Comunicación Deportiva' },
+    { id: 'ra-6', moduleId: 'mod-2', code: 'RA2', description: 'Organización de Eventos Deportivos' },
 ];
 
 // GROUPS
