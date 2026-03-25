@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { User, Group, Role, Project, Task, Course } from '../types';
 import Modal from './Modal';
-import { PlusCircleIcon, ChevronDownIcon } from './Icons';
+import { PlusCircleIcon, ChevronDownIcon, TrashIcon } from './Icons';
 import { sortBySurname } from '../lib/utils';
 import ProjectCard from './ProjectCard';
 
@@ -27,8 +27,9 @@ const GroupForm: React.FC<{
     courses: Course[];
     courseDates: { startDate: string; endDate: string; };
     onSave: (groupData: any) => void;
+    onDelete?: () => void;
     onCancel: () => void;
-}> = ({ group, projects, allUsers, user, courses, courseDates, onSave, onCancel }) => {
+}> = ({ group, projects, allUsers, user, courses, courseDates, onSave, onDelete, onCancel }) => {
     const isEditing = !!group?.id;
     const projectForGroup = useMemo(() => projects.find(p => p.groupId === group?.id), [projects, group]);
     
@@ -116,16 +117,16 @@ const GroupForm: React.FC<{
                         required
                     />
                 </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Fecha de Inicio</label>
-                        <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} min={courseDates.startDate} max={courseDates.endDate} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required />
+                <div className="flex flex-wrap justify-between gap-4">
+                    <div className="flex flex-col items-center w-full sm:w-auto">
+                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 text-center">Fecha de inicio</label>
+                        <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} min={courseDates.startDate} max={courseDates.endDate} className="w-full sm:w-48 p-2 mt-1 border border-gray-300 rounded-md text-red-600 font-medium text-center" required />
                     </div>
-                    <div>
-                        <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">Fecha de Fin</label>
-                        <input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate || courseDates.startDate} max={courseDates.endDate} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required />
+                    <div className="flex flex-col items-center w-full sm:w-auto">
+                        <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 text-center">Fecha de finalización</label>
+                        <input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate || courseDates.startDate} max={courseDates.endDate} className="w-full sm:w-48 p-2 mt-1 border border-gray-300 rounded-md text-green-600 font-medium text-center" required />
                     </div>
-                     <p className="mt-1 text-xs text-gray-500 sm:col-span-2">
+                     <p className="mt-1 text-xs text-gray-500 w-full">
                         Las fechas deben estar dentro del curso escolar: {new Date(courseDates.startDate).toLocaleDateString()} al {new Date(courseDates.endDate).toLocaleDateString()}.
                     </p>
                 </div>
@@ -197,9 +198,18 @@ const GroupForm: React.FC<{
 
                 {formError && <p className="mt-2 text-sm text-center text-red-600">{formError}</p>}
                 
-                <div className="flex justify-end pt-4 space-x-2">
-                    <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancelar</button>
-                    <button type="submit" className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700">Guardar</button>
+                <div className="flex items-center justify-between pt-4">
+                    <div>
+                        {isEditing && onDelete && (
+                            <button type="button" onClick={onDelete} className="flex items-center gap-2 px-4 py-2 text-red-700 bg-red-100 rounded-md hover:bg-red-200">
+                                <TrashIcon className="w-4 h-4 text-red-500" /> Eliminar Grupo
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex space-x-2">
+                        <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancelar</button>
+                        <button type="submit" className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700">Guardar</button>
+                    </div>
                 </div>
             </form>
         </>
@@ -266,14 +276,12 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
     };
 
     const handleCardClick = (group: Group) => {
-        const project = projects.find(p => p.groupId === group.id);
-        if (project) {
-            onNavigateToKanban(project.id);
-        }
+        handleEdit(group);
     };
 
     return (
         <div>
+            <h2 className="mb-6 text-2xl font-bold text-gray-800">Gestión de Grupos</h2>
             {(user.role === Role.Admin || user.role === Role.Tutor) && (
                 <div className="flex items-center justify-between mb-6">
                     <div></div>
@@ -289,8 +297,8 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
                     const courseGroups = groupsByCourse[courseName];
                     const isExpanded = !!expandedCourseGroups[courseName];
                     return (
-                        <div key={courseName} className="bg-white rounded-lg shadow-md">
-                            <button onClick={() => toggleCourseGroup(courseName)} className="flex items-center justify-between w-full p-4 text-left focus:outline-none">
+                        <div key={courseName} className="border border-gray-200 rounded-lg bg-white shadow-sm">
+                            <button onClick={() => toggleCourseGroup(courseName)} className="flex items-center justify-between w-full p-4 text-left bg-gray-50 hover:bg-gray-100 focus:outline-none rounded-lg">
                                 <div className="flex items-center">
                                     <h3 className="text-lg font-semibold text-gray-800">{courseName}</h3>
                                     <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">
@@ -301,7 +309,7 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
                             </button>
                             {isExpanded && (
                                 <div className="p-4 border-t border-gray-200">
-                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2">
+                                    <div className="space-y-2">
                                         {courseGroups.map(group => {
                                             const project = projects.find(p => p.groupId === group.id);
                                             const tutor = allUsers.find(u => u.id === group.tutorId);
@@ -314,8 +322,6 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
                                                     tutor={tutor}
                                                     tasks={tasks}
                                                     onClick={() => handleCardClick(group)} 
-                                                    onEdit={canManage ? (e) => { e.stopPropagation(); handleEdit(group); } : undefined}
-                                                    onDelete={canManage ? (e) => { e.stopPropagation(); handleDeleteClick(group); } : undefined}
                                                 />
                                             );
                                         })}
@@ -337,6 +343,7 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
                         courses={courses}
                         courseDates={courseDates}
                         onSave={handleSave}
+                        onDelete={editingGroup ? () => { setIsFormModalOpen(false); handleDeleteClick(editingGroup); } : undefined}
                         onCancel={() => setIsFormModalOpen(false)}
                     />
                 </Modal>

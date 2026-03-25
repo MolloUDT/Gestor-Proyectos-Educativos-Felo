@@ -135,6 +135,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
     const selectedProject = projects.find(p => p.id === selectedProjectId);
     const projectGroup = groups.find(g => g.id === selectedProject?.groupId);
     const course = courses.find(c => c.id === projectGroup?.courseId);
+    const projectTutor = users.find(u => u.id === projectGroup?.tutorId);
 
     const filteredModules = useMemo(() => {
         if (!projectGroup) return [];
@@ -342,6 +343,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
                         <h2 className="text-xl font-bold text-gray-800">
                             Proyecto: <span className="text-green-700">{selectedProject?.name}</span>
                         </h2>
+                        {projectTutor && (
+                            <div className="mt-1 text-sm text-blue-600">
+                                <span className="font-semibold">Tutor:</span> {projectTutor.lastName}, {projectTutor.firstName}
+                            </div>
+                        )}
                     </div>
                     <button onClick={handleBackToSelection} className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">← Volver a la selección</button>
                 </div>
