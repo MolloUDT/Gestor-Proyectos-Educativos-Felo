@@ -187,7 +187,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
     const filteredTasks = tasks.filter(task => task.projectId === selectedProjectId);
     
     const sortedTasks = useMemo(() => {
-        return [...filteredTasks].sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
+        return [...filteredTasks].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     }, [filteredTasks]);
 
     const columns = useMemo(() => {
