@@ -363,7 +363,7 @@ const App: React.FC = () => {
     };
 
     const handleCreateTask = async (taskData: Omit<Task, 'id'>) => {
-        await supabase.from('tasks').insert({
+        const { error } = await supabase.from('tasks').insert({
             title: taskData.title,
             description: taskData.description,
             status: taskData.status,
@@ -376,6 +376,7 @@ const App: React.FC = () => {
             project_id: taskData.projectId,
             is_verified: taskData.isVerified || false
         });
+        if (error) console.error("Error creating task:", error);
         await fetchAllData();
     };
 
@@ -393,7 +394,8 @@ const App: React.FC = () => {
         if (taskData.projectId !== undefined) updateData.project_id = taskData.projectId;
         if (taskData.isVerified !== undefined) updateData.is_verified = taskData.isVerified;
         
-        await supabase.from('tasks').update(updateData).eq('id', taskId);
+        const { error } = await supabase.from('tasks').update(updateData).eq('id', taskId);
+        if (error) console.error("Error updating task:", error);
         await fetchAllData();
     };
 

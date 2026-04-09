@@ -20,7 +20,7 @@ export enum Difficulty {
 export enum KanbanStatus {
     Backlog = 'Pendiente',
     Doing = 'En Progreso',
-    Done = 'Realizada',
+    Done = 'Realizadas',
 }
 
 export interface Course {

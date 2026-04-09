@@ -268,7 +268,7 @@ const GanttLegend: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-1">
                         <StatusIcon status={KanbanStatus.Done} className="w-4 h-4" />
-                        <span className="text-xs text-gray-600">Realizada</span>
+                        <span className="text-xs text-gray-600">Realizadas</span>
                     </div>
                 </div>
             </div>
