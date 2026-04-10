@@ -144,6 +144,29 @@ const App: React.FC = () => {
         checkSession();
     }, [fetchAllData]);
 
+    // Real-time subscription to keep data in sync
+    useEffect(() => {
+        if (!currentUser) return;
+
+        const channel = supabase
+            .channel('db-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                },
+                () => {
+                    fetchAllData();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [currentUser, fetchAllData]);
+
     const handleLogin = useCallback(async (username: string, password: string): Promise<void> => {
         try {
             console.log("Attempting login for:", username);
