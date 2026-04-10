@@ -1260,16 +1260,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
                     >
                         {pendingTutorials.length > 0 ? `Tutorías pendientes (${pendingTutorials.length})` : 'Sin tutorías pendientes'}
                     </button>
-                    <button
-                        onClick={() => pendingMeetings.length > 0 && setIsPendingMeetingsModalOpen(true)}
-                        className={`px-1 sm:px-2 py-1.5 text-[9px] sm:text-[10px] md:text-xs font-bold rounded-md transition-all whitespace-nowrap flex-1 max-w-[300px] ${
-                            pendingMeetings.length > 0
-                                ? 'bg-red-500 text-white shadow-lg hover:bg-red-600'
-                                : 'bg-green-500 text-white cursor-default'
-                        }`}
-                    >
-                        {pendingMeetings.length > 0 ? `Reuniones de grupo pendientes (${pendingMeetings.length})` : 'Sin reuniones de grupo pendientes'}
-                    </button>
+                    {user.role === Role.Student && (
+                        <button
+                            onClick={() => pendingMeetings.length > 0 && setIsPendingMeetingsModalOpen(true)}
+                            className={`px-1 sm:px-2 py-1.5 text-[9px] sm:text-[10px] md:text-xs font-bold rounded-md transition-all whitespace-nowrap flex-1 max-w-[300px] ${
+                                pendingMeetings.length > 0
+                                    ? 'bg-red-500 text-white shadow-lg hover:bg-red-600'
+                                    : 'bg-green-500 text-white cursor-default'
+                            }`}
+                        >
+                            {pendingMeetings.length > 0 ? `Reuniones de grupo pendientes (${pendingMeetings.length})` : 'Sin reuniones de grupo pendientes'}
+                        </button>
+                    )}
                 </div>
             </div>
             
