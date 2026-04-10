@@ -7,6 +7,7 @@ import StatusIcon from './StatusIcon';
 import { KANBAN_COLUMNS_ORDER } from '../constants';
 import Modal from './Modal';
 import { ProgressCircle } from './ProgressCircle';
+import ProjectCard from './ProjectCard';
 
 const formatDate = (date: Date) => {
     const year = date.getFullYear();
@@ -601,8 +602,6 @@ const GanttChartDisplay: React.FC<GanttChartDisplayProps> = ({ tasks, courseDate
         </>
     );
 };
-
-import ProjectCard from './ProjectCard';
 
 interface GanttChartProps {
     user: User;

@@ -69,6 +69,7 @@ interface TooltipData {
     projectName: string;
     courseName: string;
     summary: string;
+    tutorName?: string;
     location?: string;
     time?: string;
     meetingType?: 'tutorial' | 'group_meeting';
@@ -195,6 +196,7 @@ const CalendarView: React.FC<{
                     <p className="font-bold text-blue-300 mb-1">
                         {tooltip.data.meetingType === 'group_meeting' ? 'Reunión de Grupo' : 'Tutoría'}
                     </p>
+                    <p className="text-sm mb-1"><span className="font-semibold text-gray-400">Tutor/a:</span> {tooltip.data.tutorName}</p>
                     <p className="text-sm mb-1"><span className="font-semibold text-gray-400">Curso:</span> {tooltip.data.courseName === 'default' ? 'Sin curso' : tooltip.data.courseName}</p>
                     <p className="text-sm mb-1"><span className="font-semibold text-gray-400">Grupo:</span> {tooltip.data.groupName}</p>
                     <p className="text-sm mb-2"><span className="font-semibold text-gray-400">Proyecto:</span> {tooltip.data.projectName}</p>
@@ -307,11 +309,13 @@ const CalendarView: React.FC<{
                                                 }
                                             }}
                                             onMouseMove={(e) => {
+                                                const tutor = allUsers.find(u => u.id === tut.tutorId);
                                                 const data: TooltipData = {
                                                     groupName: event.groupName,
                                                     projectName: event.projectName,
                                                     courseName: event.courseGroup,
                                                     summary: isRegistered ? tut.summary : "Próxima reunión agendada.",
+                                                    tutorName: tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Tutor no asignado',
                                                     location: tut.location || 'Lugar por definir',
                                                     time: tut.time || 'Hora por definir',
                                                     meetingType: tut.type

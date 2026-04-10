@@ -48,6 +48,7 @@ const App: React.FC = () => {
     const [modules, setModules] = useState<Module[]>([]);
 
     const fetchAllData = useCallback(async () => {
+        console.log("Fetching all data from Supabase...");
         try {
             // Fetch Users
             const { data: usersData } = await supabase.from('users').select('*, group_members(group_id)');
@@ -149,18 +150,60 @@ const App: React.FC = () => {
         if (!currentUser) return;
 
         const channel = supabase
-            .channel('db-changes')
+            .channel(`db-changes-${currentUser.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'tutorials'
+                },
+                (payload) => {
+                    console.log('Tutorial real-time change:', payload);
+                    setTimeout(() => fetchAllData(), 200);
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'messages'
+                },
+                (payload) => {
+                    console.log('Message real-time change:', payload);
+                    setTimeout(() => fetchAllData(), 200);
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'tasks'
+                },
+                (payload) => {
+                    console.log('Task real-time change:', payload);
+                    setTimeout(() => fetchAllData(), 200);
+                }
+            )
             .on(
                 'postgres_changes',
                 {
                     event: '*',
                     schema: 'public',
                 },
-                () => {
-                    fetchAllData();
+                (payload) => {
+                    // Fallback for other tables
+                    if (payload.table !== 'tutorials' && payload.table !== 'messages' && payload.table !== 'tasks') {
+                        console.log('Other real-time change:', payload);
+                        setTimeout(() => fetchAllData(), 200);
+                    }
                 }
             )
-            .subscribe();
+            .subscribe((status) => {
+                console.log('Real-time subscription status:', status);
+            });
 
         return () => {
             supabase.removeChannel(channel);
