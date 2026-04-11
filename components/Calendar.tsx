@@ -367,6 +367,13 @@ const CalendarView: React.FC<{
                                                 {isRegistered ? '' : 'Próxima Reunión: '}
                                                 {event.groupName}
                                             </p>
+                                            <span className="px-2 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded">
+                                                Tutor/a: {(() => {
+                                                    const tutId = isRegistered ? (event as RegisteredEvent).tutorId : (event as ScheduledEvent).originalTutorial.tutorId;
+                                                    const tutor = allUsers.find(u => u.id === tutId);
+                                                    return tutor ? `${tutor.firstName} ${tutor.lastName}` : 'No asignado';
+                                                })()}
+                                            </span>
                                             <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800">
                                                 {(isRegistered ? (event as RegisteredEvent).type : (event as ScheduledEvent).originalTutorial.type) === 'group_meeting' ? 'Grupo' : 'Tutoría'}
                                             </span>

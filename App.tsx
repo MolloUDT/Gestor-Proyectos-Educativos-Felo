@@ -82,8 +82,13 @@ const App: React.FC = () => {
             setRas(fetchedRas);
 
             // Fetch Tutorials
-            const { data: tutorialsData } = await supabase.from('tutorials').select('*');
-            setTutorials(tutorialsData ? tutorialsData.map(mapTutorial) : []);
+            const { data: tutorialsData, error: tutorialsError } = await supabase.from('tutorials').select('*');
+            if (tutorialsError) {
+                console.error("Error fetching tutorials:", tutorialsError);
+            } else {
+                console.log(`Fetched ${tutorialsData?.length || 0} tutorials from DB`);
+                setTutorials(tutorialsData ? tutorialsData.map(mapTutorial) : []);
+            }
 
             // Fetch Files
             const { data: filesData } = await supabase.from('stored_files').select('*');
@@ -159,8 +164,13 @@ const App: React.FC = () => {
                     table: 'tutorials'
                 },
                 (payload) => {
-                    console.log('Tutorial real-time change:', payload);
-                    setTimeout(() => fetchAllData(), 200);
+                    console.log('Tutorial real-time change:', payload.eventType, payload);
+                    if (payload.eventType === 'DELETE' && payload.old) {
+                        const deletedId = payload.old.id;
+                        setTutorials(prev => prev.filter(t => t.id !== deletedId));
+                    }
+                    // Re-fetch to ensure full sync with related data
+                    setTimeout(() => fetchAllData(), 500);
                 }
             )
             .on(
@@ -171,8 +181,12 @@ const App: React.FC = () => {
                     table: 'messages'
                 },
                 (payload) => {
-                    console.log('Message real-time change:', payload);
-                    setTimeout(() => fetchAllData(), 200);
+                    console.log('Message real-time change:', payload.eventType, payload);
+                    if (payload.eventType === 'DELETE' && payload.old) {
+                        const deletedId = payload.old.id;
+                        setMessages(prev => prev.filter(m => m.id !== deletedId));
+                    }
+                    setTimeout(() => fetchAllData(), 500);
                 }
             )
             .on(
@@ -183,8 +197,12 @@ const App: React.FC = () => {
                     table: 'tasks'
                 },
                 (payload) => {
-                    console.log('Task real-time change:', payload);
-                    setTimeout(() => fetchAllData(), 200);
+                    console.log('Task real-time change:', payload.eventType, payload);
+                    if (payload.eventType === 'DELETE' && payload.old) {
+                        const deletedId = payload.old.id;
+                        setTasks(prev => prev.filter(t => t.id !== deletedId));
+                    }
+                    setTimeout(() => fetchAllData(), 500);
                 }
             )
             .on(
@@ -196,8 +214,8 @@ const App: React.FC = () => {
                 (payload) => {
                     // Fallback for other tables
                     if (payload.table !== 'tutorials' && payload.table !== 'messages' && payload.table !== 'tasks') {
-                        console.log('Other real-time change:', payload);
-                        setTimeout(() => fetchAllData(), 200);
+                        console.log('Other real-time change:', payload.table, payload.eventType, payload);
+                        setTimeout(() => fetchAllData(), 500);
                     }
                 }
             )
