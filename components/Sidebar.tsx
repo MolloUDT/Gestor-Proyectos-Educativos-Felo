@@ -1,7 +1,7 @@
 import React from 'react';
 import { User, Role } from '../types';
 import { Page } from '../App';
-import { HomeIcon, LayoutGridIcon, GanttChartIcon, UsersIcon, FolderIcon, CalendarIcon, GraduationCapIcon, ClipboardListIcon, RocketIcon, SimpleGroupIcon, EditIcon, MessageSquareIcon, InfoIcon, BookIcon } from './Icons';
+import { HomeIcon, LayoutGridIcon, GanttChartIcon, UsersIcon, FolderIcon, CalendarIcon, GraduationCapIcon, ClipboardListIcon, RocketIcon, SimpleGroupIcon, EditIcon, MessageSquareIcon, InfoIcon, BookIcon, DatabaseIcon } from './Icons';
 
 interface SidebarProps {
     user: User;
@@ -31,6 +31,7 @@ export const NAV_ITEMS: NavItem[] = [
     { id: 'logbook', label: 'Cuaderno de Bitácora', icon: BookIcon, roles: [Role.Admin, Role.Tutor] },
     { id: 'messaging', label: 'Mensajería', icon: MessageSquareIcon, roles: [Role.Admin, Role.Tutor, Role.Student] },
     { id: 'files', label: 'Archivos de grupos', icon: FolderIcon, roles: [Role.Admin, Role.Tutor, Role.Student] },
+    { id: 'db-management', label: 'Gestión Base Datos', icon: DatabaseIcon, roles: [Role.Admin] },
     { id: 'information', label: 'Información', icon: InfoIcon, roles: [Role.Admin, Role.Tutor, Role.Student] },
 ];
 

@@ -18,10 +18,11 @@ import Messaging from './components/Messaging';
 import Logbook from './components/Logbook';
 import NotificationModal from './components/NotificationModal';
 import InformationPage from './components/InformationPage';
+import DatabaseManagement from './components/DatabaseManagement';
 
 import ProfileModal from './components/ProfileModal';
 
-export type Page = 'dashboard' | 'students' | 'ras' | 'tutors' | 'board' | 'gantt' | 'groups' | 'files' | 'calendar' | 'project-dates' | 'messaging' | 'information' | 'logbook';
+export type Page = 'dashboard' | 'students' | 'ras' | 'tutors' | 'board' | 'gantt' | 'groups' | 'files' | 'calendar' | 'project-dates' | 'messaging' | 'information' | 'logbook' | 'db-management';
 
 const App: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -46,6 +47,29 @@ const App: React.FC = () => {
     const [courseDates, setCourseDates] = useState({ startDate: '2025-09-15', endDate: '2026-06-19' });
     
     const [modules, setModules] = useState<Module[]>([]);
+
+    // Persistencia de sesión personalizada
+    useEffect(() => {
+        const savedUser = localStorage.getItem('gestor_proyectos_user');
+        if (savedUser && !currentUser) {
+            try {
+                const user = JSON.parse(savedUser);
+                console.log("Restaurando sesión de localStorage para:", user.username);
+                setCurrentUser(user);
+            } catch (e) {
+                console.error("Error al restaurar sesión de localStorage:", e);
+                localStorage.removeItem('gestor_proyectos_user');
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        if (currentUser) {
+            localStorage.setItem('gestor_proyectos_user', JSON.stringify(currentUser));
+        } else {
+            localStorage.removeItem('gestor_proyectos_user');
+        }
+    }, [currentUser]);
 
     const fetchAllData = useCallback(async () => {
         console.log("Fetching all data from Supabase...");
@@ -126,6 +150,7 @@ const App: React.FC = () => {
     useEffect(() => {
         const checkSession = async () => {
             try {
+                // Primero intentamos Supabase Auth por si acaso
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session) {
                     const { data: usersData } = await supabase
@@ -135,19 +160,34 @@ const App: React.FC = () => {
                         .single();
                     
                     if (usersData) {
+                        console.log("Sesión de Supabase Auth encontrada para:", usersData.username);
                         setCurrentUser(mapUser(usersData));
                         setPage('dashboard');
                         await fetchAllData();
+                        return;
                     }
-                } else {
-                    fetchAllData();
                 }
+                
+                // Si no hay sesión de Supabase Auth, fetchAllData se llamará de todos modos
+                // La persistencia de localStorage se encarga del currentUser si existe
+                await fetchAllData();
             } catch (error) {
                 console.error("Error checking session:", error);
                 fetchAllData();
             }
         };
         checkSession();
+
+        // Escuchar cambios de auth de Supabase por si acaso
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (!session && currentUser && !localStorage.getItem('gestor_proyectos_user')) {
+                console.log("Supabase Auth SIGNED_OUT detectado");
+                // Solo cerramos sesión si no tenemos persistencia manual
+                // setCurrentUser(null); 
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, [fetchAllData]);
 
     // Real-time subscription to keep data in sync
@@ -857,6 +897,15 @@ const App: React.FC = () => {
                         />;
             case 'information':
                 return <InformationPage />;
+            case 'db-management':
+                return (
+                    <DatabaseManagement 
+                        courses={courses}
+                        groups={groups}
+                        allUsers={users}
+                        onRefreshData={fetchAllData}
+                    />
+                );
             default:
                  return <Dashboard 
                             user={currentUser} 
