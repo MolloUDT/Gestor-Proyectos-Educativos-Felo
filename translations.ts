@@ -458,6 +458,18 @@ export const translations = {
         november: "Noviembre",
         december: "Diciembre",
         
+        // Textos faltantes
+        addGroupToCourse: "Añadir alumnos a un curso",
+        addStudentToCourse: "Añadir alumno a un curso",
+        studentSearchInfo: "Buscar información de estudiante",
+        searchPlaceholder: "Teclea aquí el nombre del alumno",
+        searchButton: "Buscar",
+        selectCategoryToStart: "Selecciona el buzón a la izquierda para empezar",
+        selectGroupFiles: "Selecciona un grupo a la izquierda para poder gestionar sus archivos",
+        allCourses: "Todos los Cursos",
+        allGroups: "Todos los Grupos",
+        meetings: "Reuniones de Grupo",
+        
         // Roles
         adminRole: "Administrador General",
         tutorRole: "Tutor de grupos",
@@ -926,6 +938,18 @@ export const translations = {
         october: "October",
         november: "November",
         december: "December",
+
+        // Missing texts
+        addGroupToCourse: "Add students to a course",
+        addStudentToCourse: "Add student to a course",
+        studentSearchInfo: "Search student information",
+        searchPlaceholder: "Type the student's name here",
+        searchButton: "Search",
+        selectCategoryToStart: "Select a message category on the left to start",
+        selectGroupFiles: "Select a group on the left to manage its files",
+        allCourses: "All Courses",
+        allGroups: "All Groups",
+        meetings: "Group Meetings",
 
         // Roles
         adminRole: "Administrator General",

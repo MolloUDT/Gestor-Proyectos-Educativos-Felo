@@ -402,7 +402,7 @@ const Students: React.FC<StudentsProps> = ({ users, courses, groups, projects, o
                                     <div className="flex items-center">
                                         <h3 className="font-semibold text-gray-800">{course.name}</h3>
                                         <span className="ml-3 px-2 py-0.5 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
-                                            {students.length} {students.length === 1 ? t('student').toLowerCase() : t('students').toLowerCase()}
+                                            {students.length} {students.length === 1 ? t('student').toLowerCase() : t('students_label').toLowerCase()}
                                         </span>
                                     </div>
                                     <ChevronDownIcon className={`w-5 h-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : 'rotate-0'}`} />
