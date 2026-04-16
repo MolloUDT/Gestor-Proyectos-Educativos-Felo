@@ -3,6 +3,7 @@ import { Course, Group, Role, User } from '../types';
 import { supabase } from '../lib/supabase';
 import Modal from './Modal';
 import { TrashIcon, AlertTriangleIcon, CheckCircleIcon } from './Icons';
+import { useLanguage } from '../lib/LanguageContext';
 
 interface DatabaseManagementProps {
     courses: Course[];
@@ -12,6 +13,7 @@ interface DatabaseManagementProps {
 }
 
 const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ courses, groups, allUsers, onRefreshData }) => {
+    const { t } = useLanguage();
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [confirmAction, setConfirmAction] = useState<{
         title: string;
@@ -39,11 +41,11 @@ const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ courses, groups
         setStatusMessage(null);
         try {
             await confirmAction.action();
-            setStatusMessage({ type: 'success', text: 'Acción completada con éxito.' });
+            setStatusMessage({ type: 'success', text: t('dbActionSuccess') });
             await onRefreshData();
         } catch (error: any) {
             console.error("Error executing database action:", error);
-            setStatusMessage({ type: 'error', text: `Error: ${error.message || 'Ocurrió un error inesperado.'}` });
+            setStatusMessage({ type: 'error', text: `${t('error')}: ${error.message || t('errorOccurred')}` });
         } finally {
             setIsLoading(false);
             setIsConfirmModalOpen(false);
@@ -166,8 +168,8 @@ const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ courses, groups
     return (
         <div className="max-w-4xl mx-auto p-6">
             <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Gestión Base Datos</h2>
-                <p className="text-gray-600">Utiliza estas herramientas para limpiar o resetear los datos de la aplicación. <span className="font-bold text-red-600">Atención: Estas acciones son irreversibles.</span></p>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('dbManagement')}</h2>
+                <p className="text-gray-600">{t('dbCleanupSubheader')} <span className="font-bold text-red-600">{t('dbIrreversible')}</span></p>
             </div>
 
             {statusMessage && (
@@ -178,10 +180,10 @@ const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ courses, groups
             )}
 
             <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-8">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Filtros de Aplicación</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('filter')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Curso</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('course')}</label>
                         <select 
                             value={selectedCourseId} 
                             onChange={(e) => {
@@ -190,101 +192,101 @@ const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ courses, groups
                             }}
                             className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                         >
-                            <option value="all">Todos los cursos</option>
+                            <option value="all">{t('allCourses')}</option>
                             {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Grupo</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('group')}</label>
                         <select 
                             value={selectedGroupId} 
                             onChange={(e) => setSelectedGroupId(e.target.value)}
                             className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                         >
-                            <option value="all">Todos los grupos</option>
+                            <option value="all">{t('allGroups')}</option>
                             {filteredGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                         </select>
                     </div>
                 </div>
                 <p className="mt-2 text-xs text-gray-500 italic">
-                    * Los filtros se aplicarán a las acciones de borrado que lo permitan.
+                    {t('dbFilterWarning')}
                 </p>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
                 {/* Mensajes */}
                 <CleanupCard 
-                    title="Mensajes" 
-                    description="Borra todos los mensajes enviados entre usuarios."
+                    title={t('messaging')} 
+                    description={t('dbMessagesDesc')}
                     onDelete={() => handleAction(
-                        "Borrar Mensajes", 
-                        "¿Estás seguro de que deseas borrar todos los mensajes seleccionados?", 
+                        t('dbMessagesTitle'), 
+                        t('dbDeleteConfirmText'), 
                         clearMessages
                     )}
                 />
 
                 {/* Archivos */}
                 <CleanupCard 
-                    title="Archivos" 
-                    description="Borra todos los archivos subidos por los grupos."
+                    title={t('files')} 
+                    description={t('dbFilesDesc')}
                     onDelete={() => handleAction(
-                        "Borrar Archivos", 
-                        "¿Estás seguro de que deseas borrar todos los archivos seleccionados?", 
+                        t('dbFilesTitle'), 
+                        t('dbDeleteConfirmText'), 
                         clearFiles
                     )}
                 />
 
                 {/* Tutorías */}
                 <CleanupCard 
-                    title="Tutorías" 
-                    description="Borra todas las tutorías individuales agendadas."
+                    title={t('tutorials')} 
+                    description={t('dbTutorialsDesc')}
                     onDelete={() => handleAction(
-                        "Borrar Tutorías", 
-                        "¿Estás seguro de que deseas borrar todas las tutorías seleccionadas?", 
+                        t('dbTutorialsTitle'), 
+                        t('dbDeleteConfirmText'), 
                         () => clearTutorials('tutorial')
                     )}
                 />
 
                 {/* Reuniones de Grupo */}
                 <CleanupCard 
-                    title="Reuniones de Grupo" 
-                    description="Borra todas las reuniones de grupo agendadas."
+                    title={t('meetings')} 
+                    description={t('dbMeetingsDesc')}
                     onDelete={() => handleAction(
-                        "Borrar Reuniones", 
-                        "¿Estás seguro de que deseas borrar todas las reuniones de grupo seleccionadas?", 
+                        t('dbMeetingsTitle'), 
+                        t('dbDeleteConfirmText'), 
                         () => clearTutorials('group_meeting')
                     )}
                 />
 
                 {/* Cuaderno de Bitácora */}
                 <CleanupCard 
-                    title="Cuaderno de Bitácora" 
-                    description="Limpia el contenido de los cuadernos de bitácora de los grupos."
+                    title={t('logbook')} 
+                    description={t('dbLogbookDesc')}
                     onDelete={() => handleAction(
-                        "Limpiar Bitácoras", 
-                        "¿Estás seguro de que deseas limpiar el contenido de las bitácoras seleccionadas?", 
+                        t('dbLogbookTitle'), 
+                        t('dbDeleteConfirmText'), 
                         clearLogbooks
                     )}
                 />
 
                 {/* Grupos y Tareas */}
                 <CleanupCard 
-                    title="Grupos, Proyectos y Tareas" 
-                    description="Borra los grupos, sus proyectos y todas las tareas asociadas."
+                    title={t('groups')} 
+                    description={t('dbProjectsDesc')}
                     onDelete={() => handleAction(
-                        "Borrar Grupos y Tareas", 
-                        "¿Estás seguro de que deseas borrar los grupos y todas sus tareas? Esto también borrará los proyectos.", 
+                        t('dbProjectsTitle'), 
+                        `${t('dbDeleteConfirmText')} ${t('dbProjectsWarning')}`, 
                         clearGroupsAndTasks
                     )}
                 />
 
                 {/* Cursos y Alumnos */}
                 <CleanupCard 
-                    title="Cursos y Alumnos" 
-                    description="Borra los cursos y todos los alumnos asociados a ellos."
+                    title={t('courses')} 
+                    description={t('dbCoursesDesc')}
                     onDelete={() => handleAction(
-                        "Borrar Cursos y Alumnos", 
-                        "¿Estás seguro de que deseas borrar los cursos y todos sus alumnos? Esta es la acción de reseteo más profunda.", 
+                        t('dbCoursesTitle'), 
+                        `${t('dbDeleteConfirmText')} ${t('dbCoursesWarning')}`, 
                         clearCoursesAndStudents
                     )}
                     isDanger
@@ -292,11 +294,11 @@ const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ courses, groups
             </div>
 
             {isConfirmModalOpen && (
-                <Modal title={confirmAction?.title || "Confirmar Acción"} onClose={() => setIsConfirmModalOpen(false)}>
+                <Modal title={confirmAction?.title || t('confirm')} onClose={() => setIsConfirmModalOpen(false)}>
                     <div className="p-4">
                         <div className="flex items-center text-amber-600 mb-4">
                             <AlertTriangleIcon className="w-8 h-8 mr-3" />
-                            <p className="font-bold">Esta acción no se puede deshacer.</p>
+                            <p className="font-bold">{t('dbIrreversible')}</p>
                         </div>
                         <p className="text-gray-700 mb-6">{confirmAction?.message}</p>
                         <div className="flex justify-end gap-3">
@@ -305,7 +307,7 @@ const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ courses, groups
                                 className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
                                 disabled={isLoading}
                             >
-                                Cancelar
+                                {t('cancel')}
                             </button>
                             <button 
                                 onClick={executeAction}
@@ -318,9 +320,9 @@ const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ courses, groups
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
-                                        Procesando...
+                                        {t('processing')}
                                     </>
-                                ) : "Confirmar Borrado"}
+                                ) : t('confirm')}
                             </button>
                         </div>
                     </div>
@@ -335,20 +337,23 @@ const CleanupCard: React.FC<{
     description: string; 
     onDelete: () => void;
     isDanger?: boolean;
-}> = ({ title, description, onDelete, isDanger }) => (
-    <div className={`flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border ${isDanger ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}>
-        <div>
-            <h4 className={`font-bold ${isDanger ? 'text-red-800' : 'text-gray-800'}`}>{title}</h4>
-            <p className="text-sm text-gray-600">{description}</p>
+}> = ({ title, description, onDelete, isDanger }) => {
+    const { t } = useLanguage();
+    return (
+        <div className={`flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border ${isDanger ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}>
+            <div>
+                <h4 className={`font-bold ${isDanger ? 'text-red-800' : 'text-gray-800'}`}>{title}</h4>
+                <p className="text-sm text-gray-600">{description}</p>
+            </div>
+            <button 
+                onClick={onDelete}
+                className={`p-2 rounded-full transition-colors ${isDanger ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-600'}`}
+                title={t('delete')}
+            >
+                <TrashIcon className="w-5 h-5" />
+            </button>
         </div>
-        <button 
-            onClick={onDelete}
-            className={`p-2 rounded-full transition-colors ${isDanger ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-600'}`}
-            title="Borrar"
-        >
-            <TrashIcon className="w-5 h-5" />
-        </button>
-    </div>
-);
+    );
+};
 
 export default DatabaseManagement;

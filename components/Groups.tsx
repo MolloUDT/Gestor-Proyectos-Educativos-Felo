@@ -4,6 +4,7 @@ import Modal from './Modal';
 import { PlusCircleIcon, ChevronDownIcon, TrashIcon } from './Icons';
 import { sortBySurname } from '../lib/utils';
 import ProjectCard from './ProjectCard';
+import { useLanguage } from '../lib/LanguageContext';
 
 interface GroupsProps {
     user: User;
@@ -30,6 +31,7 @@ const GroupForm: React.FC<{
     onDelete?: () => void;
     onCancel: () => void;
 }> = ({ group, projects, allUsers, user, courses, courseDates, onSave, onDelete, onCancel }) => {
+    const { t } = useLanguage();
     const isEditing = !!group?.id;
     const projectForGroup = useMemo(() => projects.find(p => p.groupId === group?.id), [projects, group]);
     
@@ -70,7 +72,7 @@ const GroupForm: React.FC<{
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (memberIds.length === 0) {
-            setFormError('Debe seleccionar al menos un alumno para crear el grupo.');
+            setFormError(t('selectAtLeastOneStudentError'));
             return;
         }
         setFormError('');
@@ -85,7 +87,7 @@ const GroupForm: React.FC<{
         <>
             <form onSubmit={handleSubmit} className="space-y-4">
                  <div>
-                    <label htmlFor="groupName" className="block text-sm font-medium text-gray-700">Nombre del Grupo</label>
+                    <label htmlFor="groupName" className="block text-sm font-medium text-gray-700">{t('groupNameLabel')}</label>
                     <input
                         type="text"
                         id="groupName"
@@ -96,7 +98,7 @@ const GroupForm: React.FC<{
                     />
                 </div>
                 <div>
-                    <label htmlFor="projectName" className="block text-sm font-medium text-gray-700">Nombre del Proyecto</label>
+                    <label htmlFor="projectName" className="block text-sm font-medium text-gray-700">{t('projectNameLabel')}</label>
                     <input
                         type="text"
                         id="projectName"
@@ -107,7 +109,7 @@ const GroupForm: React.FC<{
                     />
                 </div>
                 <div>
-                    <label htmlFor="projectDescription" className="block text-sm font-medium text-gray-700">Breve descripción del proyecto</label>
+                    <label htmlFor="projectDescription" className="block text-sm font-medium text-gray-700">{t('projectDescriptionLabel')}</label>
                     <textarea
                         id="projectDescription"
                         value={projectDescription}
@@ -119,21 +121,24 @@ const GroupForm: React.FC<{
                 </div>
                 <div className="flex flex-wrap justify-between gap-4">
                     <div className="flex flex-col items-center w-full sm:w-auto">
-                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 text-center">Fecha de inicio</label>
+                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 text-center">{t('startDate')}</label>
                         <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} min={courseDates.startDate} max={courseDates.endDate} className="w-full sm:w-48 p-2 mt-1 border border-gray-300 rounded-md text-red-600 font-medium text-center" required />
                     </div>
                     <div className="flex flex-col items-center w-full sm:w-auto">
-                        <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 text-center">Fecha de finalización</label>
+                        <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 text-center">{t('endDate')}</label>
                         <input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate || courseDates.startDate} max={courseDates.endDate} className="w-full sm:w-48 p-2 mt-1 border border-gray-300 rounded-md text-green-600 font-medium text-center" required />
                     </div>
                      <p className="mt-1 text-xs text-gray-500 w-full">
-                        Las fechas deben estar dentro del curso escolar: {new Date(courseDates.startDate).toLocaleDateString()} al {new Date(courseDates.endDate).toLocaleDateString()}.
+                        {t('dateWithinCourseWarning', { 
+                            start: new Date(courseDates.startDate).toLocaleDateString(), 
+                            end: new Date(courseDates.endDate).toLocaleDateString() 
+                        })}
                     </p>
                 </div>
 
                 {user.role === Role.Admin ? (
                     <div>
-                        <label htmlFor="tutor" className="block text-sm font-medium text-gray-700">Tutor Asignado</label>
+                        <label htmlFor="tutor" className="block text-sm font-medium text-gray-700">{t('assignedTutor')}</label>
                         <select
                             id="tutor"
                             value={tutorId}
@@ -141,13 +146,13 @@ const GroupForm: React.FC<{
                             className="w-full p-2 mt-1 border border-gray-300 rounded-md"
                             required
                         >
-                            <option value="">Selecciona un tutor</option>
-                            {allTutors.map(t => <option key={t.id} value={t.id}>{t.lastName}, {t.firstName}</option>)}
+                            <option value="">{t('selectTutor')}</option>
+                            {allTutors.map(tutor => <option key={tutor.id} value={tutor.id}>{tutor.lastName}, {tutor.firstName}</option>)}
                         </select>
                     </div>
                 ) : (
                     <div>
-                        <label htmlFor="tutorName" className="block text-sm font-medium text-gray-700">Tutor Asignado</label>
+                        <label htmlFor="tutorName" className="block text-sm font-medium text-gray-700">{t('assignedTutor')}</label>
                         <input
                             type="text"
                             id="tutorName"
@@ -158,7 +163,7 @@ const GroupForm: React.FC<{
                     </div>
                 )}
                  <div>
-                    <label htmlFor="courseId" className="block text-sm font-medium text-gray-700">Curso</label>
+                    <label htmlFor="courseId" className="block text-sm font-medium text-gray-700">{t('course')}</label>
                     <select
                         id="courseId"
                         value={selectedCourseId}
@@ -167,12 +172,12 @@ const GroupForm: React.FC<{
                         required
                         disabled={isCourseSelectDisabled}
                     >
-                        <option value="">Selecciona un curso</option>
+                        <option value="">{t('selectCourse')}</option>
                         {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                 </div>
                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Alumnado integrante</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('groupMembers')}</label>
                     <div className="p-2 mt-2 border border-gray-300 rounded-md max-h-60 overflow-y-auto">
                         {selectedCourseId ? (
                             courseStudents.length > 0 ? (
@@ -188,10 +193,10 @@ const GroupForm: React.FC<{
                                     </label>
                                 ))
                             ) : (
-                                <p className="text-sm text-gray-500 p-1">No hay alumnos en este curso.</p>
+                                <p className="text-sm text-gray-500 p-1">{t('noStudentsInCourse')}</p>
                             )
                         ) : (
-                            <p className="text-sm text-gray-500 p-1">Selecciona un curso primero.</p>
+                            <p className="text-sm text-gray-500 p-1">{t('selectCourseFirst')}</p>
                         )}
                     </div>
                 </div>
@@ -202,13 +207,13 @@ const GroupForm: React.FC<{
                     <div>
                         {isEditing && onDelete && (
                             <button type="button" onClick={onDelete} className="flex items-center gap-2 px-4 py-2 text-red-700 bg-red-100 rounded-md hover:bg-red-200">
-                                <TrashIcon className="w-4 h-4 text-red-500" /> Eliminar Grupo
+                                <TrashIcon className="w-4 h-4 text-red-500" /> {t('delete')}
                             </button>
                         )}
                     </div>
                     <div className="flex space-x-2">
-                        <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700">Guardar</button>
+                        <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">{t('cancel')}</button>
+                        <button type="submit" className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700">{t('save')}</button>
                     </div>
                 </div>
             </form>
@@ -217,6 +222,7 @@ const GroupForm: React.FC<{
 };
 
 const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks, courses, courseDates, onCreate, onUpdate, onDelete, onNavigateToKanban }) => {
+    const { t } = useLanguage();
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
     const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
@@ -230,7 +236,7 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
         const result: Record<string, Group[]> = {};
         visibleGroups.forEach(group => {
             const course = courses.find(c => c.id === group.courseId);
-            const courseName = course ? course.name : 'Grupos sin curso asignado';
+            const courseName = course ? course.name : t('noGroupAssigned');
             
             if (!result[courseName]) {
                 result[courseName] = [];
@@ -238,7 +244,7 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
             result[courseName].push(group);
         });
         return result;
-    }, [visibleGroups, courses]);
+    }, [visibleGroups, courses, t]);
 
     const toggleCourseGroup = (courseName: string) => {
         setExpandedCourseGroups(prev => ({ ...prev, [courseName]: !prev[courseName] }));
@@ -281,13 +287,13 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
 
     return (
         <div>
-            <h2 className="mb-6 text-2xl font-bold text-gray-800">Gestión de Grupos</h2>
+            <h2 className="mb-6 text-2xl font-bold text-gray-800">{t('groups')}</h2>
             {(user.role === Role.Admin || user.role === Role.Tutor) && (
                 <div className="flex items-center justify-between mb-6">
                     <div></div>
                     <button onClick={handleCreate} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">
                         <PlusCircleIcon className="w-5 h-5" />
-                        Crear Grupo
+                        {t('createGroup')}
                     </button>
                 </div>
             )}
@@ -302,7 +308,10 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
                                 <div className="flex items-center">
                                     <h3 className="text-lg font-semibold text-gray-800">{courseName}</h3>
                                     <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">
-                                        {courseGroups.length} {courseGroups.length === 1 ? 'grupo' : 'grupos'}
+                                        {t('groupCountLabel', { 
+                                            count: courseGroups.length, 
+                                            label: courseGroups.length === 1 ? t('groupSingular') : t('groupPlural') 
+                                        })}
                                     </span>
                                 </div>
                                 <ChevronDownIcon className={`w-6 h-6 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -313,7 +322,6 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
                                         {courseGroups.map(group => {
                                             const project = projects.find(p => p.groupId === group.id);
                                             const tutor = allUsers.find(u => u.id === group.tutorId);
-                                            const canManage = (user.role === Role.Admin || user.id === group.tutorId);
                                             return (
                                                 <ProjectCard 
                                                     key={group.id} 
@@ -334,7 +342,7 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
             </div>
 
             {isFormModalOpen && (
-                <Modal title={editingGroup ? "Editar Grupo" : "Crear Nuevo Grupo"} onClose={() => setIsFormModalOpen(false)}>
+                <Modal title={editingGroup ? t('editGroup') : t('createGroup')} onClose={() => setIsFormModalOpen(false)}>
                     <GroupForm
                         group={editingGroup}
                         projects={projects}
@@ -350,19 +358,19 @@ const Groups: React.FC<GroupsProps> = ({ user, groups, projects, allUsers, tasks
             )}
 
             {groupToDelete && (
-                <Modal title="Confirmar Eliminación" onClose={() => setGroupToDelete(null)}>
+                <Modal title={t('confirmDelete')} onClose={() => setGroupToDelete(null)}>
                     <div className="text-center">
-                        <p className="text-lg text-gray-700">¿Estás seguro de que quieres eliminar el grupo?</p>
+                        <p className="text-lg text-gray-700">{t('deleteStudentConfirm')}</p>
                         <p className="my-2 text-xl font-bold text-red-600">"{groupToDelete.name}"</p>
                         <p className="text-sm text-gray-500">
-                            Esta acción es irreversible y eliminará todos los proyectos y tareas asociados.
+                            {t('deleteCourseWarning')}
                         </p>
                         <div className="flex justify-center mt-6 space-x-4">
                             <button onClick={() => setGroupToDelete(null)} className="px-6 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
-                                Cancelar
+                                {t('cancel')}
                             </button>
                             <button onClick={handleConfirmDelete} className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">
-                                Sí, Eliminar Grupo
+                                {t('yesDelete')}
                             </button>
                         </div>
                     </div>

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { User, Role } from '../types';
 import { LogOutIcon, MenuIcon, UserIcon } from './Icons';
 import { Page } from '../App';
+import { useLanguage } from '../lib/LanguageContext';
 
 interface HeaderProps {
     user: User;
@@ -14,6 +15,10 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ user, onLogout, toggleSidebar, pageTitle, onOpenProfile }) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const { t } = useLanguage();
+
+    const translatedRole = user.role === Role.Admin ? t('adminRole') : 
+                          user.role === Role.Tutor ? t('tutorRole') : t('studentRole');
 
     return (
         <header className="flex items-center justify-between p-4 bg-white border-b">
@@ -32,11 +37,11 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, toggleSidebar, pageTitl
                 >
                     <div className="text-right">
                         <span className="block text-sm font-medium text-gray-800">{user.firstName} {user.lastName}</span>
-                        <span className="block text-xs text-gray-500">{user.role}</span>
+                        <span className="block text-xs text-gray-500">{translatedRole}</span>
                     </div>
                 </div>
                 {dropdownOpen && (
-                    <div className="absolute right-0 z-10 w-48 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                    <div className="absolute right-0 z-10 w-48 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 transition-all">
                         <div className="py-1">
                             <a
                                 href="#"
@@ -48,7 +53,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, toggleSidebar, pageTitl
                                 className="flex items-center w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                             >
                                 <UserIcon className="w-4 h-4 mr-2" />
-                                Mi Perfil
+                                {t('myProfile')}
                             </a>
                             <a
                                 href="#"
@@ -59,7 +64,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, toggleSidebar, pageTitl
                                 className="flex items-center w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                             >
                                 <LogOutIcon className="w-4 h-4 mr-2" />
-                                Cerrar Sesión
+                                {t('logout')}
                             </a>
                         </div>
                     </div>

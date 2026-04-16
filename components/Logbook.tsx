@@ -4,6 +4,7 @@ import 'react-quill-new/dist/quill.snow.css';
 import { User, Group, Project, Course, Task, Role } from '../types';
 import { ChevronDownIcon, SaveIcon, ArrowLeftIcon } from './Icons';
 import ProjectCard from './ProjectCard';
+import { useLanguage } from '../lib/LanguageContext';
 
 interface LogbookProps {
     user: User;
@@ -18,6 +19,7 @@ interface LogbookProps {
 const QuillComponent = ReactQuill as any;
 
 const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, courses, tasks, onUpdateLogbook }) => {
+    const { t, language } = useLanguage();
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
     const [logContent, setLogContent] = useState('');
     const [expandedCourseGroups, setExpandedCourseGroups] = useState<Record<string, boolean>>({});
@@ -30,7 +32,7 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, cou
             const group = groups.find(g => g.id === project.groupId);
             if (group && group.courseId) {
                 const course = courses.find(c => c.id === group.courseId);
-                const courseName = course ? course.name : 'Curso sin nombre';
+                const courseName = course ? course.name : t('noCourseName');
 
                 if (!result[courseName]) {
                     result[courseName] = [];
@@ -39,7 +41,7 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, cou
             }
         });
         return result;
-    }, [projects, groups, courses]);
+    }, [projects, groups, courses, t]);
 
     const studentProjects = useMemo(() => {
         if (user.role !== Role.Student) return [];
@@ -55,8 +57,9 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, cou
 
     const handleSelectGroup = (group: Group) => {
         const now = new Date();
-        const dateStr = now.toLocaleDateString('es-ES');
-        const timeStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        const locale = language === 'es' ? 'es-ES' : 'en-US';
+        const dateStr = now.toLocaleDateString(locale);
+        const timeStr = now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
         
         // Header with blank line after
         const header = `<p class="logbook-header"><strong>[${user.firstName} ${user.lastName} - ${dateStr} ${timeStr}]</strong></p><p><br></p>`;
@@ -81,23 +84,17 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, cou
                 const editor = quillRef.current?.getEditor();
                 if (editor) {
                     editor.focus();
-                    // Place cursor after the header (which is roughly 2 paragraphs)
-                    // We'll just place it at the end of the header
                     const firstParagraph = editor.getContents().ops[0]?.insert;
                     if (typeof firstParagraph === 'string') {
-                        // The header is roughly the first line + the blank line
-                        // Let's just place it after the header part.
-                        // A safer way is to find the first newline or just place it at the end of the header.
-                        // Since we prepend, the header is at the start.
-                        // Let's try to find the length of the header string.
-                        const headerText = `[${user.firstName} ${user.lastName} - ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}\n\n`;
+                        const locale = language === 'es' ? 'es-ES' : 'en-US';
+                        const headerText = `[${user.firstName} ${user.lastName} - ${new Date().toLocaleDateString(locale)} ${new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}\n\n`;
                         editor.setSelection(headerText.length, 0);
                     }
                 }
             }, 200);
             return () => clearTimeout(timer);
         }
-    }, [selectedGroupId, user.firstName, user.lastName]);
+    }, [selectedGroupId, user.firstName, user.lastName, language]);
 
     const modules = {
         toolbar: [
@@ -133,19 +130,19 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, cou
                         className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
                     >
                         <ArrowLeftIcon className="w-5 h-5 mr-2" />
-                        Volver al listado
+                        {t('backToList')}
                     </button>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                     <div className="p-4 bg-green-50 border-b border-green-100">
                         <h3 className="text-lg font-bold text-green-800">{selectedProject?.name}</h3>
-                        <p className="text-sm text-green-600">Grupo: {selectedGroup?.name}</p>
+                        <p className="text-sm text-green-600">{t('group')}: {selectedGroup?.name}</p>
                         {selectedGroup && (
                             <p className="mt-1 text-xs text-green-700 italic">
-                                Tutor: {(() => {
+                                {t('tutor')}: {(() => {
                                     const tutor = allUsers.find(u => u.id === selectedGroup.tutorId);
-                                    return tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Sin tutor';
+                                    return tutor ? `${tutor.firstName} ${tutor.lastName}` : t('noTutor');
                                 })()}
                             </p>
                         )}
@@ -159,7 +156,7 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, cou
                                 onChange={setLogContent}
                                 modules={modules}
                                 className="bg-white rounded-lg"
-                                placeholder="Empieza a escribir aquí..."
+                                placeholder={t('startWriting')}
                             />
                         </div>
                         <div className="mt-6 flex justify-end">
@@ -168,7 +165,7 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, cou
                                 className="flex items-center px-6 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors shadow-md"
                             >
                                 <SaveIcon className="w-5 h-5 mr-2" />
-                                Guardar Bitácora
+                                {t('saveLogbook')}
                             </button>
                         </div>
                     </div>
@@ -178,9 +175,9 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, cou
     }
 
     return (
-        <div>
+        <div className="p-2 sm:p-0">
             {/* Title removed as per user request */}
-            <p className="text-gray-600 mb-8">Selecciona un grupo para ver o añadir entradas a su cuaderno de bitácora.</p>
+            <p className="text-gray-600 mb-8">{t('logbookIntro')}</p>
             
             {user.role === Role.Student ? (
                 <div className="space-y-2">
@@ -196,7 +193,7 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, cou
                                 onClick={() => handleSelectGroup(group)}
                             />
                         );
-                    }) : <p className="text-center text-gray-500">No estás asignado a ningún proyecto.</p>}
+                    }) : <p className="text-center text-gray-500">{t('noAssignedProject')}</p>}
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -212,7 +209,7 @@ const Logbook: React.FC<LogbookProps> = ({ user, groups, projects, allUsers, cou
                                     <div className="flex items-center">
                                         <h3 className="text-lg font-semibold text-gray-800">{courseName}</h3>
                                         <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">
-                                            {projectsData.length} {projectsData.length === 1 ? 'proyecto' : 'proyectos'}
+                                            {projectsData.length} {projectsData.length === 1 ? t('groupSingular') : t('groupPlural')}
                                         </span>
                                     </div>
                                     <ChevronDownIcon className={`w-6 h-6 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />

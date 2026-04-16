@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { User, Tutorial, Role, Group, Project, Course } from '../types';
+import { useLanguage } from '../lib/LanguageContext';
 
 const formatDate = (date: Date) => {
     const year = date.getFullYear();
@@ -21,6 +22,7 @@ export const TutorialForm: React.FC<{
     initialData?: Partial<Omit<Tutorial, 'id'>> | null;
     readOnly?: boolean;
 }> = ({ user, tutors, groups, allUsers, projects, courses, onSave, onCancel, tutorialToEdit, initialData, readOnly = false }) => {
+    const { t } = useLanguage();
     const [date, setDate] = useState(tutorialToEdit?.date || initialData?.date || '');
     const [time, setTime] = useState(tutorialToEdit?.time || initialData?.time || '');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -179,7 +181,7 @@ export const TutorialForm: React.FC<{
 
         const result: Record<string, Group[]> = {};
         filteredGroups.forEach(group => {
-            let courseName = 'Grupos sin curso asignado';
+            let courseName = t('groupsNoCourse') || 'Grupos sin curso asignado';
             const course = courses.find(c => c.id === group.courseId);
             if (course) {
                 courseName = course.name;
@@ -188,7 +190,7 @@ export const TutorialForm: React.FC<{
             result[courseName].push(group);
         });
         return result;
-    }, [tutorId, groups, courses, user, selectedCourseId]);
+    }, [tutorId, groups, courses, user, selectedCourseId, t]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -196,7 +198,7 @@ export const TutorialForm: React.FC<{
         const finalStatus = statusRef.current;
 
         if (finalStatus === 'held' && !summary.trim()) {
-            setError("El contenido de la reunión es obligatorio para registrarla como realizada.");
+            setError(t('errorMeetingContentRequired'));
             setStatus('held'); // Ensure UI shows it's required now
             return;
         }
@@ -206,7 +208,7 @@ export const TutorialForm: React.FC<{
 
         try {
             if (!type) {
-                setError("Por favor, selecciona un tipo de reunión.");
+                setError(t('errorSelectMeetingType'));
                 setIsSubmitting(false);
                 return;
             }
@@ -226,7 +228,7 @@ export const TutorialForm: React.FC<{
             });
 
             if (err) {
-                setError(err.message || "Error al guardar la tutoría. Por favor, revisa los permisos o contacta con soporte.");
+                setError(err.message || t('errorSaveTutorial'));
                 setIsSubmitting(false);
                 return;
             }
@@ -250,7 +252,7 @@ export const TutorialForm: React.FC<{
                 }
             }
         } catch (err: any) {
-            setError(err.message || "Error inesperado al guardar la tutoría.");
+            setError(err.message || t('errorUnexpected'));
             setIsSubmitting(false);
         }
     };
@@ -265,7 +267,7 @@ export const TutorialForm: React.FC<{
         <form onSubmit={handleSubmit} className="space-y-4">
             {user.role === Role.Student && !tutorialToEdit && (
                 <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <label className="block mb-4 text-sm font-bold text-gray-700 uppercase tracking-wide">Tipo de Reunión</label>
+                    <label className="block mb-4 text-sm font-bold text-gray-700 uppercase tracking-wide">{t('meetingType')}</label>
                     <div className="flex flex-col space-y-6">
                         <label className="flex items-center cursor-pointer group">
                             <div className="relative flex items-center justify-center">
@@ -277,7 +279,7 @@ export const TutorialForm: React.FC<{
                                     className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500"
                                 />
                             </div>
-                            <span className="ml-3 text-base font-medium text-blue-600 group-hover:text-blue-800 transition-colors">Reunión de Tutoría <span className="font-bold">(con Tutor)</span></span>
+                            <span className="ml-3 text-base font-medium text-blue-600 group-hover:text-blue-800 transition-colors">{t('tutorialWithTutor')}</span>
                         </label>
                         <label className="flex items-center cursor-pointer group">
                             <div className="relative flex items-center justify-center">
@@ -289,14 +291,14 @@ export const TutorialForm: React.FC<{
                                     className="w-5 h-5 text-green-600 border-gray-300 focus:ring-green-500"
                                 />
                             </div>
-                            <span className="ml-3 text-base font-medium text-green-600 group-hover:text-green-800 transition-colors">Reunión de grupo <span className="font-bold">(solo integrantes del grupo)</span></span>
+                            <span className="ml-3 text-base font-medium text-green-600 group-hover:text-green-800 transition-colors">{t('groupMeetingOnly')}</span>
                         </label>
                     </div>
                 </div>
             )}
 
             <div>
-                <label className="block text-sm font-medium text-gray-700">Tutor</label>
+                <label className="block text-sm font-medium text-gray-700">{t('tutor')}</label>
                 <select 
                     value={tutorId} 
                     onChange={e => setTutorId(e.target.value)} 
@@ -304,13 +306,13 @@ export const TutorialForm: React.FC<{
                     required
                     disabled={readOnly || isRegistration}
                 >
-                    <option value="">Seleccionar tutor</option>
+                    <option value="">{t('selectTutor')}</option>
                     {filteredTutors.map(t => <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>)}
                 </select>
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700">Curso</label>
+                <label className="block text-sm font-medium text-gray-700">{t('course')}</label>
                 <select 
                     value={selectedCourseId} 
                     onChange={e => setSelectedCourseId(e.target.value)} 
@@ -318,13 +320,13 @@ export const TutorialForm: React.FC<{
                     required
                     disabled={readOnly || isRegistration}
                 >
-                    <option value="">Seleccionar curso</option>
+                    <option value="">{t('selectCourse')}</option>
                     {studentCourses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700">Grupo</label>
+                <label className="block text-sm font-medium text-gray-700">{t('group')}</label>
                 <select 
                     value={groupId} 
                     onChange={e => setGroupId(e.target.value)} 
@@ -332,7 +334,7 @@ export const TutorialForm: React.FC<{
                     required 
                     disabled={readOnly || !tutorId || !selectedCourseId || isRegistration}
                 >
-                    <option value="">{!tutorId ? 'Seleccione un tutor primero' : (!selectedCourseId ? 'Seleccione un curso primero' : 'Seleccionar grupo')}</option>
+                    <option value="">{!tutorId ? t('selectTutorFirst') : (!selectedCourseId ? t('selectCourseFirst') : t('selectGroup'))}</option>
                     {Object.keys(availableGroupsByCourse).sort().map(courseName => (
                         <optgroup label={courseName} key={courseName}>
                             {availableGroupsByCourse[courseName].map(group => {
@@ -346,14 +348,14 @@ export const TutorialForm: React.FC<{
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700">Proyecto</label>
+                <label className="block text-sm font-medium text-gray-700">{t('project')}</label>
                 <select 
                     className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
                     disabled={readOnly || isRegistration || !groupId}
                     value={projects.find(p => p.groupId === groupId)?.id || ''}
                     onChange={() => {}} // Derived from group, but enabled as requested
                 >
-                    <option value="">{groupId ? 'Seleccionar proyecto' : 'Seleccione un grupo primero'}</option>
+                    <option value="">{groupId ? t('selectProject') : t('selectProjectFirst')}</option>
                     {projects.filter(p => p.groupId === groupId).map(p => (
                         <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
@@ -363,7 +365,7 @@ export const TutorialForm: React.FC<{
             <div className="flex flex-row items-end justify-between">
                 <div className="w-auto">
                     <label className="block text-sm font-medium text-gray-700 truncate">
-                        Fecha de la reunión
+                        {t('meetingDate')}
                     </label>
                     <input 
                         type="date" 
@@ -376,7 +378,7 @@ export const TutorialForm: React.FC<{
                 </div>
                 <div className="w-auto">
                     <label className="block text-sm font-medium text-gray-700 truncate text-right">
-                        Hora de la reunión
+                        {t('meetingTime')}
                     </label>
                     <input 
                         type="time" 
@@ -390,12 +392,12 @@ export const TutorialForm: React.FC<{
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700">Lugar propuesto para la reunión</label>
+                <label className="block text-sm font-medium text-gray-700">{t('meetingLocation')}</label>
                 <input 
                     type="text" 
                     value={location} 
                     onChange={e => setLocation(e.target.value)} 
-                    placeholder="Ej: Sala de reuniones, Aula 102, Online..." 
+                    placeholder={t('meetingLocationPlaceholder')} 
                     className="w-full h-10 p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
                     disabled={readOnly || (isRegistration && status === 'held')}
                 />
@@ -404,7 +406,7 @@ export const TutorialForm: React.FC<{
             {isRegistration && (
                 <>
                     <div className="border-t pt-4 mt-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Asistencia de integrantes</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('attendance')}</label>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded-md bg-gray-50">
                             {groupMembers.map(member => (
                                 <label key={member.id} className="flex items-center space-x-2 text-sm">
@@ -424,19 +426,19 @@ export const TutorialForm: React.FC<{
                                     <span>{member.firstName} {member.lastName}</span>
                                 </label>
                             ))}
-                            {groupMembers.length === 0 && <p className="text-xs text-gray-500 italic">No hay integrantes en este grupo</p>}
+                            {groupMembers.length === 0 && <p className="text-xs text-gray-500 italic">{t('noMembers')}</p>}
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Contenido de la reunión</label>
+                        <label className="block text-sm font-medium text-gray-700">{t('meetingContent')}</label>
                         <textarea 
                             value={summary} 
                             onChange={e => setSummary(e.target.value)} 
                             rows={5} 
                             className="w-full p-2 mt-1 border border-gray-300 rounded-md disabled:bg-gray-100" 
                             required={status === 'held'}
-                            placeholder="Registra lo tratado en la reunión..."
+                            placeholder={t('meetingContentPlaceholder')}
                             disabled={readOnly}
                         />
                     </div>
@@ -446,18 +448,18 @@ export const TutorialForm: React.FC<{
             {/* Próxima reunión (opcional) */}
             {status === 'held' && !readOnly && (
                 <div className="p-4 mt-6 border rounded-lg bg-blue-50 border-blue-100">
-                    <h4 className="mb-3 text-sm font-semibold text-blue-800">Agendar próxima reunión (opcional)</h4>
+                    <h4 className="mb-3 text-sm font-semibold text-blue-800">{t('nextMeeting')}</h4>
                     <div className="flex flex-row items-end justify-between space-x-2">
                         <div className="w-auto">
-                            <label className="block text-sm font-medium text-gray-700">Fecha</label>
+                            <label className="block text-sm font-medium text-gray-700">{t('date')}</label>
                             <input type="date" value={nextDate} onChange={e => setNextDate(e.target.value)} className="w-44 h-10 p-2 mt-1 border border-gray-300 rounded-md text-sm" />
                         </div>
                         <div className="w-auto">
-                            <label className="block text-sm font-medium text-gray-700 text-right">Hora</label>
+                            <label className="block text-sm font-medium text-gray-700 text-right">{t('time') || 'Hora'}</label>
                             <input type="time" value={nextTime} onChange={e => setNextTime(e.target.value)} className="w-28 h-10 p-2 mt-1 border border-gray-300 rounded-md text-sm" />
                         </div>
                         <div className="flex-1 min-w-[100px]">
-                            <label className="block text-sm font-medium text-gray-700">Lugar</label>
+                            <label className="block text-sm font-medium text-gray-700">{t('location')}</label>
                             <input type="text" value={nextLocation} onChange={e => setNextLocation(e.target.value)} placeholder="Ej: Aula 102" className="w-full h-10 p-2 mt-1 border border-gray-300 rounded-md text-sm" />
                         </div>
                     </div>
@@ -472,7 +474,7 @@ export const TutorialForm: React.FC<{
 
             <div className="flex justify-end pt-4 space-x-2">
                 <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200" disabled={isSubmitting}>
-                    {readOnly ? 'Cerrar' : 'Cancelar'}
+                    {readOnly ? t('close') : t('cancel')}
                 </button>
                 {!readOnly && (
                     <>
@@ -482,7 +484,7 @@ export const TutorialForm: React.FC<{
                             disabled={isSubmitting}
                             className={`px-4 py-2 text-white rounded-md transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''} ${status === 'held' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
                         >
-                            {isSubmitting ? 'Guardando...' : (tutorialToEdit ? 'Guardar cambios' : (status === 'held' ? 'Registrar reunión' : (type === 'group_meeting' ? 'Agendar Reunión' : (user.role === Role.Student ? 'Solicitar Tutoría' : 'Agendar Tutoría'))))}
+                            {isSubmitting ? t('saving') : (tutorialToEdit ? t('saveChanges') : (status === 'held' ? t('registerMeeting') : (type === 'group_meeting' ? t('scheduleMeeting') || 'Agendar Reunión' : (user.role === Role.Student ? t('requestTutorial') : t('scheduleTutorial')))))}
                         </button>
                         {tutorialToEdit && status === 'scheduled' && (
                             <button 
@@ -491,7 +493,7 @@ export const TutorialForm: React.FC<{
                                 disabled={isSubmitting}
                                 className={`px-4 py-2 text-white rounded-md transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''} bg-green-600 hover:bg-green-700`}
                             >
-                                {type === 'group_meeting' ? 'Reunión realizada' : 'Tutoría realizada'}
+                                {type === 'group_meeting' ? t('meetingHeld') : t('tutorialHeld')}
                             </button>
                         )}
                     </>

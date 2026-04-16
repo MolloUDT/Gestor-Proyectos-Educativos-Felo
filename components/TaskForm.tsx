@@ -6,6 +6,8 @@ import StatusIcon from './StatusIcon';
 import PriorityIcon from './PriorityIcon';
 import DifficultyIcon from './DifficultyIcon';
 
+import { useLanguage } from '../lib/LanguageContext';
+
 interface TaskFormProps {
     task: Partial<Task> | null;
     assignees: User[];
@@ -27,6 +29,7 @@ const formatDate = (date: Date) => {
 };
 
 const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, modules, courseDates, onSave, onCancel, onDelete, userRole }) => {
+    const { t } = useLanguage();
     const isNewTask = !task?.id;
     const initialModuleId = task?.raId ? ras.find(r => r.id === task.raId)?.moduleId : '';
     const [selectedModuleId, setSelectedModuleId] = useState(initialModuleId || '');
@@ -80,14 +83,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, mo
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-red-700">
                             <span className="text-lg">⚠️</span>
-                            <span className="text-sm font-medium">Esta tarea está pendiente de revisión.</span>
+                            <span className="text-sm font-medium">{t('taskPendingReview')}</span>
                         </div>
                         <button 
                             type="button" 
                             onClick={handleVerify}
                             className="px-3 py-1 text-xs font-bold text-white uppercase bg-red-600 rounded hover:bg-red-700 transition-colors"
                         >
-                            ✓ Validar y dar OK
+                            ✓ {t('validateTask')}
                         </button>
                     </div>
                 </div>
@@ -96,29 +99,29 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, mo
                 <div className="p-3 mb-4 border border-green-200 rounded-md bg-green-50">
                     <div className="flex items-center gap-2 text-green-700">
                         <span className="text-lg">✓</span>
-                        <span className="text-sm font-medium">Tarea revisada y validada.</span>
+                        <span className="text-sm font-medium">{t('taskReviewedValidated')}</span>
                     </div>
                 </div>
             )}
             <div>
-                <label className="block text-sm font-medium text-gray-700">Título</label>
+                <label className="block text-sm font-medium text-gray-700">{t('taskTitle')}</label>
                 <input type="text" name="title" value={formData.title} onChange={handleChange} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required />
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700">Descripción</label>
+                <label className="block text-sm font-medium text-gray-700">{t('taskDescription')}</label>
                 <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className="w-full p-2 mt-1 border border-gray-300 rounded-md" />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Asignado a</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('assignee')}</label>
                     <select name="assigneeId" value={formData.assigneeId} onChange={handleChange} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md" required>
-                        <option value="">Seleccionar miembro</option>
+                        <option value="">{t('selectMember')}</option>
                         {assignees.filter(a => a.role !== Role.Tutor).map(a => <option key={a.id} value={a.id}>{a.lastName}, {a.firstName}</option>)}
                     </select>
                 </div>
                 <div className="relative">
                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                        Estado
+                        {t('status')}
                         <StatusIcon status={KanbanStatus.Backlog} />
                         <StatusIcon status={KanbanStatus.Doing} />
                         <StatusIcon status={KanbanStatus.Done} />
@@ -130,7 +133,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, mo
                             'text-green-600'
                         }`}>
                             <StatusIcon status={formData.status} />
-                            {formData.status}
+                            {formData.status === KanbanStatus.Backlog ? t('pendingTasks') : formData.status === KanbanStatus.Doing ? t('inProgressTasks') : t('completedTasks')}
                         </div>
                         <span>▼</span>
                     </div>
@@ -143,7 +146,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, mo
                                     'text-green-600'
                                 }`}>
                                     <StatusIcon status={s} />
-                                    {s}
+                                    {s === KanbanStatus.Backlog ? t('pendingTasks') : s === KanbanStatus.Doing ? t('inProgressTasks') : t('completedTasks')}
                                 </div>
                             ))}
                         </div>
@@ -151,7 +154,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, mo
                 </div>
                 <div className="relative">
                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                        Prioridad
+                        {t('priority')}
                         <PriorityIcon priority={Priority.High} />
                         <PriorityIcon priority={Priority.Medium} />
                         <PriorityIcon priority={Priority.Low} />
@@ -163,7 +166,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, mo
                             'text-green-600'
                         }`}>
                             <PriorityIcon priority={formData.priority} />
-                            {formData.priority}
+                            {formData.priority === Priority.High ? t('highPriority') : formData.priority === Priority.Medium ? t('mediumPriority') : t('lowPriority')}
                         </div>
                         <span>▼</span>
                     </div>
@@ -176,7 +179,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, mo
                                     'text-green-600'
                                 }`}>
                                     <PriorityIcon priority={p} />
-                                    {p}
+                                    {p === Priority.High ? t('highPriority') : p === Priority.Medium ? t('mediumPriority') : t('lowPriority')}
                                 </div>
                             ))}
                         </div>
@@ -184,7 +187,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, mo
                 </div>
                 <div className="relative">
                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                        Nivel de Dificultad
+                        {t('difficulty')}
                         <DifficultyIcon difficulty={Difficulty.Level1} />
                         <DifficultyIcon difficulty={Difficulty.Level2} />
                         <DifficultyIcon difficulty={Difficulty.Level3} />
@@ -196,16 +199,16 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, mo
                             'text-green-600'
                         }`}>
                             <DifficultyIcon difficulty={formData.difficulty} />
-                            {formData.difficulty === Difficulty.Level1 ? 'Baja' : formData.difficulty === Difficulty.Level2 ? 'Media' : 'Alta'}
+                            {formData.difficulty === Difficulty.Level1 ? t('low') : formData.difficulty === Difficulty.Level2 ? t('medium') : t('high')}
                         </div>
                         <span>▼</span>
                     </div>
                     {isDifficultyOpen && (
                         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
                             {[
-                                { value: Difficulty.Level1, label: 'Baja', colorClass: 'text-green-600' },
-                                { value: Difficulty.Level2, label: 'Media', colorClass: 'text-orange-500' },
-                                { value: Difficulty.Level3, label: 'Alta', colorClass: 'text-red-600' },
+                                { value: Difficulty.Level1, label: t('low'), colorClass: 'text-green-600' },
+                                { value: Difficulty.Level2, label: t('medium'), colorClass: 'text-orange-500' },
+                                { value: Difficulty.Level3, label: t('high'), colorClass: 'text-red-600' },
                             ].map(d => (
                                 <div key={d.value} onClick={() => handleSelect('difficulty', d.value)} className={`p-2 hover:bg-gray-100 flex items-center gap-2 cursor-pointer ${d.colorClass}`}>
                                     <DifficultyIcon difficulty={d.value} />
@@ -218,16 +221,16 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, mo
                 {(userRole === Role.Admin || userRole === Role.Tutor) && (
                     <>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Módulo asociado</label>
+                            <label className="block text-sm font-medium text-gray-700">{t('module')}</label>
                             <select name="moduleId" value={selectedModuleId} onChange={handleChange} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md">
-                                <option value="">Seleccionar Módulo</option>
+                                <option value="">{t('select')} {t('module')}</option>
                                 {modules.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">RA asociado</label>
+                            <label className="block text-sm font-medium text-gray-700">{t('ra')}</label>
                             <select name="raId" value={formData.raId} onChange={handleChange} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md" disabled={!selectedModuleId}>
-                                <option value="">Seleccionar RA</option>
+                                <option value="">{t('select')} {t('ra')}</option>
                                 {ras.filter(ra => ra.moduleId === selectedModuleId).map(ra => (
                                     <option key={ra.id} value={ra.id}>{ra.code}: {ra.description}</option>
                                 ))}
@@ -236,11 +239,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, mo
                     </>
                 )}
                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Fecha de inicio</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('startDate')}</label>
                     <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} min={courseDates.startDate} max={courseDates.endDate} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md text-red-600 font-medium" required />
                 </div>
                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Fecha de finalización</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('endDate')}</label>
                     <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} min={formData.startDate || courseDates.startDate} max={courseDates.endDate} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md text-green-600 font-medium" required />
                 </div>
             </div>
@@ -248,13 +251,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, mo
                 <div>
                     {!isNewTask && (userRole === Role.Admin || userRole === Role.Tutor || userRole === Role.Student) && (
                         <button type="button" onClick={() => onDelete?.(task as Task)} className="flex items-center gap-2 px-4 py-2 text-sm text-red-700 bg-red-100 rounded-md hover:bg-red-200">
-                           <TrashIcon className="w-4 h-4 text-red-500" /> Eliminar
+                           <TrashIcon className="w-4 h-4 text-red-500" /> {t('delete')}
                         </button>
                     )}
                 </div>
                 <div className="flex space-x-2">
-                    <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancelar</button>
-                    <button type="submit" className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700">Guardar Tarea</button>
+                    <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">{t('cancel')}</button>
+                    <button type="submit" className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700">{t('saveTask')}</button>
                 </div>
             </div>
         </form>

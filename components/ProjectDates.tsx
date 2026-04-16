@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useLanguage } from '../lib/LanguageContext';
 
 interface ProjectDatesProps {
     courseDates: { startDate: string; endDate: string; };
@@ -7,6 +8,7 @@ interface ProjectDatesProps {
 }
 
 const ProjectDates: React.FC<ProjectDatesProps> = ({ courseDates, onUpdate }) => {
+    const { t } = useLanguage();
     const [startDate, setStartDate] = useState(courseDates.startDate);
     const [endDate, setEndDate] = useState(courseDates.endDate);
     const [feedback, setFeedback] = useState('');
@@ -14,24 +16,24 @@ const ProjectDates: React.FC<ProjectDatesProps> = ({ courseDates, onUpdate }) =>
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (new Date(startDate) >= new Date(endDate)) {
-            setFeedback('La fecha de inicio debe ser anterior a la fecha de fin.');
+            setFeedback(t('startDateError'));
             return;
         }
         onUpdate({ startDate, endDate });
-        setFeedback('Fechas del curso actualizadas correctamente.');
+        setFeedback(t('datesUpdatedSuccess'));
         setTimeout(() => setFeedback(''), 3000);
     };
 
     return (
         <div className="p-6 bg-white rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold text-gray-800 text-center mb-12">Configurar fechas del curso escolar</h2>
+            <h2 className="text-2xl font-bold text-gray-800 text-center mb-12">{t('projectDatesTitle')}</h2>
             <p className="text-gray-600 text-center mb-8">
-                Establece las fechas de inicio y fin del curso. Todos los proyectos y tareas deberán estar dentro de este rango.
+                {t('projectDatesSubtitle')}
             </p>
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="flex flex-col md:flex-row justify-center gap-8">
                     <div className="w-full max-w-48">
-                        <label htmlFor="startDate" className="block text-sm font-bold text-green-600 text-center">Fecha de inicio de curso</label>
+                        <label htmlFor="startDate" className="block text-sm font-bold text-green-600 text-center">{t('startDateLimit')}</label>
                         <input
                             type="date"
                             id="startDate"
@@ -42,7 +44,7 @@ const ProjectDates: React.FC<ProjectDatesProps> = ({ courseDates, onUpdate }) =>
                         />
                     </div>
                     <div className="w-full max-w-48">
-                        <label htmlFor="endDate" className="block text-sm font-bold text-red-600 text-center">Fecha de fin de curso</label>
+                        <label htmlFor="endDate" className="block text-sm font-bold text-red-600 text-center">{t('endDateLimit')}</label>
                         <input
                             type="date"
                             id="endDate"
@@ -54,12 +56,12 @@ const ProjectDates: React.FC<ProjectDatesProps> = ({ courseDates, onUpdate }) =>
                     </div>
                 </div>
                 <div className="flex flex-col items-center pt-4">
-                    {feedback && <p className={`text-sm font-semibold mb-4 ${feedback.includes('anterior') ? 'text-red-600' : 'text-green-600'}`}>{feedback}</p>}
+                    {feedback && <p className={`text-sm font-semibold mb-4 ${feedback.includes('anterior') || feedback === t('startDateError') ? 'text-red-600' : 'text-green-600'}`}>{feedback}</p>}
                     <button
                         type="submit"
                         className="px-10 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
                     >
-                        Guardar Fechas
+                        {t('save')}
                     </button>
                 </div>
             </form>

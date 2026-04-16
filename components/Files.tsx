@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { User, Role, StoredFile, Group, Project, Course, Task } from '../types';
 import { ChevronDownIcon, TrashIcon } from './Icons';
+import { useLanguage } from '../lib/LanguageContext';
 import ProjectCard from './ProjectCard';
 import Modal from './Modal';
 
@@ -18,6 +19,7 @@ interface FilesProps {
 }
 
 const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, courses, tasks, onUploadFile, onDeleteFile }) => {
+    const { t } = useLanguage();
     const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
     const [fileToDelete, setFileToDelete] = useState<StoredFile | null>(null);
 
@@ -39,7 +41,7 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
 
         visibleGroups.forEach(group => {
             const course = courses.find(c => c.id === group.courseId);
-            const courseName = course ? course.name : 'Curso no asignado';
+            const courseName = course ? course.name : t('projectsWithoutCourse');
             
             if (!result[courseName]) result[courseName] = [];
             result[courseName].push(group);
@@ -58,7 +60,7 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
 
     return (
         <div>
-            <p className="text-gray-600 mb-8">Seleccione el grupo para acceder a sus archivos de proyecto</p>
+            <p className="text-gray-600 mb-8">{t('selectGroupFiles')}</p>
             
             {user.role === Role.Student ? (
                 <div className="space-y-4">
@@ -89,8 +91,8 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                         className="flex items-center w-full p-4 text-left text-gray-700 transition-colors bg-white border border-gray-200 rounded-lg shadow-sm gap-4 hover:bg-green-50 hover:border-green-300"
                                     >
                                         <div className="flex-grow min-w-0">
-                                            <p className="font-semibold text-green-800 truncate">Grupo: {group.name}</p>
-                                            <p className="mt-1 text-xs text-blue-600">Tutor: {tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Sin tutor'}</p>
+                                            <p className="font-semibold text-green-800 truncate">{t('group')}: {group.name}</p>
+                                            <p className="mt-1 text-xs text-blue-600">{t('tutor')}: {tutor ? `${tutor.firstName} ${tutor.lastName}` : t('noTutor')}</p>
                                         </div>
                                     </button>
                                 )}
@@ -107,7 +109,7 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                                 htmlFor={`file-upload-${group.id}`}
                                                 className="px-3 py-1 text-sm font-semibold text-white bg-green-600 rounded-md cursor-pointer hover:bg-green-700 transition-colors"
                                             >
-                                                Subir Archivo
+                                                {t('uploadFile')}
                                             </label>
                                         </div>
                                         {groupFiles.length > 0 ? (
@@ -115,9 +117,9 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                                 <table className="w-full text-left table-auto">
                                                     <thead className="bg-gray-100">
                                                         <tr>
-                                                            <th className="px-4 py-2 text-sm font-semibold text-gray-600">Nombre</th>
-                                                            <th className="px-4 py-2 text-sm font-semibold text-gray-600">Fecha</th>
-                                                            <th className="px-4 py-2 text-sm font-semibold text-gray-600">Acciones</th>
+                                                            <th className="px-4 py-2 text-sm font-semibold text-gray-600">{t('name')}</th>
+                                                            <th className="px-4 py-2 text-sm font-semibold text-gray-600">{t('date')}</th>
+                                                            <th className="px-4 py-2 text-sm font-semibold text-gray-600">{t('actions')}</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -126,8 +128,8 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                                                 <td className="px-4 py-2 text-sm text-gray-900">{file.name}</td>
                                                                 <td className="px-4 py-2 text-sm text-gray-600">{new Date(file.uploadedAt).toLocaleDateString()}</td>
                                                                 <td className="px-4 py-2 text-sm space-x-4">
-                                                                    <a href={file.url} className="text-green-600 hover:underline">Descargar</a>
-                                                                    <button onClick={() => setFileToDelete(file)} className="text-red-500 hover:underline">Eliminar</button>
+                                                                    <a href={file.url} className="text-green-600 hover:underline">{t('download')}</a>
+                                                                    <button onClick={() => setFileToDelete(file)} className="text-red-500 hover:underline">{t('delete')}</button>
                                                                 </td>
                                                             </tr>
                                                         ))}
@@ -136,14 +138,14 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                             </div>
                                         ) : (
                                             <div className="p-4 text-center text-gray-500 border border-dashed rounded-md">
-                                                No hay archivos en este grupo.
+                                                {t('noFilesInGroup')}
                                             </div>
                                         )}
                                     </div>
                                 )}
                             </div>
                         );
-                    }) : <p className="text-center text-gray-500">No estás asignado a ningún grupo.</p>}
+                    }) : <p className="text-center text-gray-500">{t('notAssignedToGroup')}</p>}
                 </div>
             ) : (
                 <div className="space-y-2">
@@ -152,7 +154,7 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                             <button onClick={() => toggleExpand(`course_${courseName}`)} className="flex items-center justify-between w-full p-4 text-left bg-gray-50 hover:bg-gray-100 focus:outline-none">
                                 <div className="flex items-center">
                                     <h3 className="font-semibold text-gray-800">{courseName}</h3>
-                                    <span className="ml-3 px-2 py-0.5 text-xs font-semibold text-green-800 bg-green-100 rounded-full">{groupsByCourse[courseName].length} grupos</span>
+                                    <span className="ml-3 px-2 py-0.5 text-xs font-semibold text-green-800 bg-green-100 rounded-full">{groupsByCourse[courseName].length} {t('groupsCount')}</span>
                                 </div>
                                 <ChevronDownIcon className={`w-5 h-5 text-gray-500 transition-transform ${expandedKeys[`course_${courseName}`] ? 'rotate-180' : ''}`} />
                             </button>
@@ -185,8 +187,8 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                                     className="flex items-center w-full p-4 text-left text-gray-700 transition-colors bg-white border border-gray-200 rounded-lg shadow-sm gap-4 hover:bg-green-50 hover:border-green-300"
                                                 >
                                                     <div className="flex-grow min-w-0">
-                                                        <p className="font-semibold text-green-800 truncate">Grupo: {group.name}</p>
-                                                        <p className="mt-1 text-xs text-blue-600">Tutor: {tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Sin tutor'}</p>
+                                                        <p className="font-semibold text-green-800 truncate">{t('group')}: {group.name}</p>
+                                                        <p className="mt-1 text-xs text-blue-600">{t('tutor')}: {tutor ? `${tutor.firstName} ${tutor.lastName}` : t('noTutor')}</p>
                                                     </div>
                                                 </button>
                                             )}
@@ -203,7 +205,7 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                                             htmlFor={`file-upload-${group.id}`}
                                                             className="px-3 py-1 text-sm font-semibold text-white bg-green-600 rounded-md cursor-pointer hover:bg-green-700"
                                                         >
-                                                            Subir Archivo
+                                                            {t('uploadFile')}
                                                         </label>
                                                     </div>
                                                     {groupFiles.length > 0 ? (
@@ -211,9 +213,9 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                                             <table className="w-full text-left table-auto">
                                                                 <thead className="bg-gray-100">
                                                                     <tr>
-                                                                        <th className="px-4 py-2 text-sm font-semibold text-gray-600">Nombre</th>
-                                                                        <th className="px-4 py-2 text-sm font-semibold text-gray-600">Fecha</th>
-                                                                        <th className="px-4 py-2 text-sm font-semibold text-gray-600">Acciones</th>
+                                                                        <th className="px-4 py-2 text-sm font-semibold text-gray-600">{t('name')}</th>
+                                                                        <th className="px-4 py-2 text-sm font-semibold text-gray-600">{t('date')}</th>
+                                                                        <th className="px-4 py-2 text-sm font-semibold text-gray-600">{t('actions')}</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -222,8 +224,8 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                                                             <td className="px-4 py-2 text-sm text-gray-900">{file.name}</td>
                                                                             <td className="px-4 py-2 text-sm text-gray-600">{new Date(file.uploadedAt).toLocaleDateString()}</td>
                                                                             <td className="px-4 py-2 text-sm space-x-4">
-                                                                                <a href={file.url} className="text-green-600 hover:underline">Descargar</a>
-                                                                                <button onClick={() => setFileToDelete(file)} className="text-red-500 hover:underline">Eliminar</button>
+                                                                                <a href={file.url} className="text-green-600 hover:underline">{t('download')}</a>
+                                                                                <button onClick={() => setFileToDelete(file)} className="text-red-500 hover:underline">{t('delete')}</button>
                                                                             </td>
                                                                         </tr>
                                                                     ))}
@@ -232,7 +234,7 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                                         </div>
                                                     ) : (
                                                         <div className="p-4 text-center text-gray-500 border border-dashed rounded-md">
-                                                            No hay archivos en este grupo.
+                                                            {t('noFilesInGroup')}
                                                         </div>
                                                     )}
                                                 </div>
@@ -247,16 +249,16 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
             )}
             
             {fileToDelete && (
-                <Modal title="Confirmar Eliminación" onClose={() => setFileToDelete(null)}>
+                <Modal title={t('confirmDelete')} onClose={() => setFileToDelete(null)}>
                     <div className="text-center">
-                        <p className="text-lg text-gray-700">¿Estás seguro de que quieres eliminar el archivo?</p>
+                        <p className="text-lg text-gray-700">{t('confirmDeleteFile')}</p>
                         <p className="my-2 text-xl font-bold text-red-600">"{fileToDelete.name}"</p>
                         <div className="flex justify-center mt-6 space-x-4">
                             <button onClick={() => setFileToDelete(null)} className="px-6 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
-                                Cancelar
+                                {t('cancel')}
                             </button>
                             <button onClick={handleConfirmDelete} className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">
-                                Sí, Eliminar
+                                {t('yesDelete')}
                             </button>
                         </div>
                     </div>

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { User, Role, Group, Project, Message, Course } from '../types';
 import { ChevronDownIcon, XIcon } from './Icons';
+import { useLanguage } from '../lib/LanguageContext';
 import MessagingHistoryModal from './MessagingHistoryModal';
 import PendingMessagesModal from './PendingMessagesModal';
 import Modal from './Modal';
@@ -20,7 +21,7 @@ interface MessagingProps {
 type ActiveTab = 'tutors' | 'groups' | 'students';
 
 const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects, messages, courses, onSendMessage, onDeleteMessage, onMarkMessagesAsRead }) => {
-    
+    const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState<ActiveTab | null>(null);
     
     const [selectedTutorIds, setSelectedTutorIds] = useState<string[]>([]);
@@ -67,11 +68,11 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
         }
 
         if (recipientIds.length === 0) {
-            alert('Por favor, selecciona al menos un destinatario.');
+            alert(t('selectAtLeastOneRecipient'));
             return;
         }
         if (!subject.trim() || !body.trim()) {
-            alert('El asunto y el cuerpo del mensaje no pueden estar vacíos.');
+            alert(t('subjectAndBodyNotEmpty'));
             return;
         }
 
@@ -91,7 +92,7 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
     const executeSend = () => {
         if (messageDataToSend) {
             onSendMessage(messageDataToSend);
-            alert(`Mensaje enviado a ${messageDataToSend.recipientIds.length} destinatario(s).`);
+            alert(t('messageSentTo', { count: messageDataToSend.recipientIds.length.toString() }));
             resetMessagingCenter();
         }
     };
@@ -142,7 +143,7 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
 
         availableStudents.forEach(student => {
             const course = courses.find(c => c.id === student.courseId);
-            const courseName = course ? course.name : 'Curso no asignado';
+            const courseName = course ? course.name : t('projectsWithoutCourse');
             
             if (!result[courseName]) {
                 result[courseName] = { groups: [], students: [] };
@@ -152,7 +153,7 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
 
         availableGroups.forEach(group => {
             const course = courses.find(c => c.id === group.courseId);
-            const courseName = course ? course.name : 'Curso no asignado';
+            const courseName = course ? course.name : t('projectsWithoutCourse');
             
             if (!result[courseName]) {
                 result[courseName] = { groups: [], students: [] };
@@ -182,8 +183,8 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
                          {/* Available Tutors */}
                         <div>
                             <div className="flex justify-between items-center mb-2">
-                                <h4 className="font-semibold">Destinatarios Disponibles</h4>
-                                <button onClick={() => setSelectedTutorIds(filteredTutors.map(t => t.id))} className="text-sm text-blue-600 hover:underline">Todos</button>
+                                <h4 className="font-semibold">{t('availableRecipients')}</h4>
+                                <button onClick={() => setSelectedTutorIds(filteredTutors.map(t => t.id))} className="text-sm text-blue-600 hover:underline">{t('all')}</button>
                             </div>
                             <ul className="h-64 overflow-y-auto border rounded-md p-2 space-y-1">
                                 {filteredTutors.map(tutor => (
@@ -192,7 +193,7 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
                                             <input type="checkbox" className="mr-2" checked={selectedTutorIds.includes(tutor.id)} onChange={() => {
                                                 setSelectedTutorIds(prev => prev.includes(tutor.id) ? prev.filter(id => id !== tutor.id) : [...prev, tutor.id]);
                                             }} />
-                                            {tutor.lastName}, {tutor.firstName} {tutor.role === Role.Admin && '(Admin)'}
+                                            {tutor.lastName}, {tutor.firstName} {tutor.role === Role.Admin && `(${t('admin')})`}
                                         </label>
                                     </li>
                                 ))}
@@ -201,8 +202,8 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
                         {/* Selected Tutors */}
                         <div>
                             <div className="flex justify-between items-center mb-2">
-                                <h4 className="font-semibold">Seleccionados ({selectedTutorIds.length})</h4>
-                                <button onClick={() => setSelectedTutorIds([])} className="text-sm text-red-600 hover:underline">Limpiar</button>
+                                <h4 className="font-semibold">{t('selected')} ({selectedTutorIds.length})</h4>
+                                <button onClick={() => setSelectedTutorIds([])} className="text-sm text-red-600 hover:underline">{t('clear')}</button>
                             </div>
                             <ul className="h-64 overflow-y-auto border rounded-md p-2 space-y-1">
                                 {selectedTutorIds.map(id => {
@@ -241,13 +242,13 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
                      <div className="grid grid-cols-2 gap-4">
                         <div>
                             <div className="flex justify-between items-center mb-2">
-                                <h4 className="font-semibold">{isGroupMode ? 'Grupos Disponibles' : 'Alumnos Disponibles'}</h4>
+                                <h4 className="font-semibold">{isGroupMode ? t('availableGroups') : t('availableStudents')}</h4>
                                 <button onClick={() => {
                                     // FIX: Replaced flatMap with map(...).flat() to work around a TypeScript
                                     // type inference issue with unions of array types.
                                     const allIds = Object.values(dataByCourse).map(data => isGroupMode ? data.groups : data.students).flat().map(item => item.id);
                                     setSelectedIds(allIds);
-                                }} className="text-sm text-blue-600 hover:underline">Todos</button>
+                                }} className="text-sm text-blue-600 hover:underline">{t('all')}</button>
                             </div>
                              <div className="h-64 overflow-y-auto border rounded-md p-2 space-y-1">
                                 {Object.keys(dataByCourse).sort().map(course => {
@@ -281,7 +282,7 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
                                                                     setSelectedIds(prev => prev.includes(item.id) ? prev.filter(id => id !== item.id) : [...prev, item.id]);
                                                                 }} />
                                                                 {isGroupMode ? (item as Group).name : `${(item as User).lastName}, ${(item as User).firstName}`}
-                                                                {isGroupMode && <span className="ml-2 text-xs text-gray-500">({projects.find(p=>p.groupId === (item as Group).id)?.name || 'Sin proyecto'})</span>}
+                                                                {isGroupMode && <span className="ml-2 text-xs text-gray-500">({projects.find(p=>p.groupId === (item as Group).id)?.name || t('noProject')})</span>}
                                                             </label>
                                                         </li>
                                                     ))}
@@ -317,7 +318,7 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
     return (
         <div className="p-6 bg-white rounded-lg shadow-md space-y-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
-                <h2 className="text-2xl font-bold text-gray-800">Centro de Mensajería</h2>
+                <h2 className="text-2xl font-bold text-gray-800">{t('messagingCenter')}</h2>
                 <div className="flex items-center gap-2">
                     <button 
                         onClick={() => unreadMessages.length > 0 && setIsPendingModalOpen(true)}
@@ -328,7 +329,7 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
                         }`}
                         disabled={unreadMessages.length === 0}
                     >
-                        {unreadMessages.length > 0 ? 'Mensajes Pendientes' : 'Sin Mensajes Pendientes'}
+                        {unreadMessages.length > 0 ? t('pendingMessages') : t('noPendingMessages')}
                         {unreadMessages.length > 0 && (
                             <span className="absolute -top-2 -right-2 flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-600 border-2 border-white rounded-full">
                                 {unreadMessages.length}
@@ -339,7 +340,7 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
                         onClick={() => setIsHistoryModalOpen(true)}
                         className="px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-md whitespace-nowrap hover:bg-gray-300"
                     >
-                        Historial de mensajería
+                        {t('messagingHistory')}
                     </button>
                 </div>
             </div>
@@ -357,9 +358,9 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                             }`}
                         >
-                            {tab === 'tutors' && 'Enviar a Tutores/Admin'}
-                            {tab === 'groups' && 'Enviar a Grupos'}
-                            {tab === 'students' && 'Enviar a Alumnos'}
+                            {tab === 'tutors' && t('sendToTutors')}
+                            {tab === 'groups' && t('sendToGroups')}
+                            {tab === 'students' && t('sendToStudents')}
                         </button>
                     ))}
                 </nav>
@@ -369,10 +370,10 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
                 <>
                     {/* Recipient Selector */}
                     <div className="space-y-2">
-                        <h3 className="text-lg font-semibold text-gray-700">Paso 1: Selecciona los destinatarios</h3>
+                        <h3 className="text-lg font-semibold text-gray-700">{t('step1Message')}</h3>
                         <input 
                             type="text" 
-                            placeholder="Buscar por nombre..."
+                            placeholder={t('searchByName')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full p-2 mb-2 border rounded-md"
@@ -382,19 +383,19 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
                     
                     {/* Message Composer */}
                     <div className="space-y-2">
-                        <h3 className="text-lg font-semibold text-gray-700">Paso 2: Redacta el mensaje</h3>
+                        <h3 className="text-lg font-semibold text-gray-700">{t('step2Message')}</h3>
                         {user.role !== Role.Admin && (
                             <div className="p-4 mb-4 text-sm text-yellow-800 bg-yellow-100 border-l-4 border-yellow-500" role="alert">
-                                <p className="font-bold">Atención</p>
-                                <p>Una vez enviado, el mensaje no se podrá editar ni eliminar. Quedará un registro permanente de la conversación.</p>
+                                <p className="font-bold">{t('warning')}</p>
+                                <p>{t('messagePermanentWarning')}</p>
                             </div>
                         )}
                         <div>
-                            <label htmlFor="subject" className="block text-sm font-medium text-gray-700">Asunto</label>
+                            <label htmlFor="subject" className="block text-sm font-medium text-gray-700">{t('subject')}</label>
                             <input type="text" id="subject" value={subject} onChange={e => setSubject(e.target.value)} className="w-full p-2 mt-1 border rounded-md" required/>
                         </div>
                         <div>
-                            <label htmlFor="body" className="block text-sm font-medium text-gray-700">Cuerpo del Mensaje</label>
+                            <label htmlFor="body" className="block text-sm font-medium text-gray-700">{t('messageBody')}</label>
                             <textarea id="body" value={body} onChange={e => setBody(e.target.value)} rows={6} className="w-full p-2 mt-1 border rounded-md" required/>
                         </div>
                     </div>
@@ -402,31 +403,31 @@ const Messaging: React.FC<MessagingProps> = ({ user, allUsers, groups, projects,
                     {/* Send Button */}
                     <div className="flex justify-end pt-4 border-t">
                         <button onClick={handlePrepareSend} className="px-6 py-2 font-bold text-white bg-green-600 rounded-md hover:bg-green-700">
-                            Enviar Mensaje
+                            {t('send')}
                         </button>
                     </div>
                 </>
             ) : (
                 <div className="py-16 text-center text-gray-500 bg-gray-50 rounded-lg">
-                    <p>Selecciona una categoría de destinatario para comenzar a redactar un mensaje.</p>
+                    <p>{t('selectCategoryToStart')}</p>
                 </div>
             )}
 
             {isConfirmModalOpen && (
-                <Modal title="Confirmar Envío de Mensaje" onClose={() => setIsConfirmModalOpen(false)}>
+                <Modal title={t('confirmSendMessage')} onClose={() => setIsConfirmModalOpen(false)}>
                     <div className="text-center">
                         <p className="mb-6 text-base text-gray-700">
-                           Atención: los mensajes enviados no se podrán eliminar del historial de mensajería.
+                           {t('confirmMessageWarning')}
                         </p>
                         <div className="flex flex-wrap justify-center gap-4">
                             <button onClick={resetMessagingCenter} className="px-6 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
-                                Cancelar mensaje
+                                {t('cancelMessage')}
                             </button>
                             <button onClick={() => setIsConfirmModalOpen(false)} className="px-6 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700">
-                                Volver a editar
+                                {t('backToEdit')}
                             </button>
                             <button onClick={executeSend} className="px-6 py-2 text-white bg-green-600 rounded-md hover:bg-green-700">
-                                Enviar
+                                {t('send')}
                             </button>
                         </div>
                     </div>

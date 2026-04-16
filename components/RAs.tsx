@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { RA, Module, Course } from '../types';
 import Modal from './Modal';
 import { EditIcon, TrashIcon, PlusCircleIcon, ChevronDownIcon } from './Icons';
+import { useLanguage } from '../lib/LanguageContext';
 
 const ModuleForm: React.FC<{
     moduleName?: string;
@@ -11,6 +12,7 @@ const ModuleForm: React.FC<{
     onSave: (data: { name: string; courseIds: string[] }) => void;
     onCancel: () => void;
 }> = ({ moduleName, courseIds, allCourses, onSave, onCancel }) => {
+    const { t } = useLanguage();
     const [name, setName] = useState(moduleName || '');
     const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>(courseIds || (allCourses.length > 0 ? [allCourses[0].id] : []));
 
@@ -30,7 +32,7 @@ const ModuleForm: React.FC<{
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-                <label htmlFor="moduleName" className="block text-sm font-medium text-gray-700">Nombre del Módulo</label>
+                <label htmlFor="moduleName" className="block text-sm font-medium text-gray-700">{t('moduleName')}</label>
                 <input
                     type="text"
                     id="moduleName"
@@ -42,7 +44,7 @@ const ModuleForm: React.FC<{
             </div>
             {!moduleName && (
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Cursos</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('course')}</label>
                     <div className="mt-1 space-y-2">
                         {allCourses.map(c => (
                             <label key={c.id} className="flex items-center">
@@ -59,13 +61,13 @@ const ModuleForm: React.FC<{
                 </div>
             )}
             <div className="flex justify-end pt-4 space-x-2">
-                <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancelar</button>
+                <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">{t('cancel')}</button>
                 <button 
                     type="submit" 
                     disabled={!name.trim() || selectedCourseIds.length === 0}
                     className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                    Guardar Módulo
+                    {t('save')}
                 </button>
             </div>
         </form>
@@ -81,6 +83,7 @@ const RAForm: React.FC<{
     allModules: Module[];
     allCourses: Course[];
 }> = ({ ra, allRAs, onSave, onCancel, currentModuleId, allModules, allCourses }) => {
+    const { t } = useLanguage();
     const currentModule = allModules.find(m => m.id === currentModuleId);
     const [moduleIds, setModuleIds] = useState<string[]>(ra?.moduleId ? [ra.moduleId] : [currentModuleId]);
     const [codeNumber, setCodeNumber] = useState(ra?.code?.replace(/\D/g, '') || '');
@@ -103,7 +106,7 @@ const RAForm: React.FC<{
             const isDuplicate = moduleIds.some(mId => 
                 allRAs.some(r => r.id !== ra?.id && r.moduleId === mId && r.code.trim().toLowerCase() === fullCode.trim().toLowerCase())
             );
-            setError(isDuplicate ? 'Ya existe un RA con este número en uno de los módulos seleccionados.' : '');
+            setError(isDuplicate ? t('duplicateRAError') : '');
         } else {
             setError('');
         }
@@ -126,7 +129,7 @@ const RAForm: React.FC<{
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-                <label className="block text-sm font-medium text-gray-700">Número del RA</label>
+                <label className="block text-sm font-medium text-gray-700">{t('raNumber')}</label>
                 <div className="flex items-center mt-1">
                     <span className="px-3 py-2 font-semibold text-gray-600 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">RA</span>
                     <input
@@ -138,10 +141,10 @@ const RAForm: React.FC<{
                         required
                     />
                 </div>
-                {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+                {error && <p className="mt-1 text-sm text-red-600">{t('duplicateRAError')}</p>}
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700">Descripción Completa</label>
+                <label className="block text-sm font-medium text-gray-700">{t('description')}</label>
                 <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
@@ -153,7 +156,7 @@ const RAForm: React.FC<{
             
             {otherMatchingModules.length > 0 && (
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">También asociar a estos módulos:</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('associateOtherModules')}:</label>
                     <div className="mt-1 space-y-2">
                         {otherMatchingModules.map(m => {
                             const course = allCourses.find(c => c.id === m.courseId);
@@ -173,13 +176,13 @@ const RAForm: React.FC<{
                 </div>
             )}
             <div className="flex justify-end pt-4 space-x-2">
-                <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancelar</button>
+                <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">{t('cancel')}</button>
                 <button 
                     type="submit" 
                     disabled={!!error || !codeNumber || moduleIds.length === 0}
                     className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                    Guardar RA
+                    {t('save')}
                 </button>
             </div>
         </form>
@@ -199,6 +202,7 @@ interface RAsProps {
 }
 
 const RAs: React.FC<RAsProps> = ({ ras, modules, courses, onCreateRA, onUpdateRA, onDeleteRA, onCreateModule, onUpdateModule, onDeleteModule }) => {
+    const { t } = useLanguage();
     const [expandedCourses, setExpandedCourses] = useState<Record<string, boolean>>({});
     const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
     const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
@@ -232,7 +236,7 @@ const RAs: React.FC<RAsProps> = ({ ras, modules, courses, onCreateRA, onUpdateRA
 
     return (
         <div className="space-y-4">
-            <h2 className="mb-6 text-2xl font-bold text-gray-800">Selecciona un curso</h2>
+            <h2 className="mb-6 text-2xl font-bold text-gray-800">{t('selectCourse')}</h2>
             
             {/* Courses List */}
             <div className="space-y-2">
@@ -245,7 +249,7 @@ const RAs: React.FC<RAsProps> = ({ ras, modules, courses, onCreateRA, onUpdateRA
                                 <div className="flex items-center">
                                     <h3 className="text-lg font-semibold text-gray-800">{c.name}</h3>
                                     <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">
-                                        {courseModules.length} {courseModules.length === 1 ? 'módulo' : 'módulos'}
+                                        {courseModules.length} {courseModules.length === 1 ? t('module').toLowerCase() : t('modules').toLowerCase()}
                                     </span>
                                 </div>
                                 <ChevronDownIcon className={`w-6 h-6 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -253,9 +257,9 @@ const RAs: React.FC<RAsProps> = ({ ras, modules, courses, onCreateRA, onUpdateRA
                             {isExpanded && (
                                 <div className="p-4 border-t border-gray-200 space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <h4 className="font-semibold text-gray-700">Módulos</h4>
+                                        <h4 className="font-semibold text-gray-700">{t('modules')}</h4>
                                         <button onClick={() => { setEditingModule(null); setIsModuleModalOpen(true); }} className="flex items-center justify-center w-36 h-8 px-3 py-1 text-sm text-white bg-green-600 rounded-md hover:bg-green-700">
-                                            <PlusCircleIcon className="w-4 h-4 mr-1" /> Nuevo Módulo
+                                            <PlusCircleIcon className="w-4 h-4 mr-1" /> {t('newModule')}
                                         </button>
                                     </div>
                                     <div className="space-y-2">
@@ -277,9 +281,9 @@ const RAs: React.FC<RAsProps> = ({ ras, modules, courses, onCreateRA, onUpdateRA
                                                 {selectedModuleId === m.id && (
                                                     <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
                                                         <div className="flex items-center justify-between">
-                                                            <h5 className="text-sm font-semibold text-gray-600">Resultados de Aprendizaje (RAs)</h5>
+                                                            <h5 className="text-sm font-semibold text-gray-600">{t('raResults')}</h5>
                                                             <button onClick={() => { setEditingRA(null); setIsRAModalOpen(true); }} className="flex items-center justify-center w-36 h-8 px-3 py-1 text-sm text-white bg-black rounded-md hover:bg-gray-800">
-                                                                <PlusCircleIcon className="w-4 h-4 mr-1" /> Nuevo RA
+                                                                <PlusCircleIcon className="w-4 h-4 mr-1" /> {t('newRA')}
                                                             </button>
                                                         </div>
                                                         {rasByModule[m.id]?.map(ra => (
@@ -307,7 +311,7 @@ const RAs: React.FC<RAsProps> = ({ ras, modules, courses, onCreateRA, onUpdateRA
 
             {/* Modals */}
             {isModuleModalOpen && (
-                <Modal onClose={() => setIsModuleModalOpen(false)} title={editingModule ? "Editar Módulo" : "Nuevo Módulo"}>
+                <Modal onClose={() => setIsModuleModalOpen(false)} title={editingModule ? t('editModule') : t('newModule')}>
                     <ModuleForm
                         moduleName={editingModule?.name}
                         courseIds={editingModule ? [editingModule.courseId] : undefined}
@@ -322,7 +326,7 @@ const RAs: React.FC<RAsProps> = ({ ras, modules, courses, onCreateRA, onUpdateRA
                 </Modal>
             )}
             {isRAModalOpen && (
-                <Modal onClose={() => setIsRAModalOpen(false)} title={editingRA ? "Editar RA" : "Nuevo RA"}>
+                <Modal onClose={() => setIsRAModalOpen(false)} title={editingRA ? t('editRA') : t('newRA')}>
                     <RAForm
                         ra={editingRA}
                         allRAs={ras}
@@ -340,17 +344,17 @@ const RAs: React.FC<RAsProps> = ({ ras, modules, courses, onCreateRA, onUpdateRA
             )}
             
             {moduleToDelete && (
-                <Modal title="Confirmar Eliminación" onClose={() => setModuleToDelete(null)}>
+                <Modal title={t('confirm')} onClose={() => setModuleToDelete(null)}>
                     <div className="text-center">
-                        <p className="text-lg text-gray-700">¿Estás seguro de que quieres eliminar el módulo?</p>
+                        <p className="text-lg text-gray-700">{t('deleteModuleConfirm')}</p>
                         <p className="my-2 text-xl font-bold text-red-600">"{moduleToDelete.name}"</p>
-                        <p className="text-sm text-gray-500 mb-6">Esta acción también eliminará todos los RAs asociados a este módulo.</p>
+                        <p className="text-sm text-gray-500 mb-6">{t('deleteModuleWarning')}</p>
                         <div className="flex justify-center mt-6 space-x-4">
                             <button onClick={() => setModuleToDelete(null)} className="px-6 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
-                                Cancelar
+                                {t('cancel')}
                             </button>
                             <button onClick={() => { onDeleteModule(moduleToDelete.id); setModuleToDelete(null); }} className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">
-                                Sí, Eliminar
+                                {t('delete')}
                             </button>
                         </div>
                     </div>
@@ -358,17 +362,17 @@ const RAs: React.FC<RAsProps> = ({ ras, modules, courses, onCreateRA, onUpdateRA
             )}
 
             {raToDelete && (
-                <Modal title="Confirmar Eliminación" onClose={() => setRaToDelete(null)}>
+                <Modal title={t('confirm')} onClose={() => setRaToDelete(null)}>
                     <div className="text-center">
-                        <p className="text-lg text-gray-700">¿Estás seguro de que quieres eliminar el RA?</p>
+                        <p className="text-lg text-gray-700">{t('deleteRAConfirm')}</p>
                         <p className="my-2 text-xl font-bold text-red-600">"{raToDelete.code}"</p>
                         <p className="text-sm text-gray-500 mb-6">{raToDelete.description}</p>
                         <div className="flex justify-center mt-6 space-x-4">
                             <button onClick={() => setRaToDelete(null)} className="px-6 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
-                                Cancelar
+                                {t('cancel')}
                             </button>
                             <button onClick={() => { onDeleteRA(raToDelete.id); setRaToDelete(null); }} className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">
-                                Sí, Eliminar
+                                {t('delete')}
                             </button>
                         </div>
                     </div>

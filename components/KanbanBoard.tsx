@@ -12,6 +12,8 @@ import { ProgressCircle } from './ProgressCircle';
 
 import ProjectCard from './ProjectCard';
 
+import { useLanguage } from '../lib/LanguageContext';
+
 interface KanbanBoardProps {
     user: User;
     groups: Group[];
@@ -55,6 +57,8 @@ const KanbanColumn: React.FC<{
     viewMode: ViewMode;
 }> = ({ title, headerColor, tasks, ras, modules, users, onCardClick, userRole, viewMode }) => {
     
+    const { t } = useLanguage();
+    
     const renderIcon = () => {
         if (viewMode === 'status') {
             return <StatusIcon status={title as KanbanStatus} className="w-4 h-4" />;
@@ -69,23 +73,23 @@ const KanbanColumn: React.FC<{
     const getDisplayTitle = () => {
         if (viewMode === 'status') {
             switch (title) {
-                case KanbanStatus.Backlog: return 'Tareas pendientes';
-                case KanbanStatus.Doing: return 'Tareas en progreso';
-                case KanbanStatus.Done: return 'Tareas realizadas';
+                case KanbanStatus.Backlog: return t('pendingTasks');
+                case KanbanStatus.Doing: return t('inProgressTasks');
+                case KanbanStatus.Done: return t('completedTasks');
                 default: return title;
             }
         } else if (viewMode === 'priority') {
             switch (title) {
-                case Priority.High: return 'Prioridad alta';
-                case Priority.Medium: return 'Prioridad media';
-                case Priority.Low: return 'Prioridad baja';
+                case Priority.High: return t('highPriority');
+                case Priority.Medium: return t('mediumPriority');
+                case Priority.Low: return t('lowPriority');
                 default: return title;
             }
         } else if (viewMode === 'difficulty') {
             switch (title) {
-                case Difficulty.Level3: return 'Dificultad alta';
-                case Difficulty.Level2: return 'Dificultad media';
-                case Difficulty.Level1: return 'Dificultad baja';
+                case Difficulty.Level3: return t('highDifficulty');
+                case Difficulty.Level2: return t('mediumDifficulty');
+                case Difficulty.Level1: return t('lowDifficulty');
                 default: return title;
             }
         }
@@ -112,6 +116,7 @@ const KanbanColumn: React.FC<{
 
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks, users, ras, modules, courses, courseDates, onCreateTask, onUpdateTask, onDeleteTask, initialProjectId, onProjectSelected }) => {
+    const { t } = useLanguage();
     const relevantProjectIds = useMemo(() => {
         if (user.role === Role.Admin) return projects.map(p => p.id);
         if (user.role === Role.Tutor) {
@@ -163,7 +168,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
         projects.filter(p => relevantProjectIds.includes(p.id)).forEach(project => {
             const group = groups.find(g => g.id === project.groupId);
             const course = group ? courses.find(c => c.id === group.courseId) : null;
-            const courseName = course ? course.name : 'Proyectos sin curso asignado';
+            const courseName = course ? course.name : t('projectsWithoutCourse');
             
             if (!result[courseName]) {
                 result[courseName] = [];
@@ -255,7 +260,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
     if (!selectedProjectId) {
         return (
             <div className="space-y-4">
-                <h2 className="mb-6 text-2xl font-bold text-gray-800">Selecciona un Proyecto</h2>
+                <h2 className="mb-6 text-2xl font-bold text-gray-800">{t('selectProject')}</h2>
                 
                 {user.role === Role.Student ? (
                     <div className="space-y-2">
@@ -276,7 +281,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
                                 );
                             })
                         ) : (
-                            <p className="text-gray-500">No estás asignado a ningún proyecto.</p>
+                            <p className="text-gray-500">{t('noAssignedProjects')}</p>
                         )}
                     </div>
                 ) : (
@@ -290,7 +295,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
                                         <div className="flex items-center">
                                             <h3 className="text-lg font-semibold text-gray-800">{courseName}</h3>
                                             <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">
-                                                {courseProjects.length} {courseProjects.length === 1 ? 'proyecto' : 'proyectos'}
+                                                {courseProjects.length} {courseProjects.length === 1 ? t('project').toLowerCase() : t('projects').toLowerCase()}
                                             </span>
                                         </div>
                                         <ChevronDownIcon className={`w-6 h-6 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -338,30 +343,30 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
                 <div className="flex items-start justify-between pb-4 border-b shrink-0">
                     <div>
                         <div className="mb-1 text-sm text-gray-600">
-                            <span className="font-semibold">Curso:</span> {course?.name} <span className="ml-4 font-semibold">Grupo:</span> {projectGroup?.name}
+                            <span className="font-semibold">{t('course')}:</span> {course?.name} <span className="ml-4 font-semibold">{t('group')}:</span> {projectGroup?.name}
                         </div>
                         <h2 className="text-xl font-bold text-gray-800">
-                            Proyecto: <span className="text-green-700">{selectedProject?.name}</span>
+                            {t('project')}: <span className="text-green-700">{selectedProject?.name}</span>
                         </h2>
                         {projectTutor && (
                             <div className="mt-1 text-sm text-blue-600">
-                                <span className="font-semibold">Tutor:</span> {projectTutor.lastName}, {projectTutor.firstName}
+                                <span className="font-semibold">{t('tutor')}:</span> {projectTutor.lastName}, {projectTutor.firstName}
                             </div>
                         )}
                     </div>
-                    <button onClick={handleBackToSelection} className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">← Volver a la selección</button>
+                    <button onClick={handleBackToSelection} className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">← {t('backToSelection')}</button>
                 </div>
                 
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
-                        <button onClick={() => setViewMode('status')} className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${viewMode === 'status' ? 'bg-black text-white shadow' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}>Por Estado</button>
-                        <button onClick={() => setViewMode('priority')} className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${viewMode === 'priority' ? 'bg-black text-white shadow' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}>Por Prioridad</button>
-                        <button onClick={() => setViewMode('difficulty')} className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${viewMode === 'difficulty' ? 'bg-black text-white shadow' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}>Por Dificultad</button>
+                        <button onClick={() => setViewMode('status')} className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${viewMode === 'status' ? 'bg-black text-white shadow' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}>{t('byStatus')}</button>
+                        <button onClick={() => setViewMode('priority')} className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${viewMode === 'priority' ? 'bg-black text-white shadow' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}>{t('byPriority')}</button>
+                        <button onClick={() => setViewMode('difficulty')} className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${viewMode === 'difficulty' ? 'bg-black text-white shadow' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}>{t('byDifficulty')}</button>
                     </div>
                     {(user.role === Role.Admin || user.role === Role.Tutor || user.role === Role.Student) && (
                         <button onClick={handleCreateClick} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700">
                             <PlusCircleIcon className="w-5 h-5"/>
-                            Añadir Tarea
+                            {t('addTask')}
                         </button>
                     )}
                 </div>
@@ -395,7 +400,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
             </div>
             
             {isModalOpen && (
-                <Modal title={editingTask ? "Editar Tarea" : "Crear Nueva Tarea"} onClose={() => setIsModalOpen(false)}>
+                <Modal title={editingTask ? t('editTask') : t('newTask')} onClose={() => setIsModalOpen(false)}>
                     <TaskForm
                         task={editingTask}
                         assignees={availableAssignees}
@@ -412,16 +417,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ user, groups, projects, tasks
             )}
 
             {taskToDelete && (
-                <Modal title="Confirmar Eliminación" onClose={() => setTaskToDelete(null)}>
+                <Modal title={t('confirmDelete')} onClose={() => setTaskToDelete(null)}>
                     <div className="text-center">
-                        <p className="text-lg text-gray-700">¿Estás seguro de que quieres eliminar la tarea?</p>
+                        <p className="text-lg text-gray-700">{t('deleteTaskConfirm')}</p>
                         <p className="my-2 text-xl font-bold text-red-600">"{taskToDelete.title}"</p>
                         <div className="flex justify-center mt-6 space-x-4">
                             <button onClick={() => setTaskToDelete(null)} className="px-6 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
-                                Cancelar
+                                {t('cancel')}
                             </button>
                             <button onClick={handleConfirmDelete} className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">
-                                Sí, Eliminar
+                                {t('yes')}, {t('delete')}
                             </button>
                         </div>
                     </div>

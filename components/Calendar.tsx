@@ -3,6 +3,7 @@ import { User, Tutorial, Role, Group, Project, Course, Task } from '../types';
 import Modal from './Modal';
 import { ChevronDownIcon, EditIcon, TrashIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
 import ProjectCard from './ProjectCard';
+import { useLanguage } from '../lib/LanguageContext';
 
 interface CalendarProps {
     user: User;
@@ -87,6 +88,7 @@ const CalendarView: React.FC<{
     courseDates: { startDate: string; endDate: string; };
     onScheduleNew: (data: Partial<Omit<Tutorial, 'id'>>) => void;
 }> = ({ user, visibleTutorials, groups, allUsers, projects, courses, onEdit, onDelete, courseDates, onScheduleNew }) => {
+    const { t, language } = useLanguage();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [dailyTutorialsPopover, setDailyTutorialsPopover] = useState<{ day: Date; events: CalendarEvent[] } | null>(null);
     const [tooltip, setTooltip] = useState<{ data: TooltipData; x: number; y: number } | null>(null);
@@ -109,8 +111,8 @@ const CalendarView: React.FC<{
             const group = groupMap.get(tut.groupId);
             const project = projectMap.get(tut.groupId);
             const enrichedBase = {
-                groupName: group?.name || 'Grupo desconocido',
-                projectName: project?.name || 'Sin proyecto asignado',
+                groupName: group?.name || t('unknownGroup'),
+                projectName: project?.name || t('noProjectAssigned'),
                 courseGroup: groupToCourseMap[tut.groupId] || 'default',
             };
 
@@ -194,21 +196,19 @@ const CalendarView: React.FC<{
                     style={{ top: tooltip.y - 15, left: tooltip.x + 15, transform: 'translateY(-100%)' }}
                 >
                     <p className="font-bold text-blue-300 mb-1">
-                        {tooltip.data.meetingType === 'group_meeting' ? 'Reunión de Grupo' : 'Tutoría'}
+                        {tooltip.data.meetingType === 'group_meeting' ? t('meetingTitle') : t('tutorialTitle')}
                     </p>
-                    <p className="text-sm mb-1"><span className="font-semibold text-gray-400">Tutor/a:</span> {tooltip.data.tutorName}</p>
-                    <p className="text-sm mb-1"><span className="font-semibold text-gray-400">Curso:</span> {tooltip.data.courseName === 'default' ? 'Sin curso' : tooltip.data.courseName}</p>
-                    <p className="text-sm mb-1"><span className="font-semibold text-gray-400">Grupo:</span> {tooltip.data.groupName}</p>
-                    <p className="text-sm mb-2"><span className="font-semibold text-gray-400">Proyecto:</span> {tooltip.data.projectName}</p>
+                    <p className="text-sm mb-1"><span className="font-semibold text-gray-400">{t('tutor')}:</span> {tooltip.data.tutorName}</p>
+                    <p className="text-sm mb-1"><span className="font-semibold text-gray-400">{t('course')}:</span> {tooltip.data.courseName === 'default' ? t('noCourse') : tooltip.data.courseName}</p>
+                    <p className="text-sm mb-1"><span className="font-semibold text-gray-400">{t('group')}:</span> {tooltip.data.groupName}</p>
+                    <p className="text-sm mb-2"><span className="font-semibold text-gray-400">{t('project')}:</span> {tooltip.data.projectName}</p>
 
                     {(tooltip.data.location || tooltip.data.time) && <hr className="my-2 border-gray-600" />}
                     
                     {tooltip.data.location && (
-                        <p className="text-xs"><span className="font-semibold">Lugar:</span> {tooltip.data.location}</p>
+                        <p className="text-xs"><span className="font-semibold">{t('location')}:</span> {tooltip.data.location}</p>
                     )}
-                    {tooltip.data.time && (
-                        <p className="text-xs"><span className="font-semibold">Hora:</span> {tooltip.data.time}</p>
-                    )}
+                    <p className="text-sm mb-1"><span className="font-semibold text-gray-400">{t('time')}:</span> {tooltip.data.time}</p>
 
                     {tooltip.data.summary && (
                         <>
@@ -226,7 +226,7 @@ const CalendarView: React.FC<{
                 >
                     <ChevronLeftIcon className="w-6 h-6"/>
                 </button>
-                <h3 className="text-xl font-semibold text-gray-800">{currentDate.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}</h3>
+                <h3 className="text-xl font-semibold text-gray-800 capitalize">{currentDate.toLocaleString(language === 'es' ? 'es-ES' : 'en-US', { month: 'long', year: 'numeric' })}</h3>
                 <button 
                     onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + 1)))} 
                     className="p-2 text-gray-600 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -244,29 +244,29 @@ const CalendarView: React.FC<{
                 <div className="flex items-center gap-4 ml-4 pl-4 border-l">
                     <div className="flex items-center gap-1">
                         <div className="w-3 h-3 border rounded-full bg-gray-200 border-gray-400"></div>
-                        <span className="text-xs text-gray-600">Tutoría Agendada</span>
+                        <span className="text-xs text-gray-600">{t('scheduledTutorial_label')}</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <div className="w-3 h-3 border rounded-full bg-gray-200 border-gray-400 flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                         </div>
-                        <span className="text-xs text-gray-600">Tutoría Realizada</span>
+                        <span className="text-xs text-gray-600">{t('heldTutorial_label')}</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <div className="w-3 h-3 border rounded-sm bg-gray-200 border-gray-400"></div>
-                        <span className="text-xs text-gray-600">Reunión Grupo Agendada</span>
+                        <span className="text-xs text-gray-600">{t('scheduledGroupMeeting')}</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <div className="w-3 h-3 border rounded-sm bg-gray-200 border-gray-400 flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                         </div>
-                        <span className="text-xs text-gray-600">Reunión Grupo Realizada</span>
+                        <span className="text-xs text-gray-600">{t('heldGroupMeeting')}</span>
                     </div>
                 </div>
             </div>
 
             <div className="grid grid-cols-7 text-center text-sm font-semibold text-gray-500">
-                {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => <div key={d} className="py-2">{d}</div>)}
+                {[t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat'), t('sun')].map(d => <div key={d} className="py-2">{d}</div>)}
             </div>
             <div className="grid grid-cols-7 border-t border-l">
                 {days.map(d => {
@@ -314,10 +314,10 @@ const CalendarView: React.FC<{
                                                     groupName: event.groupName,
                                                     projectName: event.projectName,
                                                     courseName: event.courseGroup,
-                                                    summary: isRegistered ? tut.summary : "Próxima reunión agendada.",
-                                                    tutorName: tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Tutor no asignado',
-                                                    location: tut.location || 'Lugar por definir',
-                                                    time: tut.time || 'Hora por definir',
+                                                    summary: isRegistered ? tut.summary : t('nextMeetingScheduled'),
+                                                    tutorName: tutor ? `${tutor.firstName} ${tutor.lastName}` : t('noTutorAssigned'),
+                                                    location: tut.location || t('locationToBeDefined'),
+                                                    time: tut.time || t('timeToBeDefined'),
                                                     meetingType: tut.type
                                                 };
                                                 setTooltip({ data, x: e.clientX, y: e.clientY });
@@ -342,7 +342,7 @@ const CalendarView: React.FC<{
 
             {dailyTutorialsPopover && (
                 <Modal 
-                    title={`Tutorías para el ${dailyTutorialsPopover.day.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}`}
+                    title={t('meetingsForDay', { date: dailyTutorialsPopover.day.toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' }) })}
                     onClose={() => setDailyTutorialsPopover(null)}
                 >
                     <div className="space-y-2">
@@ -364,24 +364,24 @@ const CalendarView: React.FC<{
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
                                             <p className="font-semibold text-green-800">
-                                                {isRegistered ? '' : 'Próxima Reunión: '}
+                                                {isRegistered ? '' : t('nextMeetingAgenda')}
                                                 {event.groupName}
                                             </p>
                                             <span className="px-2 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded">
-                                                Tutor/a: {(() => {
+                                                {t('tutor')}: {(() => {
                                                     const tutId = isRegistered ? (event as RegisteredEvent).tutorId : (event as ScheduledEvent).originalTutorial.tutorId;
                                                     const tutor = allUsers.find(u => u.id === tutId);
-                                                    return tutor ? `${tutor.firstName} ${tutor.lastName}` : 'No asignado';
+                                                    return tutor ? `${tutor.firstName} ${tutor.lastName}` : t('noTutorAssigned');
                                                 })()}
                                             </span>
                                             <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800">
-                                                {(isRegistered ? (event as RegisteredEvent).type : (event as ScheduledEvent).originalTutorial.type) === 'group_meeting' ? 'Grupo' : 'Tutoría'}
+                                                {(isRegistered ? (event as RegisteredEvent).type : (event as ScheduledEvent).originalTutorial.type) === 'group_meeting' ? t('groupLabel') : t('tutorialLabel')}
                                             </span>
                                         </div>
                                         <p className="mt-1 text-sm italic text-gray-600 truncate">{event.projectName}</p>
                                         <div className="flex gap-2 mt-1">
-                                            <span className="text-xs text-gray-500">🕒 {isRegistered ? event.time : event.originalTutorial.time || 'Por definir'}</span>
-                                            <span className="text-xs text-gray-500">📍 {isRegistered ? event.location : event.originalTutorial.location || 'Por definir'}</span>
+                                            <span className="text-xs text-gray-500">🕒 {isRegistered ? event.time : event.originalTutorial.time || t('timeToBeDefined')}</span>
+                                            <span className="text-xs text-gray-500">📍 {isRegistered ? event.location : event.originalTutorial.location || t('locationToBeDefined')}</span>
                                         </div>
                                         {isRegistered && <p className="mt-1 text-xs text-gray-500 truncate">{event.summary}</p>}
                                     </div>
@@ -411,6 +411,7 @@ const PendingTutorialsModal: React.FC<{
     onClose: () => void;
     onEdit: (tutorial: Tutorial) => void;
 }> = ({ user, tutors, tutorials, groups, allUsers, projects, courses, onClose, onEdit }) => {
+    const { t, language } = useLanguage();
     const [selectedTutorId, setSelectedTutorId] = useState(user.role === Role.Tutor ? user.id : '');
 
     const pendingTutorialsByTutor = useMemo(() => {
@@ -435,17 +436,17 @@ const PendingTutorialsModal: React.FC<{
                 return {
                     id: tut.id,
                     date: tut.date,
-                    reunionStatus: isOverdue ? 'Reunión no celebrada' : 'Reunión por celebrar',
-                    location: tut.location || 'No especificado',
-                    time: tut.time || 'No especificada',
+                    reunionStatus: isOverdue ? t('reunionNotHeld') : t('reunionToHold'),
+                    location: tut.location || t('notSpecified'),
+                    time: tut.time || t('notSpecified'),
                     courseGroup,
-                    groupName: group?.name || 'Grupo Desconocido',
-                    projectName: project?.name || 'Sin Proyecto',
+                    groupName: group?.name || t('unknownGroup'),
+                    projectName: project?.name || t('noProject'),
                     isOverdue,
                     originalTutorial: tut
                 };
             });
-    }, [selectedTutorId, tutorials, groups, projects, courses]);
+    }, [selectedTutorId, tutorials, groups, projects, courses, t]);
     
     const pendingTutorialsForStudent = useMemo(() => {
         if (user.role !== Role.Student) return [];
@@ -469,27 +470,27 @@ const PendingTutorialsModal: React.FC<{
                 return {
                     id: tut.id,
                     date: tut.date,
-                    reunionStatus: isOverdue ? 'Reunión no celebrada' : 'Reunión por celebrar',
-                    location: tut.location || 'No especificado',
-                    time: tut.time || 'No especificada',
+                    reunionStatus: isOverdue ? t('reunionNotHeld') : t('reunionToHold'),
+                    location: tut.location || t('notSpecified'),
+                    time: tut.time || t('notSpecified'),
                     courseGroup,
-                    groupName: group?.name || 'Grupo Desconocido',
-                    projectName: project?.name || 'Sin Proyecto',
+                    groupName: group?.name || t('unknownGroup'),
+                    projectName: project?.name || t('noProject'),
                     isOverdue,
                     originalTutorial: tut
                 };
             });
-    }, [user, tutorials, groups, projects, courses]);
+    }, [user, tutorials, groups, projects, courses, t]);
 
     const tutorialsToShow = user.role === Role.Student ? pendingTutorialsForStudent : pendingTutorialsByTutor;
 
     let noDataContent: React.ReactNode;
     if (user.role === Role.Admin && !selectedTutorId) {
-        noDataContent = <p className="py-6 text-center text-gray-500">Por favor, selecciona un tutor para ver sus reuniones pendientes.</p>;
+        noDataContent = <p className="py-6 text-center text-gray-500">{t('selectTutorToSeeMeetings')}</p>;
     } else if (tutorialsToShow.length === 0) {
         const message = user.role === Role.Admin
-            ? "Este tutor no tiene reuniones anteriores registradas, ni agendadas en el futuro."
-            : "No tienes reuniones pendientes agendadas.";
+            ? t('noMeetingsForTutor')
+            : t('noPendingMeetingsStudent');
         noDataContent = <p className="py-6 text-center text-gray-500">{message}</p>;
     }
 
@@ -497,14 +498,14 @@ const PendingTutorialsModal: React.FC<{
         <div className="space-y-4">
             {user.role === Role.Admin && (
                 <div>
-                    <label htmlFor="tutor-select" className="block text-sm font-medium text-gray-700">Seleccionar Tutor</label>
+                    <label htmlFor="tutor-select" className="block text-sm font-medium text-gray-700">{t('selectTutorLabel')}</label>
                     <select
                         id="tutor-select"
                         value={selectedTutorId}
                         onChange={(e) => setSelectedTutorId(e.target.value)}
                         className="w-full p-2 mt-1 border border-gray-300 rounded-md"
                     >
-                        <option value="">-- Elige un tutor --</option>
+                        <option value="">{t('chooseTutorPlaceholder')}</option>
                         {tutors.map(tutor => (
                             <option key={tutor.id} value={tutor.id}>{tutor.firstName} {tutor.lastName}</option>
                         ))}
@@ -513,12 +514,12 @@ const PendingTutorialsModal: React.FC<{
             )}
              {user.role === Role.Tutor && (
                  <div className="p-3 bg-gray-100 rounded-md">
-                    <p className="text-sm text-gray-800">Mostrando reuniones pendientes para: <span className="font-semibold">{user.firstName} {user.lastName}</span></p>
+                    <p className="text-sm text-gray-800">{t('showingPendingMeetingsForTutor')} <span className="font-semibold">{user.firstName} {user.lastName}</span></p>
                 </div>
             )}
             {user.role === Role.Student && (
                  <div className="p-3 bg-gray-100 rounded-md">
-                    <p className="text-sm text-gray-800">Mostrando próximas reuniones para tus grupos.</p>
+                    <p className="text-sm text-gray-800">{t('showingUpcomingMeetingsForGroups')}</p>
                 </div>
             )}
 
@@ -528,13 +529,13 @@ const PendingTutorialsModal: React.FC<{
                         <table className="w-full mt-2 text-left table-auto">
                             <thead className="bg-gray-100">
                                 <tr>
-                                    <th className="px-3 py-2 text-sm font-semibold text-gray-600">Fecha</th>
-                                    <th className="px-3 py-2 text-sm font-semibold text-gray-600">Reunión</th>
-                                    <th className="px-3 py-2 text-sm font-semibold text-gray-600">Lugar</th>
-                                    <th className="px-3 py-2 text-sm font-semibold text-gray-600">Hora</th>
-                                    <th className="px-3 py-2 text-sm font-semibold text-gray-600">Curso</th>
-                                    <th className="px-3 py-2 text-sm font-semibold text-gray-600">Grupo</th>
-                                    <th className="px-3 py-2 text-sm font-semibold text-gray-600">Proyecto</th>
+                                    <th className="px-3 py-2 text-sm font-semibold text-gray-600">{t('dateLabel')}</th>
+                                    <th className="px-3 py-2 text-sm font-semibold text-gray-600">{t('meetingLabel')}</th>
+                                    <th className="px-3 py-2 text-sm font-semibold text-gray-600">{t('locationLabel')}</th>
+                                    <th className="px-3 py-2 text-sm font-semibold text-gray-600">{t('timeLabel')}</th>
+                                    <th className="px-3 py-2 text-sm font-semibold text-gray-600">{t('courseLabel')}</th>
+                                    <th className="px-3 py-2 text-sm font-semibold text-gray-600">{t('groupLabelTable')}</th>
+                                    <th className="px-3 py-2 text-sm font-semibold text-gray-600">{t('projectLabelTable')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
@@ -544,7 +545,7 @@ const PendingTutorialsModal: React.FC<{
                                         className={`hover:bg-gray-50 cursor-pointer ${tut.isOverdue ? 'bg-red-50 text-red-800' : 'text-green-800'}`}
                                         onClick={() => onEdit(tut.originalTutorial)}
                                     >
-                                        <td className="px-3 py-2 text-sm">{new Date(tut.date + 'T00:00:00').toLocaleDateString('es-ES')}</td>
+                                        <td className="px-3 py-2 text-sm">{new Date(tut.date + 'T00:00:00').toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US')}</td>
                                         <td className={`px-3 py-2 text-sm ${tut.isOverdue ? 'font-semibold' : ''}`}>{tut.reunionStatus}</td>
                                         <td className="px-3 py-2 text-sm">{tut.location}</td>
                                         <td className="px-3 py-2 text-sm">{tut.time}</td>
@@ -565,6 +566,7 @@ const PendingTutorialsModal: React.FC<{
 };
 
 const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, projects, courses, onCreateTutorial, onUpdateTutorial, onDeleteTutorial, courseDates, tasks, initialGroupId, onGroupSelected }) => {
+    const { t, language } = useLanguage();
     const [view, setView] = useState('list');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingTutorial, setEditingTutorial] = useState<Tutorial | null>(null);
@@ -586,7 +588,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                 if (course) {
                     newExpandedKeys[`course_${course.name}`] = true;
                 } else {
-                    newExpandedKeys['course_Curso no asignado'] = true;
+                    newExpandedKeys[`course_${t('courseNotAssigned')}`] = true;
                 }
                 setExpandedKeys(prev => ({ ...prev, ...newExpandedKeys }));
                 
@@ -668,7 +670,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
 
         Object.keys(tutorialsByGroupId).forEach(groupId => {
             const group = groups.find(g => g.id === groupId);
-            const courseName = groupToCourseMap[groupId] || 'Curso no asignado';
+            const courseName = groupToCourseMap[groupId] || t('courseNotAssigned');
             if (group) {
                 if (!result[courseName]) result[courseName] = [];
                 result[courseName].push({
@@ -733,35 +735,35 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex gap-2">
                         <button onClick={() => setIsPendingModalOpen(true)} className="w-40 px-3 py-2 text-xs font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors whitespace-nowrap">
-                            Reuniones pendientes
+                            {t('pendingMeetings')}
                         </button>
                         <button onClick={() => setView(v => v === 'list' ? 'calendar' : 'list')} className="w-40 px-3 py-2 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap">
-                            {view === 'list' ? 'Ver calendario' : 'Ver lista'}
+                            {view === 'list' ? t('viewCalendar') : t('viewList')}
                         </button>
                     </div>
                     <button onClick={handleCreate} className="px-3 py-2 text-xs font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors whitespace-nowrap">
-                        {user.role === Role.Student ? 'Nueva reunión de grupo / Solicitar Tutoría' : 'Agendar Tutoría'}
+                        {user.role === Role.Student ? t('requestGroupMeeting') : t('scheduleTutorial')}
                     </button>
                 </div>
 
                 {user.role !== Role.Student && (
                     <div className="flex flex-col sm:flex-row gap-4 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
                         <div className="flex-1">
-                            <label htmlFor="course-filter" className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Curso</label>
+                            <label htmlFor="course-filter" className="block text-sm font-medium text-gray-700 mb-1">{t('filterByCourse')}</label>
                             <select
                                 id="course-filter"
                                 value={selectedCourseId}
                                 onChange={(e) => setSelectedCourseId(e.target.value)}
                                 className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                             >
-                                <option value="">Todos los cursos</option>
+                                <option value="">{t('allCourses')}</option>
                                 {courses.map(course => (
                                     <option key={course.id} value={course.id}>{course.name}</option>
                                 ))}
                             </select>
                         </div>
                         <div className="flex-1">
-                            <label htmlFor="group-filter" className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Grupo</label>
+                            <label htmlFor="group-filter" className="block text-sm font-medium text-gray-700 mb-1">{t('filterByGroup')}</label>
                             <select
                                 id="group-filter"
                                 value={selectedGroupId}
@@ -769,7 +771,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                                 className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                                 disabled={availableGroupsForFilter.length === 0}
                             >
-                                <option value="">Todos los grupos</option>
+                                <option value="">{t('allGroups')}</option>
                                 {availableGroupsForFilter.map(group => (
                                     <option key={group.id} value={group.id}>{group.name}</option>
                                 ))}
@@ -805,14 +807,14 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-2 mb-1">
                                                             <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${tutorial.type === 'group_meeting' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
-                                                                {tutorial.type === 'group_meeting' ? 'Reunión de Grupo' : 'Tutoría'}
+                                                                {tutorial.type === 'group_meeting' ? t('meetingTitle') : t('tutorialTitle')}
                                                             </span>
                                                             {tutorial.status === 'held' ? (
-                                                                <span className="px-2 py-0.5 text-xs font-medium text-green-800 bg-green-100 rounded-full">Realizada</span>
+                                                                <span className="px-2 py-0.5 text-xs font-medium text-green-800 bg-green-100 rounded-full">{t('held')}</span>
                                                             ) : (
-                                                                <span className="px-2 py-0.5 text-xs font-medium text-red-800 bg-red-100 rounded-full">Pendiente</span>
+                                                                <span className="px-2 py-0.5 text-xs font-medium text-red-800 bg-red-100 rounded-full">{t('pending')}</span>
                                                             )}
-                                                            <p className="font-semibold text-gray-700">{new Date(tutorial.date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                            <p className="font-semibold text-gray-700">{new Date(tutorial.date + 'T00:00:00').toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                                                         </div>
                                                         <p className="text-sm text-gray-600 truncate">{tutorial.summary}</p>
                                                     </div>
@@ -836,7 +838,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                                 <button onClick={() => toggleExpand(`course_${courseName}`)} className="flex items-center justify-between w-full p-4 text-left focus:outline-none">
                                     <div className="flex items-center">
                                         <h3 className="text-lg font-semibold text-gray-800">{courseName}</h3>
-                                        <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">{tutorialsByCourseAndGroup[courseName].length} {tutorialsByCourseAndGroup[courseName].length === 1 ? 'grupo' : 'grupos'}</span>
+                                        <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">{tutorialsByCourseAndGroup[courseName].length} {tutorialsByCourseAndGroup[courseName].length === 1 ? t('groupSingular') : t('groupPlural')}</span>
                                     </div>
                                     <ChevronDownIcon className={`w-6 h-6 text-gray-500 transition-transform ${expandedKeys[`course_${courseName}`] ? 'rotate-180' : ''}`} />
                                 </button>
@@ -912,7 +914,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
             )}
 
             {isPendingModalOpen && (
-                <Modal title="Reuniones Pendientes" onClose={closeModal} size="5xl">
+                <Modal title={t('pendingMeetings')} onClose={closeModal} size="5xl">
                     <PendingTutorialsModal
                         user={user}
                         tutors={tutors}
@@ -929,15 +931,15 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                     />
                 </Modal>
             )}
-            {isCreateModalOpen && <Modal title="Solicitar Tutoría" onClose={closeModal}><TutorialForm user={user} tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} initialData={prefilledData} /></Modal>}
-            {editingTutorial && <Modal title={editingTutorial.type === 'tutorial' ? (user.role === Role.Student ? "Detalles de Tutoría" : "Editar Tutoría") : "Editar reunión de grupo"} onClose={closeModal}><TutorialForm user={user} tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} tutorialToEdit={editingTutorial} readOnly={user.role === Role.Student && editingTutorial.type === 'tutorial'} /></Modal>}
+            {isCreateModalOpen && <Modal title={t('requestTutorial')} onClose={closeModal}><TutorialForm user={user} tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} initialData={prefilledData} /></Modal>}
+            {editingTutorial && <Modal title={editingTutorial.type === 'tutorial' ? (user.role === Role.Student ? t('tutorialDetails') : t('editTutorial')) : t('editGroupMeeting')} onClose={closeModal}><TutorialForm user={user} tutors={tutors} groups={groups} allUsers={allUsers} projects={projects} courses={courses} onSave={handleSave} onCancel={closeModal} tutorialToEdit={editingTutorial} readOnly={user.role === Role.Student && editingTutorial.type === 'tutorial'} /></Modal>}
             {tutorialToDelete && (
-                <Modal title="Confirmar Eliminación" onClose={closeModal}>
+                <Modal title={t('confirmDelete')} onClose={closeModal}>
                     <div className="text-center">
-                        <p className="text-lg text-gray-700">¿Estás seguro de que quieres eliminar la tutoría del día <span className="font-bold">{new Date(tutorialToDelete.date + 'T00:00:00').toLocaleDateString()}</span>?</p>
+                        <p className="text-lg text-gray-700">{t('deleteTutorialConfirm')} <span className="font-bold">{new Date(tutorialToDelete.date + 'T00:00:00').toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US')}</span>?</p>
                         <div className="flex justify-center mt-6 space-x-4">
-                            <button onClick={closeModal} className="px-6 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancelar</button>
-                            <button onClick={handleConfirmDelete} className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">Sí, Eliminar</button>
+                            <button onClick={closeModal} className="px-6 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">{t('cancel')}</button>
+                            <button onClick={handleConfirmDelete} className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">{t('confirmDeleteAction') || 'Sí, Eliminar'}</button>
                         </div>
                     </div>
                 </Modal>

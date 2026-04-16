@@ -9,6 +9,7 @@ import TaskForm from './TaskForm';
 import { TutorialForm } from './TutorialForm';
 import { sortBySurname } from '../lib/utils';
 import ProjectCard from './ProjectCard';
+import { useLanguage } from '../lib/LanguageContext';
 
 interface DashboardProps {
     user: User;
@@ -1128,6 +1129,7 @@ const AdminTutorDashboard: React.FC<{
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, allUsers, messages, tutorials, ras, courses, courseDates, selectedGroupId, onNavigateToKanban, onNavigateToCalendar, onSendMessage, onMarkMessagesAsRead, onUpdateTask, onDeleteTask, onUpdateTutorial }) => {
+    const { t } = useLanguage();
     const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
     const [isPendingTutorialsModalOpen, setIsPendingTutorialsModalOpen] = useState(false);
     const [isPendingMeetingsModalOpen, setIsPendingMeetingsModalOpen] = useState(false);
@@ -1237,7 +1239,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
         <div>
             <div className="flex flex-col gap-8 mb-8">
                 <h2 className="text-2xl font-bold text-gray-800">
-                    {user.role === Role.Student ? 'Mis Proyectos' : 'Proyectos por curso'}
+                    {user.role === Role.Student ? t('myProjects') : t('projectsByCourse')}
                 </h2>
                 <div className="flex flex-row items-center justify-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
                     <button
@@ -1248,7 +1250,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
                                 : 'bg-green-500 text-white cursor-default'
                         }`}
                     >
-                        {unreadMessages.length > 0 ? `Mensajes pendientes (${unreadMessages.length})` : 'Sin mensajes pendientes'}
+                        {unreadMessages.length > 0 ? `${t('pendingMessages')} (${unreadMessages.length})` : t('noPendingMessages')}
                     </button>
                     <button
                         onClick={() => pendingTutorials.length > 0 && setIsPendingTutorialsModalOpen(true)}
@@ -1258,7 +1260,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
                                 : 'bg-green-500 text-white cursor-default'
                         }`}
                     >
-                        {pendingTutorials.length > 0 ? `Tutorías pendientes (${pendingTutorials.length})` : 'Sin tutorías pendientes'}
+                        {pendingTutorials.length > 0 ? `${t('pendingTutorials')} (${pendingTutorials.length})` : t('noPendingTutorials')}
                     </button>
                     {user.role === Role.Student && (
                         <button

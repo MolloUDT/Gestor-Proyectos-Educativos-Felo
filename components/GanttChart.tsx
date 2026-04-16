@@ -8,6 +8,7 @@ import { KANBAN_COLUMNS_ORDER } from '../constants';
 import Modal from './Modal';
 import { ProgressCircle } from './ProgressCircle';
 import ProjectCard from './ProjectCard';
+import { useLanguage } from '../lib/LanguageContext';
 
 const formatDate = (date: Date) => {
     const year = date.getFullYear();
@@ -29,6 +30,7 @@ const GanttTaskForm: React.FC<{
     onDelete?: (task: Task) => void;
     userRole: Role;
 }> = ({ task, assignees, projectId, ras, modules, courseDates, onSave, onCancel, onDelete, userRole }) => {
+    const { t } = useLanguage();
     const isNewTask = !task?.id;
     const initialModuleId = task?.raId ? ras.find(r => r.id === task.raId)?.moduleId : '';
     const [selectedModuleId, setSelectedModuleId] = useState(initialModuleId || '');
@@ -71,14 +73,14 @@ const GanttTaskForm: React.FC<{
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-red-700">
                             <span className="text-lg">⚠️</span>
-                            <span className="text-sm font-medium">Esta tarea está pendiente de revisión.</span>
+                            <span className="text-sm font-medium">{t('taskPendingReview')}</span>
                         </div>
                         <button 
                             type="button" 
                             onClick={handleVerify}
                             className="px-3 py-1 text-xs font-bold text-white uppercase bg-red-600 rounded hover:bg-red-700 transition-colors"
                         >
-                            ✓ Validar y dar OK
+                            {t('validateAndOk')}
                         </button>
                     </div>
                 </div>
@@ -87,28 +89,28 @@ const GanttTaskForm: React.FC<{
                 <div className="p-3 mb-4 border border-green-200 rounded-md bg-green-50">
                     <div className="flex items-center gap-2 text-green-700">
                         <span className="text-lg">✓</span>
-                        <span className="text-sm font-medium">Tarea revisada y validada.</span>
+                        <span className="text-sm font-medium">{t('taskReviewedValidated')}</span>
                     </div>
                 </div>
             )}
             <div>
-                <label className="block text-sm font-medium text-gray-700">Título</label>
+                <label className="block text-sm font-medium text-gray-700">{t('taskTitle')}</label>
                 <input type="text" name="title" value={formData.title} onChange={handleChange} className="w-full p-2 mt-1 border border-gray-300 rounded-md" required />
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700">Descripción</label>
+                <label className="block text-sm font-medium text-gray-700">{t('description')}</label>
                 <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className="w-full p-2 mt-1 border border-gray-300 rounded-md" />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Asignado a</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('assignee')}</label>
                     <select name="assigneeId" value={formData.assigneeId} onChange={handleChange} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md" required>
-                        <option value="">Seleccionar miembro</option>
+                        <option value="">{t('selectMember')}</option>
                         {assignees.map(a => <option key={a.id} value={a.id}>{a.lastName}, {a.firstName}</option>)}
                     </select>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Estado</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('status')}</label>
                     <select name="status" value={formData.status} onChange={handleChange} className={`w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md ${
                         formData.status === KanbanStatus.Backlog ? 'text-red-400' :
                         formData.status === KanbanStatus.Doing ? 'text-yellow-600' :
@@ -119,12 +121,12 @@ const GanttTaskForm: React.FC<{
                                 s === KanbanStatus.Backlog ? 'text-red-400' :
                                 s === KanbanStatus.Doing ? 'text-yellow-600' :
                                 'text-green-600'
-                            }>{s}</option>
+                            }>{t(s.toLowerCase())}</option>
                         ))}
                     </select>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Prioridad</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('priority')}</label>
                     <select name="priority" value={formData.priority} onChange={handleChange} className={`w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md ${
                         formData.priority === Priority.High ? 'text-red-600' :
                         formData.priority === Priority.Medium ? 'text-orange-500' :
@@ -135,12 +137,12 @@ const GanttTaskForm: React.FC<{
                                 p === Priority.High ? 'text-red-600' :
                                 p === Priority.Medium ? 'text-orange-500' :
                                 'text-green-600'
-                            }>{p}</option>
+                            }>{t(p.toLowerCase())}</option>
                         ))}
                     </select>
                 </div>
                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Nivel de Dificultad</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('difficulty')}</label>
                     <select name="difficulty" value={formData.difficulty} onChange={handleChange} className={`w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md ${
                         formData.difficulty === Difficulty.Level3 ? 'text-red-600' :
                         formData.difficulty === Difficulty.Level2 ? 'text-orange-500' :
@@ -151,23 +153,23 @@ const GanttTaskForm: React.FC<{
                                 d === Difficulty.Level3 ? 'text-red-600' :
                                 d === Difficulty.Level2 ? 'text-orange-500' :
                                 'text-green-600'
-                            }>{d === Difficulty.Level1 ? 'Baja' : d === Difficulty.Level2 ? 'Media' : 'Alta'}</option>
+                            }>{t(d.toLowerCase())}</option>
                         ))}
                     </select>
                 </div>
                 {(userRole === Role.Admin || userRole === Role.Tutor) && (
                     <>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Módulo asociado</label>
+                            <label className="block text-sm font-medium text-gray-700">{t('moduleAssociated')}</label>
                             <select name="moduleId" value={selectedModuleId} onChange={handleChange} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md">
-                                <option value="">Seleccionar Módulo</option>
+                                <option value="">{t('selectModule')}</option>
                                 {modules.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">RA asociado</label>
+                            <label className="block text-sm font-medium text-gray-700">{t('raAssociated')}</label>
                             <select name="raId" value={formData.raId} onChange={handleChange} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md" disabled={!selectedModuleId}>
-                                <option value="">Seleccionar RA</option>
+                                <option value="">{t('selectRA')}</option>
                                 {ras.filter(ra => ra.moduleId === selectedModuleId).map(ra => (
                                     <option key={ra.id} value={ra.id}>{ra.code}: {ra.description}</option>
                                 ))}
@@ -175,12 +177,12 @@ const GanttTaskForm: React.FC<{
                         </div>
                     </>
                 )}
-                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Fecha de inicio</label>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">{t('startDate')}</label>
                     <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} min={courseDates.startDate} max={courseDates.endDate} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md text-red-600 font-medium" required />
                 </div>
                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Fecha de finalización</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('endDate')}</label>
                     <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} min={formData.startDate || courseDates.startDate} max={courseDates.endDate} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md text-green-600 font-medium" required />
                 </div>
             </div>
@@ -188,13 +190,13 @@ const GanttTaskForm: React.FC<{
                 <div>
                     {!isNewTask && (userRole === Role.Admin || userRole === Role.Tutor || userRole === Role.Student) && (
                         <button type="button" onClick={() => onDelete?.(task as Task)} className="flex items-center gap-2 px-4 py-2 text-sm text-red-700 bg-red-100 rounded-md hover:bg-red-200">
-                           <TrashIcon className="w-4 h-4 text-red-500" /> Eliminar
+                           <TrashIcon className="w-4 h-4 text-red-500" /> {t('delete')}
                         </button>
                     )}
                 </div>
                 <div className="flex space-x-2">
-                    <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancelar</button>
-                    <button type="submit" className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700">Guardar Tarea</button>
+                    <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">{t('cancel')}</button>
+                    <button type="submit" className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700">{t('save')}</button>
                 </div>
             </div>
         </form>
@@ -215,61 +217,62 @@ const GANTT_BAR_COLORS: { [key in KanbanStatus]: string } = {
 };
 
 const GanttLegend: React.FC = () => {
+    const { t } = useLanguage();
     return (
         <div className="flex flex-wrap items-center justify-between gap-4 w-full">
             {/* Prioridad */}
             <div className="flex items-center gap-3 p-2 px-3 bg-gray-50 border border-gray-200 rounded-lg">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Prioridad:</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">{t('priority')}:</span>
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1">
                         <PriorityIcon priority={Priority.High} className="w-4 h-4" />
-                        <span className="text-xs text-gray-600">Alta</span>
+                        <span className="text-xs text-gray-600">{t('high')}</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <PriorityIcon priority={Priority.Medium} className="w-4 h-4" />
-                        <span className="text-xs text-gray-600">Media</span>
+                        <span className="text-xs text-gray-600">{t('medium')}</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <PriorityIcon priority={Priority.Low} className="w-4 h-4" />
-                        <span className="text-xs text-gray-600">Baja</span>
+                        <span className="text-xs text-gray-600">{t('low')}</span>
                     </div>
                 </div>
             </div>
 
             {/* Dificultad */}
             <div className="flex items-center gap-3 p-2 px-3 bg-gray-50 border border-gray-200 rounded-lg">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Dificultad:</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">{t('difficulty')}:</span>
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1">
                         <DifficultyIcon difficulty={Difficulty.Level1} className="w-4 h-4" />
-                        <span className="text-xs text-gray-600">Baja</span>
+                        <span className="text-xs text-gray-600">{t('easy')}</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <DifficultyIcon difficulty={Difficulty.Level2} className="w-4 h-4" />
-                        <span className="text-xs text-gray-600">Media</span>
+                        <span className="text-xs text-gray-600">{t('moderate')}</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <DifficultyIcon difficulty={Difficulty.Level3} className="w-4 h-4" />
-                        <span className="text-xs text-gray-600">Alta</span>
+                        <span className="text-xs text-gray-600">{t('complex')}</span>
                     </div>
                 </div>
             </div>
 
             {/* Estado */}
             <div className="flex items-center gap-3 p-2 px-3 bg-gray-50 border border-gray-200 rounded-lg">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Estado:</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">{t('status')}:</span>
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1">
                         <StatusIcon status={KanbanStatus.Backlog} className="w-4 h-4" />
-                        <span className="text-xs text-gray-600">Pendiente</span>
+                        <span className="text-xs text-gray-600">{t('pending')}</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <StatusIcon status={KanbanStatus.Doing} className="w-4 h-4" />
-                        <span className="text-xs text-gray-600">En progreso</span>
+                        <span className="text-xs text-gray-600">{t('inProgress')}</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <StatusIcon status={KanbanStatus.Done} className="w-4 h-4" />
-                        <span className="text-xs text-gray-600">Realizadas</span>
+                        <span className="text-xs text-gray-600">{t('realized')}</span>
                     </div>
                 </div>
             </div>
@@ -362,13 +365,14 @@ interface GanttChartDisplayProps {
 }
 
 const GanttChartDisplay: React.FC<GanttChartDisplayProps> = ({ tasks, courseDates, ras, modules, onUpdateTask, onDeleteTask, user, availableAssignees, projectId }) => {
+    const { t, language } = useLanguage();
     const [dayWidth, setDayWidth] = useState(27);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
     const [sortOption, setSortOption] = useState<'priority' | 'status' | 'date' | 'difficulty'>('date');
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const dayInitials = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+    const dayInitials = [t('sundayShort'), t('mondayShort'), t('tuesdayShort'), t('wednesdayShort'), t('thursdayShort'), t('fridayShort'), t('saturdayShort')].map(s => s.charAt(0).toUpperCase());
 
     const sortedTasks = useMemo(() => {
         const tasksCopy = [...tasks];
@@ -464,21 +468,21 @@ const GanttChartDisplay: React.FC<GanttChartDisplayProps> = ({ tasks, courseDate
             <div className="flex flex-wrap items-center justify-between gap-4 p-2 shrink-0">
                 <div className="flex items-center gap-4 ml-auto">
                     <div>
-                        <label htmlFor="gantt-sort" className="mr-2 text-sm font-semibold text-gray-600">Ordenar por:</label>
+                        <label htmlFor="gantt-sort" className="mr-2 text-sm font-semibold text-gray-600">{t('sortBy')}</label>
                         <select
                             id="gantt-sort"
                             value={sortOption}
                             onChange={(e) => setSortOption(e.target.value as 'priority' | 'status' | 'date' | 'difficulty')}
                             className="p-1 text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
                         >
-                            <option value="date">Por Fecha</option>
-                            <option value="status">Por Estado</option>
-                            <option value="priority">Por Prioridad</option>
-                            <option value="difficulty">Por Dificultad</option>
+                            <option value="date">{t('sortByDate')}</option>
+                            <option value="status">{t('sortByStatus')}</option>
+                            <option value="priority">{t('sortByPriority')}</option>
+                            <option value="difficulty">{t('sortByDifficulty')}</option>
                         </select>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-gray-600">Zoom:</span>
+                        <span className="text-sm font-semibold text-gray-600">{t('zoom')}</span>
                         <button onClick={() => setDayWidth(w => Math.max(15, w - 5))} className="px-3 py-1 font-bold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">-</button>
                         <button onClick={() => setDayWidth(w => Math.min(100, w + 5))} className="px-3 py-1 font-bold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">+</button>
                     </div>
@@ -501,12 +505,12 @@ const GanttChartDisplay: React.FC<GanttChartDisplayProps> = ({ tasks, courseDate
                         if (colSpan <= 0) return null;
                         return (
                             <div key={month.getTime()} className="sticky top-0 z-20 flex items-center justify-center text-sm font-semibold text-gray-700 bg-gray-200 border-b border-r" style={{ gridColumn: `${colStart + 2} / span ${colSpan}`, gridRow: 1 }}>
-                                {month.toLocaleString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase()}
+                                {month.toLocaleString(language === 'es' ? 'es-ES' : 'en-US', { month: 'long', year: 'numeric' }).toUpperCase()}
                             </div>
                         );
                     })}
                     
-                    <div className="sticky top-[40px] left-0 z-20 flex items-center justify-center font-semibold text-center text-gray-700 bg-gray-100 border-b border-r border-l" style={{gridRow: '2 / span 2', gridColumn: '1 / span 3'}}>Tarea</div>
+                    <div className="sticky top-[40px] left-0 z-20 flex items-center justify-center font-semibold text-center text-gray-700 bg-gray-100 border-b border-r border-l" style={{gridRow: '2 / span 2', gridColumn: '1 / span 3'}}>{t('newTask').replace('Nueva ', '')}</div>
                     
                     {Array.from({ length: totalDays }).map((_, i) => {
                         const date = new Date(chartStartDate); date.setDate(date.getDate() + i); const isWeekend = date.getDay() === 0 || date.getDay() === 6;
@@ -567,12 +571,12 @@ const GanttChartDisplay: React.FC<GanttChartDisplayProps> = ({ tasks, courseDate
                             </React.Fragment>
                         );
                     })}
-                    {tasks.length === 0 && <div className="py-10 text-center text-gray-500" style={{ gridColumn: '1 / -1', gridRow: 4 }}>No hay tareas para mostrar en el diagrama de Gantt.</div>}
+                    {tasks.length === 0 && <div className="py-10 text-center text-gray-500" style={{ gridColumn: '1 / -1', gridRow: 4 }}>{t('noTasksToShowGantt')}</div>}
                 </div>
             </div>
 
             {isModalOpen && editingTask && (
-                <Modal title="Editar Tarea" onClose={() => setIsModalOpen(false)}>
+                <Modal title={t('editTask')} onClose={() => setIsModalOpen(false)}>
                     <GanttTaskForm 
                         task={editingTask} 
                         assignees={availableAssignees} 
@@ -588,13 +592,13 @@ const GanttChartDisplay: React.FC<GanttChartDisplayProps> = ({ tasks, courseDate
                 </Modal>
             )}
             {taskToDelete && (
-                <Modal title="Confirmar Eliminación" onClose={() => setTaskToDelete(null)}>
+                <Modal title={t('confirmDeleteTask')} onClose={() => setTaskToDelete(null)}>
                     <div className="text-center">
-                        <p className="text-lg text-gray-700">¿Estás seguro de que quieres eliminar la tarea?</p>
+                        <p className="text-lg text-gray-700">{t('deleteTaskConfirmText')}</p>
                         <p className="my-2 text-xl font-bold text-red-600">"{taskToDelete.title}"</p>
                         <div className="flex justify-center mt-6 space-x-4">
-                            <button onClick={() => setTaskToDelete(null)} className="px-6 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancelar</button>
-                            <button onClick={handleConfirmDelete} className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">Sí, Eliminar</button>
+                            <button onClick={() => setTaskToDelete(null)} className="px-6 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">{t('cancel')}</button>
+                            <button onClick={handleConfirmDelete} className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">{t('yesDelete')}</button>
                         </div>
                     </div>
                 </Modal>
@@ -618,6 +622,7 @@ interface GanttChartProps {
 }
 
 const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, courseDates, allUsers, ras, modules, courses, onUpdateTask, onDeleteTask }) => {
+    const { t } = useLanguage();
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
     const [expandedCourseGroups, setExpandedCourseGroups] = useState<Record<string, boolean>>({});
 
@@ -654,7 +659,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
             const group = groups.find(g => g.id === project.groupId);
             if (group) {
                 const course = courses.find(c => c.id === group.courseId);
-                const projectCourseGroup = course ? course.name : 'Curso no definido';
+                const projectCourseGroup = course ? course.name : t('courseNotDefined');
                 
                 if (!result[projectCourseGroup]) result[projectCourseGroup] = [];
                 result[projectCourseGroup].push(project);
@@ -675,18 +680,18 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
                 <div className="flex items-start justify-between pb-4 border-b shrink-0">
                     <div>
                         <div className="mb-1 text-sm text-gray-600">
-                            <span className="font-semibold">Curso:</span> {course?.name} <span className="ml-4 font-semibold">Grupo:</span> {projectGroup?.name}
+                            <span className="font-semibold">{t('course')}:</span> {course?.name} <span className="ml-4 font-semibold">{t('group')}:</span> {projectGroup?.name}
                         </div>
                         <h2 className="text-xl font-bold text-gray-800">
-                            Proyecto: <span className="text-green-700">{selectedProject.name}</span>
+                            {t('project')}: <span className="text-green-700">{selectedProject.name}</span>
                         </h2>
                         {projectTutor && (
                             <div className="mt-1 text-sm text-blue-600">
-                                <span className="font-semibold">Tutor:</span> {projectTutor.lastName}, {projectTutor.firstName}
+                                <span className="font-semibold">{t('tutor')}:</span> {projectTutor.lastName}, {projectTutor.firstName}
                             </div>
                         )}
                     </div>
-                    <button onClick={() => setSelectedProjectId(null)} className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">← Volver a la selección</button>
+                    <button onClick={() => setSelectedProjectId(null)} className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">{t('backToSelection')}</button>
                 </div>
                 <GanttChartDisplay tasks={visibleTasks} courseDates={courseDates} ras={ras} modules={filteredModules} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} user={user} availableAssignees={assignees} projectId={selectedProject.id} />
             </div>
@@ -695,7 +700,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
     
     return (
         <div className="space-y-4">
-            <h2 className="mb-6 text-2xl font-bold text-gray-800">Selecciona un Proyecto</h2>
+            <h2 className="mb-6 text-2xl font-bold text-gray-800">{t('selectProjectHeader')}</h2>
             
             {user.role === Role.Student ? (
                 <div className="space-y-2">
@@ -716,7 +721,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
                                 onClick={() => setSelectedProjectId(project.id)}
                             />
                         );
-                    }) : <p className="text-center text-gray-500">No estás asignado a ningún proyecto.</p>}
+                    }) : <p className="text-center text-gray-500">{t('noAssignedProject')}</p>}
                 </div>
             ) : (
                 <div className="space-y-2">
@@ -727,7 +732,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
                                 <button onClick={() => toggleCourseGroup(courseGroup)} className="flex items-center justify-between w-full p-4 text-left bg-gray-50 hover:bg-gray-100 focus:outline-none rounded-lg">
                                     <div className="flex items-center">
                                         <h3 className="text-lg font-semibold text-gray-800">{courseGroup}</h3>
-                                        <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">{courseProjects.length} {courseProjects.length === 1 ? 'proyecto' : 'proyectos'}</span>
+                                        <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">{courseProjects.length} {courseProjects.length === 1 ? t('groupSingular') : t('groupPlural')}</span>
                                     </div>
                                     <ChevronDownIcon className={`w-6 h-6 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                 </button>
