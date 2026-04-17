@@ -59,10 +59,12 @@ const getAttendanceColor = (percentage: number) => {
 };
 
 const CountdownDisplay: React.FC<{ endDate: string }> = ({ endDate }) => {
+    const { t } = useLanguage();
+
     if (!endDate || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
         return (
             <div className="text-center">
-                <p className="text-sm font-medium text-gray-500">Estado</p>
+                <p className="text-sm font-medium text-gray-500">{t('status', { defaultValue: 'Estado' })}</p>
                 <p className="text-base font-bold text-gray-600">N/A</p>
             </div>
         );
@@ -77,8 +79,8 @@ const CountdownDisplay: React.FC<{ endDate: string }> = ({ endDate }) => {
     if (endUTC < todayUTC) {
         return (
             <div className="text-center">
-                <p className="text-sm font-medium text-gray-500">Estado</p>
-                <p className="text-base font-bold text-red-600">Finalizado</p>
+                <p className="text-sm font-medium text-gray-500">{t('status', { defaultValue: 'Estado' })}</p>
+                <p className="text-base font-bold text-red-600">{t('finished')}</p>
             </div>
         );
     }
@@ -87,11 +89,11 @@ const CountdownDisplay: React.FC<{ endDate: string }> = ({ endDate }) => {
     const diffInMs = endUTC - todayUTC;
     const totalDays = Math.floor(diffInMs / oneDay) + 1;
     
-    const daysText = totalDays === 1 ? 'día' : 'días';
+    const daysText = totalDays === 1 ? t('day') : t('days');
 
     return (
         <div className="text-center">
-             <p className="text-sm font-medium text-gray-500">Tiempo restante para finalizar</p>
+             <p className="text-sm font-medium text-gray-500">{t('remainingTime')}</p>
              <p className="text-base font-bold text-yellow-600">{`${totalDays} ${daysText}`}</p>
         </div>
     );
@@ -148,6 +150,8 @@ const AdminTutorGroupCard: React.FC<{
     onNavigateToCalendar: (groupId?: string) => void;
     onShowPendingTasks: (projectId: string) => void;
 }> = ({ group, project, tasks, allUsers, tutorials, courses, highlight, onNavigateToKanban, onNavigateToCalendar, onShowPendingTasks }) => {
+    const { t } = useLanguage();
+    
     const { progress, totalTasks, pendingTasks, inProgressTasks, completedTasks, projectValue, achievedValue, pendingValidationCount } = useMemo(() => {
         const groupTasks = tasks.filter(t => t.projectId === project.id);
         const total = groupTasks.length;
@@ -196,8 +200,8 @@ const AdminTutorGroupCard: React.FC<{
     
     const courseGroup = useMemo(() => {
         const course = courses.find(c => c.id === group.courseId);
-        return course ? course.name : 'Sin curso asignado';
-    }, [group.courseId, courses]);
+        return course ? course.name : t('noCourse', { defaultValue: 'Sin curso asignado' });
+    }, [group.courseId, courses, t]);
 
     const { pastTutorialsCount, nextTutorialDate, groupMeetingsCount, nextGroupMeetingDate } = useMemo(() => {
         const todayStr = new Date().toISOString().split('T')[0];
@@ -212,8 +216,8 @@ const AdminTutorGroupCard: React.FC<{
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
         const nextDateInfo = futureTutorials.length > 0
-            ? `${new Date(futureTutorials[0].date + 'T00:00:00').toLocaleDateString('es-ES')}`
-            : 'No agendada';
+            ? `${new Date(futureTutorials[0].date + 'T00:00:00').toLocaleDateString(t('locale', { defaultValue: 'es-ES' }))}`
+            : t('notScheduled');
 
         const pastGroupMeetings = groupMeetingsOnly.filter(t => t.status === 'held' && t.date >= project.startDate && t.date <= project.endDate);
         const futureGroupMeetings = groupMeetingsOnly
@@ -221,8 +225,8 @@ const AdminTutorGroupCard: React.FC<{
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
         const nextGroupMeetingDateInfo = futureGroupMeetings.length > 0
-            ? `${new Date(futureGroupMeetings[0].date + 'T00:00:00').toLocaleDateString('es-ES')}`
-            : 'No agendada';
+            ? `${new Date(futureGroupMeetings[0].date + 'T00:00:00').toLocaleDateString(t('locale', { defaultValue: 'es-ES' }))}`
+            : t('notScheduled');
 
         return { 
             pastTutorialsCount: pastTutorials.length, 
@@ -230,7 +234,7 @@ const AdminTutorGroupCard: React.FC<{
             groupMeetingsCount: pastGroupMeetings.length,
             nextGroupMeetingDate: nextGroupMeetingDateInfo
         };
-    }, [tutorials, group.id, project.startDate, project.endDate]);
+    }, [tutorials, group.id, project.startDate, project.endDate, t]);
 
     const calculateTaskStats = (tasks: Task[]) => {
         const stats = {
@@ -319,12 +323,12 @@ const AdminTutorGroupCard: React.FC<{
         });
         
         return result.sort((a, b) => b.totalAssigned.count - a.totalAssigned.count);
-    }, [freshGroupMembers, tasks, project.id]);
+    }, [freshGroupMembers, tasks, project.id, tutorials, group.id]);
     
     const difficultyConfig: { [key in Difficulty]: { bg: string, text: string, name: string } } = {
-        [Difficulty.Level1]: { bg: 'bg-green-200', text: 'text-green-800', name: 'Sencilla' },
-        [Difficulty.Level2]: { bg: 'bg-yellow-200', text: 'text-yellow-800', name: 'Moderada' },
-        [Difficulty.Level3]: { bg: 'bg-red-200', text: 'text-red-800', name: 'Compleja' },
+        [Difficulty.Level1]: { bg: 'bg-green-200', text: 'text-green-800', name: t('easy') },
+        [Difficulty.Level2]: { bg: 'bg-yellow-200', text: 'text-yellow-800', name: t('moderate') },
+        [Difficulty.Level3]: { bg: 'bg-red-200', text: 'text-red-800', name: t('complex') },
     };
 
     return (
@@ -333,15 +337,15 @@ const AdminTutorGroupCard: React.FC<{
                     <div className="flex items-center justify-center gap-4 rounded-xl p-1">
                         <ProgressCircle progress={progress} size={96} showText={true} />
                         <div className="flex flex-col gap-2">
-                           <ValueDisplay value={projectValue} label="Total" colorClass="bg-gray-600" />
-                           <ValueDisplay value={achievedValue} label="Actual" colorClass="bg-green-600" />
+                           <ValueDisplay value={projectValue} label={t('total', { defaultValue: 'Total' })} colorClass="bg-gray-600" />
+                           <ValueDisplay value={achievedValue} label={t('actual', { defaultValue: 'Actual' })} colorClass="bg-green-600" />
                         </div>
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                             <div>
-                                <h3 className="text-base font-normal text-green-700"><span className="font-bold">Proyecto:</span> {project.name}</h3>
-                                <p className="text-base text-gray-500"><span className="text-black font-bold">Curso:</span> {courseGroup} - <span className="text-black font-bold">Grupo:</span> {group.name}</p>
+                                <h3 className="text-base font-normal text-green-700"><span className="font-bold">{t('projectLabel', { defaultValue: 'Proyecto' })}:</span> {project.name}</h3>
+                                <p className="text-base text-gray-500"><span className="text-black font-bold">{t('courseLabel', { defaultValue: 'Curso' })}:</span> {courseGroup} - <span className="text-black font-bold">{t('groupLabel', { defaultValue: 'Grupo' })}:</span> {group.name}</p>
                             </div>
                             {pendingValidationCount > 0 && (
                                 <button 
@@ -352,22 +356,22 @@ const AdminTutorGroupCard: React.FC<{
                                     className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-white uppercase bg-red-600 rounded-full hover:bg-red-700 shadow-lg animate-pulse transition-all transform hover:scale-105"
                                 >
                                     <span>⚠️</span>
-                                    <span>{pendingValidationCount} Tareas sin validar</span>
+                                    <span>{pendingValidationCount} {t('unvalidatedTasks', { defaultValue: 'Tareas sin validar' })}</span>
                                 </button>
                             )}
                         </div>
-                        {tutor && <p className="mt-1 text-sm italic font-bold text-green-800">Tutor/a: {tutor.firstName} {tutor.lastName}</p>}
+                        {tutor && <p className="mt-1 text-sm italic font-bold text-green-800">{t('tutorLabel', { defaultValue: 'Tutor/a' })}: {tutor.firstName} {tutor.lastName}</p>}
                         <div className="pt-2 mt-2 border-t border-gray-200">
-                            <h4 className="mb-1 text-sm font-semibold text-blue-600">Componentes del grupo:</h4>
+                            <h4 className="mb-1 text-sm font-semibold text-blue-600">{t('groupComponents', { defaultValue: 'Componentes del grupo' })}:</h4>
                             <div className="flex flex-wrap gap-x-1 gap-y-1">
                                 {freshGroupMembers
-                                    .filter(member => member.role === Role.Student)
-                                    .sort(sortBySurname)
-                                    .map((member, index, array) => (
-                                    <span key={member.id} className="text-sm text-gray-800">
-                                        <span className="font-bold">{index + 1}.</span> {member.lastName}, {member.firstName}{index < array.length - 1 ? ' |' : ''}
-                                    </span>
-                                ))}
+                                     .filter(member => member.role === Role.Student)
+                                     .sort(sortBySurname)
+                                     .map((member, index, array) => (
+                                     <span key={member.id} className="text-sm text-gray-800">
+                                         <span className="font-bold">{index + 1}.</span> {member.lastName}, {member.firstName}{index < array.length - 1 ? ' |' : ''}
+                                     </span>
+                                 ))}
                             </div>
                         </div>
                     </div>
@@ -375,12 +379,12 @@ const AdminTutorGroupCard: React.FC<{
 
                 <div className="grid grid-cols-1 gap-2 pt-3 mt-3 border-t md:grid-cols-3 border-gray-200">
                     <div className="text-center">
-                        <p className="text-sm font-medium text-green-600">Inicio de proyecto</p>
-                        <p className="text-base font-bold text-gray-800">{new Date(project.startDate + 'T00:00:00').toLocaleDateString('es-ES')}</p>
+                        <p className="text-sm font-medium text-green-600">{t('projectStart', {defaultValue: 'Inicio de proyecto'})}</p>
+                        <p className="text-base font-bold text-gray-800">{new Date(project.startDate + 'T00:00:00').toLocaleDateString(t('locale') || 'es-ES')}</p>
                     </div>
                     <div className="text-center">
-                        <p className="text-sm font-medium text-red-600">Fin de proyecto</p>
-                        <p className="text-base font-bold text-gray-800">{new Date(project.endDate + 'T00:00:00').toLocaleDateString('es-ES')}</p>
+                        <p className="text-sm font-medium text-red-600">{t('projectEnd', {defaultValue: 'Fin de proyecto'})}</p>
+                        <p className="text-base font-bold text-gray-800">{new Date(project.endDate + 'T00:00:00').toLocaleDateString(t('locale') || 'es-ES')}</p>
                     </div>
                     <CountdownDisplay endDate={project.endDate} />
                 </div>
@@ -391,28 +395,28 @@ const AdminTutorGroupCard: React.FC<{
                             onClick={() => onNavigateToCalendar()}
                             className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
                         >
-                            <p className="text-xs font-medium text-gray-500">Reuniones de Grupo</p>
+                            <p className="text-xs font-medium text-gray-500">{t('groupMeetings', {defaultValue: 'Reuniones de Grupo'})}</p>
                             <p className="text-lg font-bold text-blue-600">{groupMeetingsCount}</p>
                         </div>
                         <div 
                             onClick={() => onNavigateToCalendar()}
                             className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
                         >
-                            <p className="text-xs font-medium text-gray-500">Próxima Reunión Grupo</p>
+                            <p className="text-xs font-medium text-gray-500">{t('nextGroupMeeting', {defaultValue: 'Próxima Reunión Grupo'})}</p>
                             <p className="text-sm font-bold text-blue-600 break-words">{nextGroupMeetingDate}</p>
                         </div>
                         <div 
                             onClick={() => onNavigateToCalendar()}
                             className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
                         >
-                            <p className="text-xs font-medium text-gray-500">Tutorías Realizadas</p>
+                            <p className="text-xs font-medium text-gray-500">{t('heldTutorials', {defaultValue: 'Tutorías Realizadas'})}</p>
                             <p className="text-lg font-bold text-blue-600">{pastTutorialsCount}</p>
                         </div>
                         <div 
                             onClick={() => onNavigateToCalendar()}
                             className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
                         >
-                            <p className="text-xs font-medium text-gray-500">Próxima Tutoría</p>
+                            <p className="text-xs font-medium text-gray-500">{t('nextTutorial', {defaultValue: 'Próxima Tutoría'})}</p>
                             <p className="text-sm font-bold text-blue-600 break-words">{nextTutorialDate}</p>
                         </div>
                     </div>
@@ -424,36 +428,36 @@ const AdminTutorGroupCard: React.FC<{
                         className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
                     >
                         <p className="text-lg font-bold text-gray-800">{totalTasks}</p>
-                        <p className="text-xs font-medium text-gray-500">Tareas Totales</p>
+                        <p className="text-xs font-medium text-gray-500">{t('totalTasks', {defaultValue: 'Tareas Totales'})}</p>
                     </div>
                     <div 
                         onClick={() => onNavigateToKanban(project.id)} 
                         className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
                     >
                         <p className="text-lg font-bold text-red-600">{pendingTasks}</p>
-                        <p className="text-xs font-medium text-gray-500">Pendientes</p>
+                        <p className="text-xs font-medium text-gray-500">{t('pending', {defaultValue: 'Pendientes'})}</p>
                     </div>
                     <div 
                         onClick={() => onNavigateToKanban(project.id)} 
                         className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
                     >
                         <p className="text-lg font-bold text-blue-600">{inProgressTasks}</p>
-                        <p className="text-xs font-medium text-gray-500">En progreso</p>
+                        <p className="text-xs font-medium text-gray-500">{t('inProgress', {defaultValue: 'En progreso'})}</p>
                     </div>
                     <div 
                         onClick={() => onNavigateToKanban(project.id)} 
                         className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
                     >
                         <p className="text-lg font-bold text-green-600">{completedTasks}</p>
-                        <p className="text-xs font-medium text-gray-500">Completadas</p>
+                        <p className="text-xs font-medium text-gray-500">{t('completed', {defaultValue: 'Completadas'})}</p>
                     </div>
                 </div>
 
             <div className="pt-3 mt-3 border-t border-gray-200">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <h4 className="text-lg font-bold text-gray-700">Rendimiento del grupo por componente</h4>
+                    <h4 className="text-lg font-bold text-gray-700">{t('groupPerformance', {defaultValue: 'Rendimiento del grupo por componente'})}</h4>
                     <div className="flex items-center space-x-4">
-                        <span className="text-xs font-semibold text-gray-500">Dificultad:</span>
+                        <span className="text-xs font-semibold text-gray-500">{t('difficulty', {defaultValue: 'Dificultad'})}:</span>
                         {(Object.keys(difficultyConfig) as Difficulty[]).map(level => (
                             <div key={level} className="flex items-center space-x-1.5">
                                 <div className={`w-3 h-3 rounded-full ${difficultyConfig[level].bg}`}></div>
@@ -466,10 +470,10 @@ const AdminTutorGroupCard: React.FC<{
                 <div className="hidden md:flex mb-2">
                     <div className="w-full md:w-5/12" /> {/* Spacer */}
                     <div className="flex w-full md:w-7/12">
-                        <div className="flex-1 text-center text-xs font-bold text-gray-500">Total</div>
-                        <div className="flex-1 text-center text-xs font-bold text-red-600">Pendientes</div>
-                        <div className="flex-1 text-center text-xs font-bold text-blue-600">En progreso</div>
-                        <div className="flex-1 text-center text-xs font-bold text-green-600">Realizadas</div>
+                        <div className="flex-1 text-center text-xs font-bold text-gray-500">{t('total')}</div>
+                        <div className="flex-1 text-center text-xs font-bold text-red-600">{t('pending')}</div>
+                        <div className="flex-1 text-center text-xs font-bold text-blue-600">{t('inProgress')}</div>
+                        <div className="flex-1 text-center text-xs font-bold text-green-600">{t('completed')}</div>
                     </div>
                 </div>
                 
@@ -479,31 +483,31 @@ const AdminTutorGroupCard: React.FC<{
                             <div key={stat.id} className="flex items-center p-2 bg-gray-50 rounded-lg border border-gray-200">
                                 <div className="flex items-center w-5/12">
                                     <div className="flex items-center flex-shrink-0 gap-2">
-                                        <div className="flex flex-col items-center" title={`Productividad: ${stat.productivity}%`}>
+                                        <div className="flex flex-col items-center" title={`${t('productivity')}: ${stat.productivity}%`}>
                                             <ProgressCircle progress={stat.productivity} size={36} showText={true} />
-                                            <p className="mt-1 text-[9px] font-semibold text-gray-600 uppercase tracking-tight">TOTAL</p>
+                                            <p className="mt-1 text-[9px] font-semibold text-gray-600 uppercase tracking-tight">{t('total')}</p>
                                         </div>
-                                        <SmallValueDisplay value={stat.assignedPoints} label="Asumidos" colorClass="bg-gray-500" />
-                                        <SmallValueDisplay value={stat.achievedPoints} label="Logrados" colorClass="bg-green-500" />
+                                        <SmallValueDisplay value={stat.assignedPoints} label={t('assumed')} colorClass="bg-gray-500" />
+                                        <SmallValueDisplay value={stat.achievedPoints} label={t('achieved')} colorClass="bg-green-500" />
                                     </div>
                                     <div className="ml-3 flex-1 min-w-0" title={`${stat.firstName} ${stat.lastName}`}>
                                         <p className="font-medium text-gray-800 truncate">{stat.firstName}</p>
                                         {stat.lastName && <p className="text-sm text-gray-600 truncate">{stat.lastName}</p>}
                                         <div className="flex items-center gap-2 mt-0.5">
-                                            <span className={`text-[10px] ${getAttendanceColor(stat.tutorialAttendance)} flex items-center gap-0.5 font-bold`} title="Asistencia a Tutorías">
+                                            <span className={`text-[10px] ${getAttendanceColor(stat.tutorialAttendance)} flex items-center gap-0.5 font-bold`} title={t('tutorialAttendance')}>
                                                 <GraduationCapIcon className="w-3 h-3" /> {stat.tutorialAttendance}%
                                             </span>
-                                            <span className={`text-[10px] ${getAttendanceColor(stat.meetingAttendance)} flex items-center gap-0.5 font-bold`} title="Asistencia a Reuniones">
+                                            <span className={`text-[10px] ${getAttendanceColor(stat.meetingAttendance)} flex items-center gap-0.5 font-bold`} title={t('meetingAttendance')}>
                                                 <UsersIcon className="w-3 h-3" /> {stat.meetingAttendance}%
                                             </span>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex justify-around w-7/12">
-                                    <StatusColumn title="Total de Tareas" mainCircleClass="bg-gray-800 text-white" stats={stat.totalAssigned} difficultyConfig={difficultyConfig} />
-                                    <StatusColumn title="Tareas Pendientes" mainCircleClass="bg-red-100 text-red-800 border border-red-200" stats={stat.pending} difficultyConfig={difficultyConfig} />
-                                    <StatusColumn title="Tareas En progreso" mainCircleClass="bg-yellow-100 text-yellow-800 border border-yellow-200" stats={stat.inProgress} difficultyConfig={difficultyConfig} />
-                                    <StatusColumn title="Tareas Realizadas" mainCircleClass="bg-green-100 text-green-800 border border-green-200" stats={stat.completed} difficultyConfig={difficultyConfig} />
+                                    <StatusColumn title={t('totalTasksProject')} mainCircleClass="bg-gray-800 text-white" stats={stat.totalAssigned} difficultyConfig={difficultyConfig} />
+                                    <StatusColumn title={t('pendingTasksProject')} mainCircleClass="bg-red-100 text-red-800 border border-red-200" stats={stat.pending} difficultyConfig={difficultyConfig} />
+                                    <StatusColumn title={t('inProgressTasksProject')} mainCircleClass="bg-yellow-100 text-yellow-800 border border-yellow-200" stats={stat.inProgress} difficultyConfig={difficultyConfig} />
+                                    <StatusColumn title={t('completedTasksProject')} mainCircleClass="bg-green-100 text-green-800 border border-green-200" stats={stat.completed} difficultyConfig={difficultyConfig} />
                                 </div>
                             </div>
                         );
@@ -515,7 +519,7 @@ const AdminTutorGroupCard: React.FC<{
 };
 
 
-// --- Componentes para la vista de Alumno ---
+// --- Componentes para la vista de Estudiante ---
 
 const StatusColumn: React.FC<{
     title: string;
@@ -526,6 +530,7 @@ const StatusColumn: React.FC<{
     };
     difficultyConfig: { [key in Difficulty]: { bg: string, text: string, name: string } };
 }> = ({ title, mainCircleClass, stats, difficultyConfig }) => {
+    const { t } = useLanguage();
     return (
         <div className="flex flex-col items-center flex-1 min-w-0" title={title}>
             <span className={`flex items-center justify-center w-10 h-10 text-base font-bold ${mainCircleClass} rounded-full`}>
@@ -535,7 +540,7 @@ const StatusColumn: React.FC<{
                 {(Object.keys(difficultyConfig) as Difficulty[]).map(level => (
                 <span
                     key={level}
-                    title={`${stats.byDifficulty[level]} tareas - ${difficultyConfig[level].name}`}
+                    title={`${stats.byDifficulty[level]} ${t('tasksSimple')} - ${difficultyConfig[level].name}`}
                     className={`flex items-center justify-center w-6 h-6 text-xs font-bold ${difficultyConfig[level].bg} ${difficultyConfig[level].text} rounded-full`}
                 >
                     {stats.byDifficulty[level]}
@@ -554,15 +559,16 @@ const PendingTasksModal: React.FC<{
     onClose: () => void;
     onEditTask: (task: Task) => void;
 }> = ({ project, tasks, allUsers, onClose, onEditTask }) => {
+    const { t } = useLanguage();
     const pendingValidationTasks = useMemo(() => 
         tasks.filter(t => t.projectId === project.id && t.isVerified === false),
     [tasks, project.id]);
 
     return (
-        <Modal title={`Tareas Pendientes de Validación - ${project.name}`} onClose={onClose}>
+        <Modal title={`${t('pendingValidationHeader', { defaultValue: 'Tareas Pendientes de Validación' })} - ${project.name}`} onClose={onClose}>
             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
                 {pendingValidationTasks.length === 0 ? (
-                    <p className="text-center text-gray-500 py-4">No hay tareas pendientes de validación en este proyecto.</p>
+                    <p className="text-center text-gray-500 py-4">{t('noPendingValidationTasks', { defaultValue: 'No hay tareas pendientes de validación en este proyecto.' })}</p>
                 ) : (
                     pendingValidationTasks.map(task => {
                         const assignee = allUsers.find(u => u.id === task.assigneeId);
@@ -574,14 +580,14 @@ const PendingTasksModal: React.FC<{
                             >
                                 <div className="flex-1 min-w-0">
                                     <h4 className="font-bold text-blue-800 truncate">{task.title}</h4>
-                                    <p className="text-xs text-red-600 mt-1">Asignado a: {assignee ? `${assignee.firstName} ${assignee.lastName}` : 'Sin asignar'}</p>
+                                    <p className="text-xs text-red-600 mt-1">{t('assignedTo', { defaultValue: 'Asignado a' })}: {assignee ? `${assignee.firstName} ${assignee.lastName}` : t('notAssigned', { defaultValue: 'Sin asignar' })}</p>
                                     <div className="flex gap-2 mt-2">
                                         <span className="px-2 py-0.5 bg-red-200 text-red-800 text-[10px] font-bold rounded uppercase">{task.status}</span>
                                         <span className="px-2 py-0.5 bg-white border border-red-200 text-red-700 text-[10px] font-bold rounded uppercase">{task.priority}</span>
                                     </div>
                                 </div>
                                 <div className="ml-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <span className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded uppercase">Revisar</span>
+                                    <span className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded uppercase">{t('review', { defaultValue: 'Revisar' })}</span>
                                 </div>
                             </div>
                         );
@@ -603,10 +609,11 @@ const StudentProjectDetailCard: React.FC<{
     onNavigateToKanban: (projectId: string) => void;
     onNavigateToCalendar: (groupId?: string) => void;
 }> = ({ group, project, tasks, tutorials, allUsers, user, courses, onNavigateToKanban, onNavigateToCalendar }) => {
+    const { t } = useLanguage();
     const courseName = useMemo(() => {
         const course = courses.find(c => c.id === group.courseId);
-        return course ? course.name : 'Sin curso asignado';
-    }, [group.courseId, courses]);
+        return course ? course.name : t('noCourse', { defaultValue: 'Sin curso asignado' });
+    }, [group.courseId, courses, t]);
     const { progress, totalTasks, pendingTasks, inProgressTasks, completedTasks, projectValue, achievedValue } = useMemo(() => {
         const groupTasks = tasks.filter(t => t.projectId === project.id);
         const total = groupTasks.length;
@@ -663,8 +670,8 @@ const StudentProjectDetailCard: React.FC<{
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
         const nextDateInfo = futureTutorials.length > 0
-            ? `${new Date(futureTutorials[0].date + 'T00:00:00').toLocaleDateString('es-ES')}`
-            : 'No agendada';
+            ? `${new Date(futureTutorials[0].date + 'T00:00:00').toLocaleDateString(t('locale', { defaultValue: 'es-ES' }))}`
+            : t('notScheduled');
 
         const pastGroupMeetings = groupMeetingsOnly.filter(t => t.status === 'held' && t.date >= project.startDate && t.date <= project.endDate);
         const futureGroupMeetings = groupMeetingsOnly
@@ -672,8 +679,8 @@ const StudentProjectDetailCard: React.FC<{
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
         const nextGroupMeetingDateInfo = futureGroupMeetings.length > 0
-            ? `${new Date(futureGroupMeetings[0].date + 'T00:00:00').toLocaleDateString('es-ES')}`
-            : 'No agendada';
+            ? `${new Date(futureGroupMeetings[0].date + 'T00:00:00').toLocaleDateString(t('locale', { defaultValue: 'es-ES' }))}`
+            : t('notScheduled');
 
         return { 
             pastTutorialsCount: pastTutorials.length, 
@@ -681,7 +688,7 @@ const StudentProjectDetailCard: React.FC<{
             groupMeetingsCount: pastGroupMeetings.length,
             nextGroupMeetingDate: nextGroupMeetingDateInfo
         };
-    }, [tutorials, group.id, project.startDate, project.endDate]);
+    }, [tutorials, group.id, project.startDate, project.endDate, t]);
 
     const calculateTaskStats = (tasks: Task[]) => {
         const stats = {
@@ -770,12 +777,12 @@ const StudentProjectDetailCard: React.FC<{
         });
         
         return result.sort((a, b) => b.totalAssigned.count - a.totalAssigned.count);
-    }, [freshGroupMembers, tasks, project.id]);
+    }, [freshGroupMembers, tasks, project.id, tutorials, group.id]);
     
     const difficultyConfig: { [key in Difficulty]: { bg: string, text: string, name: string } } = {
-        [Difficulty.Level1]: { bg: 'bg-green-200', text: 'text-green-800', name: 'Sencilla' },
-        [Difficulty.Level2]: { bg: 'bg-yellow-200', text: 'text-yellow-800', name: 'Moderada' },
-        [Difficulty.Level3]: { bg: 'bg-red-200', text: 'text-red-800', name: 'Compleja' },
+        [Difficulty.Level1]: { bg: 'bg-green-200', text: 'text-green-800', name: t('easy') },
+        [Difficulty.Level2]: { bg: 'bg-yellow-200', text: 'text-yellow-800', name: t('moderate') },
+        [Difficulty.Level3]: { bg: 'bg-red-200', text: 'text-red-800', name: t('complex') },
     };
 
     return (
@@ -784,16 +791,16 @@ const StudentProjectDetailCard: React.FC<{
                     <div className="flex items-center justify-center gap-4 rounded-xl p-1">
                         <ProgressCircle progress={progress} size={96} showText={true} />
                         <div className="flex flex-col gap-2">
-                            <ValueDisplay value={projectValue} label="Total" colorClass="bg-gray-600" />
-                            <ValueDisplay value={achievedValue} label="Actual" colorClass="bg-green-600" />
+                            <ValueDisplay value={projectValue} label={t('total', { defaultValue: 'Total' })} colorClass="bg-gray-600" />
+                            <ValueDisplay value={achievedValue} label={t('actual', { defaultValue: 'Actual' })} colorClass="bg-green-600" />
                         </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-normal text-green-700"><span className="font-bold">Proyecto:</span> {project.name}</h3>
-                        <p className="text-base text-gray-500"><span className="text-black font-bold">Curso:</span> {courseName} - <span className="text-black font-bold">Grupo:</span> {group.name}</p>
-                        {tutor && <p className="mt-1 text-sm italic font-bold text-green-800">Tutor/a: {tutor.firstName} {tutor.lastName}</p>}
+                        <h3 className="text-base font-normal text-green-700"><span className="font-bold">{t('projectLabel', { defaultValue: 'Proyecto'})}:</span> {project.name}</h3>
+                        <p className="text-base text-gray-500"><span className="text-black font-bold">{t('courseLabel', { defaultValue: 'Curso'})}:</span> {courseName} - <span className="text-black font-bold">{t('groupLabel', { defaultValue: 'Grupo'})}:</span> {group.name}</p>
+                        {tutor && <p className="mt-1 text-sm italic font-bold text-green-800">{t('tutorLabel', { defaultValue: 'Tutor/a'})}: {tutor.firstName} {tutor.lastName}</p>}
                         <div className="pt-2 mt-2 border-t border-gray-200">
-                            <h4 className="mb-1 text-sm font-semibold text-blue-600">Componentes del grupo:</h4>
+                            <h4 className="mb-1 text-sm font-semibold text-blue-600">{t('groupComponents', { defaultValue: 'Componentes del grupo'})}:</h4>
                             <div className="flex flex-wrap gap-x-1 gap-y-1">
                                 {freshGroupMembers
                                     .filter(member => member.role === Role.Student)
@@ -810,12 +817,12 @@ const StudentProjectDetailCard: React.FC<{
 
                 <div className="grid grid-cols-1 gap-2 pt-3 mt-3 border-t md:grid-cols-3 border-gray-200">
                     <div className="text-center">
-                        <p className="text-sm font-medium text-green-600">Inicio de proyecto</p>
-                        <p className="text-base font-bold text-gray-800">{new Date(project.startDate + 'T00:00:00').toLocaleDateString('es-ES')}</p>
+                        <p className="text-sm font-medium text-green-600">{t('projectStart', {defaultValue: 'Inicio de proyecto'})}</p>
+                        <p className="text-base font-bold text-gray-800">{new Date(project.startDate + 'T00:00:00').toLocaleDateString(t('locale') || 'es-ES')}</p>
                     </div>
                     <div className="text-center">
-                        <p className="text-sm font-medium text-red-600">Fin de proyecto</p>
-                        <p className="text-base font-bold text-gray-800">{new Date(project.endDate + 'T00:00:00').toLocaleDateString('es-ES')}</p>
+                        <p className="text-sm font-medium text-red-600">{t('projectEnd', {defaultValue: 'Fin de proyecto'})}</p>
+                        <p className="text-base font-bold text-gray-800">{new Date(project.endDate + 'T00:00:00').toLocaleDateString(t('locale') || 'es-ES')}</p>
                     </div>
                     <CountdownDisplay endDate={project.endDate} />
                 </div>
@@ -826,28 +833,28 @@ const StudentProjectDetailCard: React.FC<{
                             onClick={() => onNavigateToCalendar()}
                             className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
                         >
-                            <p className="text-xs font-medium text-gray-500">Reuniones de Grupo</p>
+                            <p className="text-xs font-medium text-gray-500">{t('groupMeetings', {defaultValue: 'Reuniones de Grupo'})}</p>
                             <p className="text-lg font-bold text-blue-600">{groupMeetingsCount}</p>
                         </div>
                         <div 
                             onClick={() => onNavigateToCalendar()}
                             className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
                         >
-                            <p className="text-xs font-medium text-gray-500">Próxima Reunión Grupo</p>
+                            <p className="text-xs font-medium text-gray-500">{t('nextGroupMeeting', {defaultValue: 'Próxima Reunión Grupo'})}</p>
                             <p className="text-sm font-bold text-blue-600 break-words">{nextGroupMeetingDate}</p>
                         </div>
                         <div 
                             onClick={() => onNavigateToCalendar()}
                             className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
                         >
-                            <p className="text-xs font-medium text-gray-500">Tutorías Realizadas</p>
+                            <p className="text-xs font-medium text-gray-500">{t('heldTutorials', {defaultValue: 'Tutorías Realizadas'})}</p>
                             <p className="text-lg font-bold text-blue-600">{pastTutorialsCount}</p>
                         </div>
                         <div 
                             onClick={() => onNavigateToCalendar()}
                             className="p-1 text-center bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
                         >
-                            <p className="text-xs font-medium text-gray-500">Próxima Tutoría</p>
+                            <p className="text-xs font-medium text-gray-500">{t('nextTutorial', {defaultValue: 'Próxima Tutoría'})}</p>
                             <p className="text-sm font-bold text-blue-600 break-words">{nextTutorialDate}</p>
                         </div>
                     </div>
@@ -859,36 +866,36 @@ const StudentProjectDetailCard: React.FC<{
                         className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
                     >
                         <p className="text-lg font-bold text-gray-800">{totalTasks}</p>
-                        <p className="text-xs font-medium text-gray-500">Tareas Totales</p>
+                        <p className="text-xs font-medium text-gray-500">{t('totalTasks', {defaultValue: 'Tareas Totales'})}</p>
                     </div>
                     <div 
                         onClick={() => onNavigateToKanban(project.id)} 
                         className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
                     >
                         <p className="text-lg font-bold text-red-600">{pendingTasks}</p>
-                        <p className="text-xs font-medium text-gray-500">Pendientes</p>
+                        <p className="text-xs font-medium text-gray-500">{t('pending', {defaultValue: 'Pendientes'})}</p>
                     </div>
                     <div 
                         onClick={() => onNavigateToKanban(project.id)} 
                         className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
                     >
                         <p className="text-lg font-bold text-blue-600">{inProgressTasks}</p>
-                        <p className="text-xs font-medium text-gray-500">En progreso</p>
+                        <p className="text-xs font-medium text-gray-500">{t('inProgress', {defaultValue: 'En progreso'})}</p>
                     </div>
                     <div 
                         onClick={() => onNavigateToKanban(project.id)} 
                         className="p-1 text-center bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-green-50 transition-colors"
                     >
                         <p className="text-lg font-bold text-green-600">{completedTasks}</p>
-                        <p className="text-xs font-medium text-gray-500">Completadas</p>
+                        <p className="text-xs font-medium text-gray-500">{t('completed', {defaultValue: 'Completadas'})}</p>
                     </div>
                 </div>
 
             <div className="pt-3 mt-3 border-t border-gray-200">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <h4 className="text-lg font-bold text-gray-700">Rendimiento del grupo por componente</h4>
+                    <h4 className="text-lg font-bold text-gray-700">{t('groupPerformance', {defaultValue: 'Rendimiento del grupo por componente'})}</h4>
                     <div className="flex items-center space-x-4">
-                        <span className="text-xs font-semibold text-gray-500">Dificultad:</span>
+                        <span className="text-xs font-semibold text-gray-500">{t('difficulty', {defaultValue: 'Dificultad'})}:</span>
                         {(Object.keys(difficultyConfig) as Difficulty[]).map(level => (
                             <div key={level} className="flex items-center space-x-1.5">
                                 <div className={`w-3 h-3 rounded-full ${difficultyConfig[level].bg}`}></div>
@@ -901,10 +908,10 @@ const StudentProjectDetailCard: React.FC<{
                 <div className="hidden md:flex mb-2">
                     <div className="w-full md:w-5/12" /> {/* Spacer */}
                     <div className="flex w-full md:w-7/12">
-                        <div className="flex-1 text-center text-xs font-bold text-gray-500">Total</div>
-                        <div className="flex-1 text-center text-xs font-bold text-red-600">Pendientes</div>
-                        <div className="flex-1 text-center text-xs font-bold text-blue-600">En progreso</div>
-                        <div className="flex-1 text-center text-xs font-bold text-green-600">Realizadas</div>
+                        <div className="flex-1 text-center text-xs font-bold text-gray-500">{t('total')}</div>
+                        <div className="flex-1 text-center text-xs font-bold text-red-600">{t('pending')}</div>
+                        <div className="flex-1 text-center text-xs font-bold text-blue-600">{t('inProgress')}</div>
+                        <div className="flex-1 text-center text-xs font-bold text-green-600">{t('completed')}</div>
                     </div>
                 </div>
                 
@@ -914,31 +921,31 @@ const StudentProjectDetailCard: React.FC<{
                             <div key={stat.id} className="flex items-center p-2 bg-gray-50 rounded-lg border border-gray-200">
                                 <div className="flex items-center w-5/12">
                                      <div className="flex items-center flex-shrink-0 gap-2">
-                                        <div className="flex flex-col items-center" title={`Productividad: ${stat.productivity}%`}>
+                                        <div className="flex flex-col items-center" title={`${t('productivity')}: ${stat.productivity}%`}>
                                             <ProgressCircle progress={stat.productivity} size={36} showText={true} />
-                                            <p className="mt-1 text-[9px] font-semibold text-gray-600 uppercase tracking-tight">TOTAL</p>
+                                            <p className="mt-1 text-[9px] font-semibold text-gray-600 uppercase tracking-tight">{t('total')}</p>
                                         </div>
-                                        <SmallValueDisplay value={stat.assignedPoints} label="Asumidos" colorClass="bg-gray-500" />
-                                        <SmallValueDisplay value={stat.achievedPoints} label="Logrados" colorClass="bg-green-500" />
+                                        <SmallValueDisplay value={stat.assignedPoints} label={t('assumed')} colorClass="bg-gray-500" />
+                                        <SmallValueDisplay value={stat.achievedPoints} label={t('achieved')} colorClass="bg-green-500" />
                                     </div>
                                     <div className="ml-3 flex-1 min-w-0" title={`${stat.firstName} ${stat.lastName}`}>
                                         <p className="font-medium text-gray-800 truncate">{stat.firstName}</p>
                                         {stat.lastName && <p className="text-sm text-gray-600 truncate">{stat.lastName}</p>}
                                         <div className="flex items-center gap-2 mt-0.5">
-                                            <span className={`text-[10px] ${getAttendanceColor(stat.tutorialAttendance)} flex items-center gap-0.5 font-bold`} title="Asistencia a Tutorías">
+                                            <span className={`text-[10px] ${getAttendanceColor(stat.tutorialAttendance)} flex items-center gap-0.5 font-bold`} title={t('tutorialAttendance')}>
                                                 <GraduationCapIcon className="w-3 h-3" /> {stat.tutorialAttendance}%
                                             </span>
-                                            <span className={`text-[10px] ${getAttendanceColor(stat.meetingAttendance)} flex items-center gap-0.5 font-bold`} title="Asistencia a Reuniones">
+                                            <span className={`text-[10px] ${getAttendanceColor(stat.meetingAttendance)} flex items-center gap-0.5 font-bold`} title={t('meetingAttendance')}>
                                                 <UsersIcon className="w-3 h-3" /> {stat.meetingAttendance}%
                                             </span>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex justify-around w-7/12">
-                                    <StatusColumn title="Total de Tareas" mainCircleClass="bg-gray-800 text-white" stats={stat.totalAssigned} difficultyConfig={difficultyConfig} />
-                                    <StatusColumn title="Tareas Pendientes" mainCircleClass="bg-red-100 text-red-800 border border-red-200" stats={stat.pending} difficultyConfig={difficultyConfig} />
-                                    <StatusColumn title="Tareas En progreso" mainCircleClass="bg-yellow-100 text-yellow-800 border border-yellow-200" stats={stat.inProgress} difficultyConfig={difficultyConfig} />
-                                    <StatusColumn title="Tareas Realizadas" mainCircleClass="bg-green-100 text-green-800 border border-green-200" stats={stat.completed} difficultyConfig={difficultyConfig} />
+                                    <StatusColumn title={t('totalTasksProject')} mainCircleClass="bg-gray-800 text-white" stats={stat.totalAssigned} difficultyConfig={difficultyConfig} />
+                                    <StatusColumn title={t('pendingTasksProject')} mainCircleClass="bg-red-100 text-red-800 border border-red-200" stats={stat.pending} difficultyConfig={difficultyConfig} />
+                                    <StatusColumn title={t('inProgressTasksProject')} mainCircleClass="bg-yellow-100 text-yellow-800 border border-yellow-200" stats={stat.inProgress} difficultyConfig={difficultyConfig} />
+                                    <StatusColumn title={t('completedTasksProject')} mainCircleClass="bg-green-100 text-green-800 border border-green-200" stats={stat.completed} difficultyConfig={difficultyConfig} />
                                 </div>
                             </div>
                         );
@@ -962,6 +969,8 @@ const StudentDashboard: React.FC<{
     onNavigateToCalendar: (groupId?: string) => void;
 }> = ({ user, groups, projects, tasks, tutorials, allUsers, courses, onNavigateToKanban, onNavigateToCalendar }) => {
     
+    const { t } = useLanguage();
+    
     const userProjectsWithGroups = useMemo(() => {
         return projects
             .filter(p => user.groupIds.includes(p.groupId))
@@ -975,7 +984,7 @@ const StudentDashboard: React.FC<{
     if (userProjectsWithGroups.length === 0) {
         return (
             <div className="p-6 text-center text-gray-500 bg-white rounded-lg shadow-md">
-                <p>Actualmente no estás asignado a ningún proyecto.</p>
+                <p>{t('noAssignedProjects')}</p>
             </div>
         );
     }
@@ -1012,6 +1021,7 @@ const AdminTutorDashboard: React.FC<{
     onNavigateToCalendar: (groupId?: string) => void;
     onShowPendingTasks: (projectId: string) => void;
 }> = ({ groups, projects, tasks, allUsers, tutorials, courses, selectedGroupId, onNavigateToKanban, onNavigateToCalendar, onShowPendingTasks }) => {
+    const { t } = useLanguage();
     const [expandedCourseGroups, setExpandedCourseGroups] = useState<Record<string, boolean>>({});
     const [selectedProjectForCourse, setSelectedProjectForCourse] = useState<Record<string, string | null>>({});
 
@@ -1022,7 +1032,7 @@ const AdminTutorDashboard: React.FC<{
                 const group = groups.find(g => g.id === project.groupId);
                 if (group) {
                     const course = courses.find(c => c.id === group.courseId);
-                    const courseGroupName = course ? course.name : 'Sin curso asignado';
+                    const courseGroupName = course ? course.name : t('groupsNoCourse');
                     setExpandedCourseGroups(prev => ({ ...prev, [courseGroupName]: true }));
                 }
             }
@@ -1036,7 +1046,7 @@ const AdminTutorDashboard: React.FC<{
             const group = groups.find(g => g.id === project.groupId);
             if (group) {
                 const course = courses.find(c => c.id === group.courseId);
-                const projectCourseGroup = course ? course.name : 'Sin curso asignado';
+                const projectCourseGroup = course ? course.name : t('groupsNoCourse');
 
                 if (!result[projectCourseGroup]) {
                     result[projectCourseGroup] = [];
@@ -1064,7 +1074,7 @@ const AdminTutorDashboard: React.FC<{
                         <button onClick={() => toggleCourseGroup(courseGroup)} className="flex items-center justify-between w-full p-4 text-left focus:outline-none">
                             <div className="flex items-center">
                                 <h3 className="text-lg font-semibold text-gray-800">{courseGroup}</h3>
-                                <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">{projectsData.length} {projectsData.length === 1 ? 'proyecto' : 'proyectos'}</span>
+                                <span className="ml-4 px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">{projectsData.length} {projectsData.length === 1 ? t('project').toLowerCase() : t('projects').toLowerCase()}</span>
                             </div>
                             <ChevronDownIcon className={`w-6 h-6 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                         </button>
@@ -1096,7 +1106,7 @@ const AdminTutorDashboard: React.FC<{
                                             onClick={() => setSelectedProjectForCourse(prev => ({ ...prev, [courseGroup]: null }))} 
                                             className="mb-4 text-sm text-blue-600 hover:underline flex items-center"
                                         >
-                                            <ChevronDownIcon className="w-4 h-4 mr-1 rotate-90" /> Volver al listado de grupos
+                                            <ChevronDownIcon className="w-4 h-4 mr-1 rotate-90" /> {t('backToList')}
                                         </button>
                                         <div className="grid grid-cols-1 gap-6">
                                             {projectsData
@@ -1271,7 +1281,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
                                     : 'bg-green-500 text-white cursor-default'
                             }`}
                         >
-                            {pendingMeetings.length > 0 ? `Reuniones de grupo pendientes (${pendingMeetings.length})` : 'Sin reuniones de grupo pendientes'}
+                            {pendingMeetings.length > 0 ? `${t('pendingGroupMeetings')} (${pendingMeetings.length})` : t('noPendingGroupMeetings')}
                         </button>
                     )}
                 </div>
@@ -1315,7 +1325,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
 
             {isPendingTutorialsModalOpen && (
                 <PendingTutorialsMeetingsModal
-                    title={`Tienes ${pendingTutorials.length} tutoría(s) pendiente(s)`}
+                    title={t('pendingTutorialsCount', { count: pendingTutorials.length, defaultValue: `Tienes ${pendingTutorials.length} tutoría(s) pendiente(s)` })}
                     tutorials={pendingTutorials}
                     groups={groups}
                     allUsers={allUsers}
@@ -1328,7 +1338,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
 
             {isPendingMeetingsModalOpen && (
                 <PendingTutorialsMeetingsModal
-                    title={`Tienes ${pendingMeetings.length} reunión(es) pendiente(s)`}
+                    title={t('pendingMeetingsCount', { count: pendingMeetings.length, defaultValue: `Tienes ${pendingMeetings.length} reunión(es) pendiente(s)` })}
                     tutorials={pendingMeetings}
                     groups={groups}
                     allUsers={allUsers}
@@ -1341,7 +1351,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
 
             {editingTutorial && (
                 <Modal
-                    title="Editar Tutoría/Reunión"
+                    title={t('editTutorialMeeting', { defaultValue: 'Editar Tutoría/Reunión' })}
                     onClose={() => setEditingTutorial(null)}
                     size="2xl"
                 >
@@ -1370,7 +1380,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
             )}
 
             {editingTask && (
-                <Modal title="Validar Tarea" onClose={() => setEditingTask(null)}>
+                <Modal title={t('validateTaskModal', { defaultValue: 'Validar Tarea' })} onClose={() => setEditingTask(null)}>
                     <TaskForm
                         task={editingTask}
                         assignees={availableAssignees}
@@ -1386,16 +1396,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, groups, projects, tasks, al
             )}
 
             {taskToDelete && (
-                <Modal title="Confirmar Eliminación" onClose={() => setTaskToDelete(null)}>
+                <Modal title={t('confirmDeletion', { defaultValue: 'Confirmar Eliminación' })} onClose={() => setTaskToDelete(null)}>
                     <div className="text-center">
-                        <p className="text-lg text-gray-700">¿Estás seguro de que quieres eliminar la tarea?</p>
+                        <p className="text-lg text-gray-700">{t('deleteTaskConfirmQuestion', { defaultValue: '¿Estás seguro de que quieres eliminar la tarea?' })}</p>
                         <p className="my-2 text-xl font-bold text-red-600">"{taskToDelete.title}"</p>
                         <div className="flex justify-center mt-6 space-x-4">
                             <button onClick={() => setTaskToDelete(null)} className="px-6 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
-                                Cancelar
+                                {t('cancel', { defaultValue: 'Cancelar' })}
                             </button>
                             <button onClick={handleConfirmDeleteTask} className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">
-                                Sí, Eliminar
+                                {t('yesDelete', { defaultValue: 'Sí, Eliminar' })}
                             </button>
                         </div>
                     </div>

@@ -691,7 +691,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ user, groups, projects, tasks, 
                             </div>
                         )}
                     </div>
-                    <button onClick={() => setSelectedProjectId(null)} className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">{t('backToSelection')}</button>
+                    <button onClick={() => setSelectedProjectId(null)} className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">← {t('backToSelection')}</button>
                 </div>
                 <GanttChartDisplay tasks={visibleTasks} courseDates={courseDates} ras={ras} modules={filteredModules} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} user={user} availableAssignees={assignees} projectId={selectedProject.id} />
             </div>

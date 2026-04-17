@@ -221,7 +221,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, mo
                 {(userRole === Role.Admin || userRole === Role.Tutor) && (
                     <>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">{t('module')}</label>
+                            <label className="block text-sm font-medium text-gray-700">{t('moduleAssociated')}</label>
                             <select name="moduleId" value={selectedModuleId} onChange={handleChange} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md">
                                 <option value="">{t('select')} {t('module')}</option>
                                 {modules.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
@@ -230,7 +230,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, assignees, projectId, ras, mo
                         <div>
                             <label className="block text-sm font-medium text-gray-700">{t('ra')}</label>
                             <select name="raId" value={formData.raId} onChange={handleChange} className="w-full h-[42px] p-2 mt-1 border border-gray-300 rounded-md" disabled={!selectedModuleId}>
-                                <option value="">{t('select')} {t('ra')}</option>
+                                <option value="">{t('selectRA')}</option>
                                 {ras.filter(ra => ra.moduleId === selectedModuleId).map(ra => (
                                     <option key={ra.id} value={ra.id}>{ra.code}: {ra.description}</option>
                                 ))}

@@ -21,7 +21,7 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, children, currentPage, 
     const navItems = useNavItems(user.role);
 
     const currentItem = navItems.find(item => item.id === currentPage);
-    const pageTitle = currentItem ? t(currentItem.labelKey) : '';
+    const pageTitle = currentItem ? (currentItem.id === 'db-management' ? t('dbManagementHeader') : t(currentItem.labelKey)) : '';
 
     return (
         <div className="flex h-screen bg-gray-100">

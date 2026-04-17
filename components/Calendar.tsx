@@ -820,8 +820,8 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                                                     </div>
                                                     {(user.role === Role.Admin || user.id === tutorial.tutorId || (user.role === Role.Student && tutorial.type === 'group_meeting' && (user.groupIds || []).includes(tutorial.groupId))) && (
                                                         <div className="flex flex-shrink-0 ml-4 space-x-1">
-                                                            <div onClick={(e) => { e.stopPropagation(); setEditingTutorial(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-blue-100 hover:text-blue-600" aria-label="Editar tutoría"><EditIcon className="w-4 h-4 text-blue-500" /></div>
-                                                            <div onClick={(e) => { e.stopPropagation(); setTutorialToDelete(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-red-100 hover:text-red-600" aria-label="Eliminar tutoría"><TrashIcon className="w-4 h-4 text-red-500" /></div>
+                                                            <div onClick={(e) => { e.stopPropagation(); setEditingTutorial(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-blue-100 hover:text-blue-600" aria-label={t('editTutorial')}><EditIcon className="w-4 h-4 text-blue-500" /></div>
+                                                            <div onClick={(e) => { e.stopPropagation(); setTutorialToDelete(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-red-100 hover:text-red-600" aria-label={t('deleteTask')}><TrashIcon className="w-4 h-4 text-red-500" /></div>
                                                         </div>
                                                     )}
                                                 </button>
@@ -867,21 +867,21 @@ const Calendar: React.FC<CalendarProps> = ({ user, tutorials, groups, allUsers, 
                                                                         <div className="flex-1 min-w-0">
                                                                             <div className="flex items-center gap-2 mb-1">
                                                                                 <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${tutorial.type === 'group_meeting' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
-                                                                                    {tutorial.type === 'group_meeting' ? 'Reunión de Grupo' : 'Tutoría'}
+                                                                                    {tutorial.type === 'group_meeting' ? t('meetingTitle') : t('tutorialTitle')}
                                                                                 </span>
                                                                                 {tutorial.status === 'held' ? (
-                                                                                    <span className="px-2 py-0.5 text-xs font-medium text-green-800 bg-green-100 rounded-full">Realizada</span>
+                                                                                    <span className="px-2 py-0.5 text-xs font-medium text-green-800 bg-green-100 rounded-full">{t('held')}</span>
                                                                                 ) : (
-                                                                                    <span className="px-2 py-0.5 text-xs font-medium text-red-800 bg-red-100 rounded-full">Pendiente</span>
+                                                                                    <span className="px-2 py-0.5 text-xs font-medium text-red-800 bg-red-100 rounded-full">{t('pending')}</span>
                                                                                 )}
-                                                                                <p className="font-semibold text-gray-700">{new Date(tutorial.date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                                                <p className="font-semibold text-gray-700">{new Date(tutorial.date + 'T00:00:00').toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                                                                             </div>
                                                                             <p className="text-sm text-gray-600 truncate">{tutorial.summary}</p>
                                                                         </div>
                                                                         {(user.role === Role.Admin || user.id === tutorial.tutorId || (user.role === Role.Student && tutorial.type === 'group_meeting' && (user.groupIds || []).includes(tutorial.groupId))) && (
                                                                             <div className="flex flex-shrink-0 ml-4 space-x-1">
-                                                                                <div onClick={(e) => { e.stopPropagation(); setEditingTutorial(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-blue-100 hover:text-blue-600" aria-label="Editar tutoría"><EditIcon className="w-4 h-4 text-blue-500" /></div>
-                                                                                <div onClick={(e) => { e.stopPropagation(); setTutorialToDelete(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-red-100 hover:text-red-600" aria-label="Eliminar tutoría"><TrashIcon className="w-4 h-4 text-red-500" /></div>
+                                                                                <div onClick={(e) => { e.stopPropagation(); setEditingTutorial(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-blue-100 hover:text-blue-600" aria-label={t('editTutorial')}><EditIcon className="w-4 h-4 text-blue-500" /></div>
+                                                                                <div onClick={(e) => { e.stopPropagation(); setTutorialToDelete(tutorial); }} className="p-2 text-gray-400 rounded-full hover:bg-red-100 hover:text-red-600" aria-label={t('deleteTask')}><TrashIcon className="w-4 h-4 text-red-500" /></div>
                                                                             </div>
                                                                         )}
                                                                     </button>

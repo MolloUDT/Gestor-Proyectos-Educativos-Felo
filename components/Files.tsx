@@ -154,7 +154,12 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                             <button onClick={() => toggleExpand(`course_${courseName}`)} className="flex items-center justify-between w-full p-4 text-left bg-gray-50 hover:bg-gray-100 focus:outline-none">
                                 <div className="flex items-center">
                                     <h3 className="font-semibold text-gray-800">{courseName}</h3>
-                                    <span className="ml-3 px-2 py-0.5 text-xs font-semibold text-green-800 bg-green-100 rounded-full">{groupsByCourse[courseName].length} {t('groupsCount')}</span>
+                                    <span className="ml-3 px-2 py-0.5 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
+                                        {t('groupCountLabel', { 
+                                            count: groupsByCourse[courseName].length.toString(), 
+                                            label: groupsByCourse[courseName].length === 1 ? t('groupSingular') : t('groupPlural') 
+                                        })}
+                                    </span>
                                 </div>
                                 <ChevronDownIcon className={`w-5 h-5 text-gray-500 transition-transform ${expandedKeys[`course_${courseName}`] ? 'rotate-180' : ''}`} />
                             </button>
