@@ -692,8 +692,11 @@ const App: React.FC = () => {
         try {
             // 1. Subir el archivo físico a Supabase Storage
             // Usamos un bucket llamado 'group-files'. El usuario debe tenerlo creado en su Supabase.
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${groupId}/${Date.now()}-${file.name.replace(/[^\x00-\x7F]/g, "")}`;
+            const cleanFileName = file.name
+                .replace(/[^\x00-\x7F]/g, "") // Quitar caracteres no ASCII (acentos, ñ, etc)
+                .replace(/\s+/g, '_'); // Reemplazar espacios por guiones bajos
+            
+            const fileName = `${groupId}/${Date.now()}-${cleanFileName}`;
             const filePath = `${fileName}`;
 
             const { data: uploadData, error: uploadError } = await supabase.storage
@@ -714,7 +717,8 @@ const App: React.FC = () => {
             const { error: dbError } = await supabase.from('stored_files').insert({
                 name: file.name,
                 url: publicUrl,
-                group_id: groupId
+                group_id: groupId,
+                uploaded_at: new Date().toISOString()
             });
 
             if (dbError) {

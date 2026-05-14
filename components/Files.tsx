@@ -68,6 +68,36 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
         }
     };
 
+    const handleDownload = async (file: StoredFile) => {
+        try {
+            // Forzamos la descarga intentando convertir a Blob para evitar que el navegador simplemente abra el PDF
+            const response = await fetch(file.url);
+            if (!response.ok) throw new Error("Failed to fetch file");
+            
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = file.name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error("Error forced downloading:", error);
+            // Fallback: Abrir en pestaña nueva si falla el fetch (ej: por CORS si no está configurado)
+            const link = document.createElement('a');
+            link.href = file.url;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.setAttribute('download', file.name);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
     return (
         <div>
             <p className="text-gray-600 mb-8">{t('selectGroupFiles')}</p>
@@ -139,15 +169,12 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                                                 <td className="px-4 py-2 text-sm text-gray-900">{file.name}</td>
                                                                 <td className="px-4 py-2 text-sm text-gray-600">{new Date(file.uploadedAt).toLocaleDateString()}</td>
                                                                 <td className="px-4 py-2 text-sm space-x-4">
-                                                                    <a 
-                                                                        href={file.url} 
-                                                                        download={file.name} 
-                                                                        target="_blank" 
-                                                                        rel="noopener noreferrer"
+                                                                    <button 
+                                                                        onClick={() => handleDownload(file)} 
                                                                         className="text-green-600 hover:underline"
                                                                     >
                                                                         {t('download')}
-                                                                    </a>
+                                                                    </button>
                                                                     <button onClick={() => setFileToDelete(file)} className="text-red-500 hover:underline">{t('delete')}</button>
                                                                 </td>
                                                             </tr>
@@ -249,15 +276,12 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                                                             <td className="px-4 py-2 text-sm text-gray-900">{file.name}</td>
                                                                             <td className="px-4 py-2 text-sm text-gray-600">{new Date(file.uploadedAt).toLocaleDateString()}</td>
                                                                             <td className="px-4 py-2 text-sm space-x-4">
-                                                                                <a 
-                                                                                    href={file.url} 
-                                                                                    download={file.name} 
-                                                                                    target="_blank" 
-                                                                                    rel="noopener noreferrer"
+                                                                                <button 
+                                                                                    onClick={() => handleDownload(file)} 
                                                                                     className="text-green-600 hover:underline"
                                                                                 >
                                                                                     {t('download')}
-                                                                                </a>
+                                                                                </button>
                                                                                 <button onClick={() => setFileToDelete(file)} className="text-red-500 hover:underline">{t('delete')}</button>
                                                                             </td>
                                                                         </tr>
