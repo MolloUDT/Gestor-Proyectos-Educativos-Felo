@@ -689,17 +689,65 @@ const App: React.FC = () => {
     };
     
     const handleUploadFile = async (file: File, groupId: string) => {
-        await supabase.from('stored_files').insert({
-            name: file.name,
-            url: '#', // Placeholder URL
-            group_id: groupId
-        });
-        await fetchAllData();
+        try {
+            // 1. Subir el archivo físico a Supabase Storage
+            // Usamos un bucket llamado 'group-files'. El usuario debe tenerlo creado en su Supabase.
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${groupId}/${Date.now()}-${file.name.replace(/[^\x00-\x7F]/g, "")}`;
+            const filePath = `${fileName}`;
+
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('group-files')
+                .upload(filePath, file);
+
+            if (uploadError) {
+                console.error("Error uploading file to storage:", uploadError);
+                return;
+            }
+
+            // 2. Obtener la URL pública del archivo
+            const { data: { publicUrl } } = supabase.storage
+                .from('group-files')
+                .getPublicUrl(filePath);
+
+            // 3. Insertar el registro en la base de datos con la URL real
+            const { error: dbError } = await supabase.from('stored_files').insert({
+                name: file.name,
+                url: publicUrl,
+                group_id: groupId
+            });
+
+            if (dbError) {
+                console.error("Error saving file record to database:", dbError);
+                // Si falla la DB, limpiamos el archivo de storage para evitar huérfanos
+                await supabase.storage.from('group-files').remove([filePath]);
+            }
+
+            await fetchAllData();
+        } catch (error) {
+            console.error("Unexpected error in handleUploadFile:", error);
+        }
     };
 
     const handleDeleteFile = async (fileId: string) => {
-        await supabase.from('stored_files').delete().eq('id', fileId);
-        await fetchAllData();
+        try {
+            // Buscamos el archivo para obtener su URL y extraer el path de storage
+            const fileToDelete = files.find(f => f.id === fileId);
+            if (fileToDelete && fileToDelete.url.includes('group-files')) {
+                // Intentamos extraer el path relativo desde la URL pública
+                // URL format: https://.../storage/v1/object/public/group-files/path/to/file
+                const urlParts = fileToDelete.url.split('group-files/');
+                if (urlParts.length > 1) {
+                    const storagePath = urlParts[1];
+                    await supabase.storage.from('group-files').remove([storagePath]);
+                }
+            }
+
+            await supabase.from('stored_files').delete().eq('id', fileId);
+            await fetchAllData();
+        } catch (error) {
+            console.error("Error in handleDeleteFile:", error);
+        }
     };
 
     const handleUpdateProfile = async (userId: string, data: { username?: string; password?: string }) => {

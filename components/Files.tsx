@@ -22,6 +22,7 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
     const { t } = useLanguage();
     const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
     const [fileToDelete, setFileToDelete] = useState<StoredFile | null>(null);
+    const [isUploading, setIsUploading] = useState<string | null>(null); // Guardar el groupId del grupo que está subiendo
 
     const toggleExpand = (key: string) => setExpandedKeys(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -58,6 +59,15 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
         }
     };
 
+    const onFileSelected = async (file: File, groupId: string) => {
+        setIsUploading(groupId);
+        try {
+            await onUploadFile(file, groupId);
+        } finally {
+            setIsUploading(null);
+        }
+    };
+
     return (
         <div>
             <p className="text-gray-600 mb-8">{t('selectGroupFiles')}</p>
@@ -69,9 +79,9 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                         const groupFiles = files.filter(f => f.groupId === group.id);
                         const tutor = allUsers.find(u => u.id === group.tutorId);
                         
-                        const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+                        const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
                             if (event.target.files && event.target.files[0]) {
-                                onUploadFile(event.target.files[0], group.id);
+                                onFileSelected(event.target.files[0], group.id);
                             }
                         };
 
@@ -103,13 +113,14 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                                 type="file" 
                                                 id={`file-upload-${group.id}`} 
                                                 className="hidden"
-                                                onChange={handleFileSelect}
+                                                onChange={handleFileChange}
+                                                disabled={isUploading === group.id}
                                             />
                                             <label 
                                                 htmlFor={`file-upload-${group.id}`}
-                                                className="px-3 py-1 text-sm font-semibold text-white bg-green-600 rounded-md cursor-pointer hover:bg-green-700 transition-colors"
+                                                className={`px-3 py-1 text-sm font-semibold text-white rounded-md cursor-pointer transition-colors ${isUploading === group.id ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
                                             >
-                                                {t('uploadFile')}
+                                                {isUploading === group.id ? t('uploading') : t('uploadFile')}
                                             </label>
                                         </div>
                                         {groupFiles.length > 0 ? (
@@ -128,7 +139,15 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                                                 <td className="px-4 py-2 text-sm text-gray-900">{file.name}</td>
                                                                 <td className="px-4 py-2 text-sm text-gray-600">{new Date(file.uploadedAt).toLocaleDateString()}</td>
                                                                 <td className="px-4 py-2 text-sm space-x-4">
-                                                                    <a href={file.url} className="text-green-600 hover:underline">{t('download')}</a>
+                                                                    <a 
+                                                                        href={file.url} 
+                                                                        download={file.name} 
+                                                                        target="_blank" 
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-green-600 hover:underline"
+                                                                    >
+                                                                        {t('download')}
+                                                                    </a>
                                                                     <button onClick={() => setFileToDelete(file)} className="text-red-500 hover:underline">{t('delete')}</button>
                                                                 </td>
                                                             </tr>
@@ -170,9 +189,9 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                         const groupFiles = files.filter(f => f.groupId === group.id);
                                         const tutor = allUsers.find(u => u.id === group.tutorId);
                                         
-                                        const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+                                        const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
                                             if (event.target.files && event.target.files[0]) {
-                                                onUploadFile(event.target.files[0], group.id);
+                                                onFileSelected(event.target.files[0], group.id);
                                             }
                                         };
 
@@ -204,13 +223,14 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                                             type="file" 
                                                             id={`file-upload-${group.id}`} 
                                                             className="hidden"
-                                                            onChange={handleFileSelect}
+                                                            onChange={handleFileChange}
+                                                            disabled={isUploading === group.id}
                                                         />
                                                         <label 
                                                             htmlFor={`file-upload-${group.id}`}
-                                                            className="px-3 py-1 text-sm font-semibold text-white bg-green-600 rounded-md cursor-pointer hover:bg-green-700"
+                                                            className={`px-3 py-1 text-sm font-semibold text-white rounded-md cursor-pointer transition-colors ${isUploading === group.id ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
                                                         >
-                                                            {t('uploadFile')}
+                                                            {isUploading === group.id ? t('uploading') : t('uploadFile')}
                                                         </label>
                                                     </div>
                                                     {groupFiles.length > 0 ? (
@@ -229,7 +249,15 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
                                                                             <td className="px-4 py-2 text-sm text-gray-900">{file.name}</td>
                                                                             <td className="px-4 py-2 text-sm text-gray-600">{new Date(file.uploadedAt).toLocaleDateString()}</td>
                                                                             <td className="px-4 py-2 text-sm space-x-4">
-                                                                                <a href={file.url} className="text-green-600 hover:underline">{t('download')}</a>
+                                                                                <a 
+                                                                                    href={file.url} 
+                                                                                    download={file.name} 
+                                                                                    target="_blank" 
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="text-green-600 hover:underline"
+                                                                                >
+                                                                                    {t('download')}
+                                                                                </a>
                                                                                 <button onClick={() => setFileToDelete(file)} className="text-red-500 hover:underline">{t('delete')}</button>
                                                                             </td>
                                                                         </tr>
