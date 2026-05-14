@@ -23,6 +23,7 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
     const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
     const [fileToDelete, setFileToDelete] = useState<StoredFile | null>(null);
     const [isUploading, setIsUploading] = useState<string | null>(null); // Guardar el groupId del grupo que está subiendo
+    const [uploadError, setUploadError] = useState<string | null>(null);
 
     const toggleExpand = (key: string) => setExpandedKeys(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -52,17 +53,28 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
         return result;
     }, [user, groups, courses]);
 
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = async () => {
         if (fileToDelete) {
-            onDeleteFile(fileToDelete.id);
-            setFileToDelete(null);
+            setUploadError(null);
+            try {
+                await onDeleteFile(fileToDelete.id);
+            } catch (error: any) {
+                console.error("Delete error:", error);
+                setUploadError(error.message || "Error al eliminar el archivo");
+            } finally {
+                setFileToDelete(null);
+            }
         }
     };
 
     const onFileSelected = async (file: File, groupId: string) => {
         setIsUploading(groupId);
+        setUploadError(null);
         try {
             await onUploadFile(file, groupId);
+        } catch (error: any) {
+            console.error("Upload error details:", error);
+            setUploadError(error.message || "Error desconocido al subir el archivo");
         } finally {
             setIsUploading(null);
         }
@@ -102,6 +114,18 @@ const Files: React.FC<FilesProps> = ({ user, files, groups, allUsers, projects, 
         <div>
             <p className="text-gray-600 mb-8">{t('selectGroupFiles')}</p>
             
+            {uploadError && (
+                <div className="p-4 mb-6 text-sm text-red-700 bg-red-100 border border-red-200 rounded-lg">
+                    <p className="font-bold">Error:</p>
+                    <p>{uploadError}</p>
+                    <button 
+                        onClick={() => setUploadError(null)} 
+                        className="mt-2 text-xs font-semibold underline hover:no-underline"
+                    >
+                        Cerrar aviso
+                    </button>
+                </div>
+            )}
             {user.role === Role.Student ? (
                 <div className="space-y-4">
                     {studentGroups.length > 0 ? studentGroups.map(group => {

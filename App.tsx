@@ -690,30 +690,31 @@ const App: React.FC = () => {
     
     const handleUploadFile = async (file: File, groupId: string) => {
         try {
-            // 1. Subir el archivo físico a Supabase Storage
-            // Usamos un bucket llamado 'group-files'. El usuario debe tenerlo creado en su Supabase.
+            console.log("Iniciando subida para el grupo:", groupId);
+            
             const cleanFileName = file.name
-                .replace(/[^\x00-\x7F]/g, "") // Quitar caracteres no ASCII (acentos, ñ, etc)
-                .replace(/\s+/g, '_'); // Reemplazar espacios por guiones bajos
+                .replace(/[^\x00-\x7F]/g, "") 
+                .replace(/\s+/g, '_');
             
             const fileName = `${groupId}/${Date.now()}-${cleanFileName}`;
             const filePath = `${fileName}`;
 
+            // 1. Intentar subir al Storage
             const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('group-files')
                 .upload(filePath, file);
 
             if (uploadError) {
-                console.error("Error uploading file to storage:", uploadError);
-                return;
+                console.error("Error en Storage:", uploadError);
+                throw new Error(`Error en Storage: ${uploadError.message}. Asegúrate de que el bucket 'group-files' existe y es público.`);
             }
 
-            // 2. Obtener la URL pública del archivo
+            // 2. Obtener URL
             const { data: { publicUrl } } = supabase.storage
                 .from('group-files')
                 .getPublicUrl(filePath);
 
-            // 3. Insertar el registro en la base de datos con la URL real
+            // 3. Insertar en la tabla
             const { error: dbError } = await supabase.from('stored_files').insert({
                 name: file.name,
                 url: publicUrl,
@@ -722,14 +723,17 @@ const App: React.FC = () => {
             });
 
             if (dbError) {
-                console.error("Error saving file record to database:", dbError);
-                // Si falla la DB, limpiamos el archivo de storage para evitar huérfanos
+                console.error("Error en Base de Datos:", dbError);
+                // Limpiar storage si falla DB
                 await supabase.storage.from('group-files').remove([filePath]);
+                throw new Error(`Error en Base de Datos: ${dbError.message}`);
             }
 
             await fetchAllData();
-        } catch (error) {
-            console.error("Unexpected error in handleUploadFile:", error);
+            console.log("Subida completada con éxito");
+        } catch (error: any) {
+            console.error("Error en handleUploadFile:", error);
+            throw error; // Re-lanzamos para que el componente Files lo capture
         }
     };
 
@@ -739,18 +743,21 @@ const App: React.FC = () => {
             const fileToDelete = files.find(f => f.id === fileId);
             if (fileToDelete && fileToDelete.url.includes('group-files')) {
                 // Intentamos extraer el path relativo desde la URL pública
-                // URL format: https://.../storage/v1/object/public/group-files/path/to/file
                 const urlParts = fileToDelete.url.split('group-files/');
                 if (urlParts.length > 1) {
                     const storagePath = urlParts[1];
-                    await supabase.storage.from('group-files').remove([storagePath]);
+                    const { error: storageError } = await supabase.storage.from('group-files').remove([storagePath]);
+                    if (storageError) console.warn("Could not delete from storage:", storageError.message);
                 }
             }
 
-            await supabase.from('stored_files').delete().eq('id', fileId);
+            const { error: dbError } = await supabase.from('stored_files').delete().eq('id', fileId);
+            if (dbError) throw dbError;
+
             await fetchAllData();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error in handleDeleteFile:", error);
+            throw error;
         }
     };
 
